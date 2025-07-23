@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lexo_postgres
+    environment:
+      POSTGRES_DB: lexo_dev
+      POSTGRES_USER: lexo
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lexo -d lexo_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: lexo_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Backend FastAPI (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: lexo_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./ml_models:/app/ml_models
+      - ./data:/app/data
+      - ../OCR:/app/ocr_data
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://lexo:password@postgres:5432/lexo_dev
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Frontend Next.js (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: lexo_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: lexo_chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+    restart: unless-stopped
+
+  # Adminer for Database Management (Optional)
+  adminer:
+    image: adminer:latest
+    container_name: lexo_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  chromadb_data:
+    driver: local
+
+networks:
+  default:
+    name: lexo_network
+    driver: bridge
