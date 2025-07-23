@@ -47,6 +47,7 @@ frontend/
 - **Auth** : JWT + OAuth2
 - **MCP Context7** une recherche dans une documentation à jour sera prioritaire en cas de doute.
 - **Repo GitHub** : https://github.com/aiconsultingorleans/LEXO_v1
+- **Projet Next.js** : le projet Next.js est dans le dossier `/src/`
 
 ## 📋 Fonctionnalités Prioritaires
 
@@ -161,7 +162,7 @@ async def process_document(file_path: str) -> ProcessedDocument:
     )
 ```
 
-## 📁 Structure des Fichiers
+## 📁 Arborescence du Projet
 
 ```
 ~/Documents/LEXO_v1/
@@ -171,25 +172,51 @@ async def process_document(file_path: str) -> ProcessedDocument:
 │   ├── rib/              
 │   └── non_classes/       # En attente
 │
-└── IA_Administratif/       # Application
-    ├── backend/
-    ├── frontend/
-    ├── ml_models/
-    └── data/
+├── backend/                # API FastAPI
+├── src/                    # Frontend Next.js
+├── ai_services/            # Services IA
+├── data/                   # Données locales
+├── training_dataset/       # Dataset ML
+├── deployment/             # Configs
+├── logs/                   # Logs
+├── public/                 # Assets
+├── docker-compose.yml      # Stack Docker
+├── package.json           # Deps Node.js
+├── next.config.ts         # Config Next.js
+├── CLAUDE.md              # Guide AI
+├── PLANNING.md            # Roadmap
+└── TACHES.md              # Tasks
 ```
+
+### Points Importants Navigation
+
+1. **Frontend Next.js** : Le code est dans `/src/` (pas `/frontend/`)
+2. **Backend FastAPI** : Code dans `/backend/app/`
+3. **Services IA** : Code dans `/ai_services/`
+4. **Docker Compose** : Stack complète à la racine
+5. **Configuration** : `.env` files à la racine
+
+### Raccourcis Utiles
+
+- **Pages Next.js** : `src/app/`
+- **Composants React** : `src/components/`
+- **API Backend** : `backend/app/api/`
+- **Modèles DB** : `backend/app/models/`
+- **Tests Backend** : `backend/tests/`
+- **Services IA** : `ai_services/`
 
 ## ⚡ Commandes Utiles
 
 ```bash
 # Backend
-cd ~/Documents/LEXO_v1/IA_Administratif/backend
+cd ~/Documents/LEXO_v1/backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # Frontend
-cd ~/Documents/LEXO_v1/IA_Administratif/frontend
+cd ~/Documents/LEXO_v1
 npm install
 npm run dev
 

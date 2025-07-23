@@ -1,129 +1,46 @@
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/Button';
-import { FileText, Upload, Zap, Shield } from 'lucide-react';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Home() {
-  return (
-    <MainLayout>
-      <div className="space-y-8">
-        {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Bienvenue sur LEXO v1
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Votre assistant IA pour la gestion administrative intelligente
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Button size="lg">
-              <Upload className="mr-2 h-5 w-5" />
-              Uploader un document
-            </Button>
-            <Button variant="outline" size="lg">
-              <FileText className="mr-2 h-5 w-5" />
-              Voir mes documents
-            </Button>
-          </div>
-        </div>
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Documents traités</p>
-                <p className="text-2xl font-bold text-gray-900">42</p>
-              </div>
-            </div>
-          </div>
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        router.push('/dashboard');
+      } else {
+        router.push('/auth/login');
+      }
+    }
+  }, [isAuthenticated, isLoading, router]);
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Zap className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Précision OCR</p>
-                <p className="text-2xl font-bold text-gray-900">98%</p>
-              </div>
-            </div>
+  // Affichage pendant le chargement
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary-dark rounded-xl shadow-lg flex items-center justify-center mb-6">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Shield className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Sécurité</p>
-                <p className="text-2xl font-bold text-gray-900">100%</p>
-              </div>
-            </div>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-primary/20"></div>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <FileText className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">En attente</p>
-                <p className="text-2xl font-bold text-gray-900">3</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="justify-start">
-              <Upload className="mr-2 h-4 w-4" />
-              Glisser-déposer des documents
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <FileText className="mr-2 h-4 w-4" />
-              Rechercher dans mes documents
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Zap className="mr-2 h-4 w-4" />
-              Générer un rapport
-            </Button>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Activité récente</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-sm text-gray-600">Facture EDF classée automatiquement</span>
-              </div>
-              <span className="text-xs text-gray-400">Il y a 5 min</span>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                <span className="text-sm text-gray-600">RIB Crédit Agricole traité</span>
-              </div>
-              <span className="text-xs text-gray-400">Il y a 12 min</span>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-                <span className="text-sm text-gray-600">Document en attente de classification</span>
-              </div>
-              <span className="text-xs text-gray-400">Il y a 1h</span>
-            </div>
+          <div>
+            <p className="text-foreground font-medium">Chargement...</p>
+            <p className="text-foreground-muted text-sm mt-1">LEXO v1 - Assistant IA</p>
           </div>
         </div>
       </div>
-    </MainLayout>
-  );
+    );
+  }
+
+  // La page ne devrait jamais afficher ce contenu car elle redirige toujours
+  return null;
 }

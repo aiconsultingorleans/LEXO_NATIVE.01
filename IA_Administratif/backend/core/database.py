@@ -11,12 +11,16 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
-# Moteur de base de données asynchrone
+# Moteur de base de données asynchrone avec connection pooling optimisé
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
-    pool_pre_ping=True,
+    pool_pre_ping=True,  # Teste la connexion avant de l'utiliser
+    pool_size=20,        # Nombre de connexions maintenues dans le pool
+    max_overflow=10,     # Connexions supplémentaires autorisées au-delà de pool_size
+    pool_timeout=30,     # Timeout pour obtenir une connexion du pool (secondes)
+    pool_recycle=3600,   # Recycle les connexions après 1 heure (évite les timeouts DB)
 )
 
 # Session factory

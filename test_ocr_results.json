@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-07-23 19:19:19",
+  "dependencies": {
+    "transformers": true,
+    "datasets": true,
+    "spacy": true,
+    "pandas": true,
+    "opencv-python": true,
+    "Pillow": true,
+    "pytesseract": true
+  },
+  "api_tests": {
+    "health": true,
+    "auth": true,
+    "cache": {
+      "error": "{\"detail\":\"Not Found\"}"
+    }
+  },
+  "file_tests": {
+    "ATTESTATION_Edf OA.pdf": {
+      "preprocessing": {
+        "message": "Prétraitement réussi",
+        "quality_score": 0.8,
+        "preprocessing_applied": {
+          "rotate_correction": true,
+          "denoise": true,
+          "enhance_contrast": true,
+          "remove_borders": true
+        },
+        "processed_image_path": "/tmp/tmp7_l02iyl.pdf"
+      },
+      "advanced_ocr": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "table_detection": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "entity_extraction": {
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    "Carte Rémi.pdf": {
+      "preprocessing": {
+        "message": "Prétraitement réussi",
+        "quality_score": 0.8,
+        "preprocessing_applied": {
+          "rotate_correction": true,
+          "denoise": true,
+          "enhance_contrast": true,
+          "remove_borders": true
+        },
+        "processed_image_path": "/tmp/tmpxjc7dss3.pdf"
+      },
+      "advanced_ocr": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "table_detection": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "entity_extraction": {
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    "Carte senior Remi .PNG": {
+      "preprocessing": {
+        "message": "Prétraitement réussi",
+        "quality_score": 0.8,
+        "preprocessing_applied": {
+          "rotate_correction": true,
+          "denoise": true,
+          "enhance_contrast": true,
+          "remove_borders": true
+        },
+        "processed_image_path": "/tmp/tmp8qhwdzrv.PNG"
+      },
+      "advanced_ocr": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "table_detection": {
+        "error": "{\"detail\":\"Not Found\"}"
+      },
+      "entity_extraction": {
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    }
+  },
+  "summary": {}
+}

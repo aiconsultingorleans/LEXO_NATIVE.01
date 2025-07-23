@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from api.auth import router as auth_router
 from api.documents import router as documents_router
 from api.health import router as health_router
+from api.ocr_routes_simple import router as ocr_router
 from core.config import settings
 from core.database import init_db
 
@@ -92,6 +93,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(health_router, prefix="/api/v1", tags=["Health"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(documents_router, prefix="/api/v1/documents", tags=["Documents"])
+app.include_router(ocr_router, tags=["OCR"])
 
 
 @app.get("/")

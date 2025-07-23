@@ -1,4 +1,6 @@
-Merci de lire PLANNING.md, CLAUDE.md et TACHES.md pour parfaitement connaître le projet. Lis également les initial instructions du MCP Serena. Utilise le MCP context7 pour vérifier les documentations. Vérifie quelles sont les tâches déjà effectuées dans TACHES.md et continue avec les tâches de l'étape suivante
+Merci de lire PLANNING.md, CLAUDE.md et TACHES.md pour parfaitement connaître le projet. Lis également les initial instructions du MCP Serena. Vérifie quelles sont les tâches déjà effectuées dans TACHES.md et continue avec les tâches non encore effectuées
+
+avant de lancer les tests mets à jour TACHES.md pour refléter l'état exact du projet   
 
 Installer Serena : 
 uvx --from git+https://github.com/oraios/serena serena-mcp-server

@@ -1,0 +1,23 @@
+{
+  "OCR/ATTESTATION_Edf OA.pdf": {
+    "success": true,
+    "text_length": 3083,
+    "word_count": 451,
+    "processing_time": 4.898121,
+    "confidence": 0.9270222222222222
+  },
+  "OCR/Carte Rémi.pdf": {
+    "success": true,
+    "text_length": 1300,
+    "word_count": 216,
+    "processing_time": 3.094385,
+    "confidence": 0.8876076555023923
+  },
+  "OCR/Carte senior Remi .PNG": {
+    "success": true,
+    "text_length": 947,
+    "word_count": 156,
+    "processing_time": 2.079966,
+    "confidence": 0.8975483870967742
+  }
+}

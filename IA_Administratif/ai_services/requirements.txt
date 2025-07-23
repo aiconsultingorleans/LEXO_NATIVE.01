@@ -1,0 +1,14 @@
+# Requirements pour les services IA natifs MLX - LEXO v1
+
+# MLX Framework pour Apple Silicon
+mlx>=0.0.10
+mlx-lm>=0.0.8
+
+# FastAPI pour les services
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Utilitaires
+python-multipart>=0.0.6
+python-json-logger>=2.0.0

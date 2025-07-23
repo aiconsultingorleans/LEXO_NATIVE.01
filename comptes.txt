@@ -1,0 +1,3 @@
+  - admin@lexo.fr / admin123 (Admin)
+  - jean.dupont@example.com / password123 (User)
+  - readonly@lexo.fr / readonly123 (ReadOnly)

@@ -17,7 +17,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Tous les documents', href: '/documents', icon: FileText },
   { name: 'Upload', href: '/upload', icon: Upload },
   { name: 'Recherche RAG', href: '/search', icon: Search },
@@ -39,8 +39,8 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <nav className="p-4">
+    <aside className="w-64 bg-background-secondary border-r border-card-border min-h-screen fixed left-0 top-16 z-40">
+      <nav className="p-4 h-full overflow-y-auto">
         {/* Navigation principale */}
         <div className="space-y-1">
           {navigation.map((item) => {
@@ -50,13 +50,16 @@ export function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                  'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group',
                   isActive
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-foreground-secondary hover:bg-hover-background hover:text-foreground'
                 )}
               >
-                <item.icon className="mr-3 h-4 w-4" />
+                <item.icon className={cn(
+                  "mr-3 h-5 w-5 transition-colors",
+                  isActive ? "text-primary" : "text-foreground-muted group-hover:text-foreground"
+                )} />
                 {item.name}
               </Link>
             );
@@ -65,10 +68,10 @@ export function Sidebar() {
 
         {/* Catégories de documents */}
         <div className="mt-8">
-          <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h3 className="px-4 text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-3">
             Catégories
           </h3>
-          <div className="mt-2 space-y-1">
+          <div className="space-y-1">
             {categories.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -76,17 +79,25 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    'flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group',
                     isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary/10 text-primary border border-primary/20'
+                      : 'text-foreground-secondary hover:bg-hover-background hover:text-foreground'
                   )}
                 >
                   <div className="flex items-center">
-                    <item.icon className="mr-3 h-4 w-4" />
+                    <item.icon className={cn(
+                      "mr-3 h-4 w-4 transition-colors",
+                      isActive ? "text-primary" : "text-foreground-muted group-hover:text-foreground"
+                    )} />
                     {item.name}
                   </div>
-                  <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
+                  <span className={cn(
+                    "text-xs px-2 py-1 rounded-full font-medium transition-colors",
+                    isActive 
+                      ? "bg-primary/20 text-primary" 
+                      : "bg-background-tertiary text-foreground-muted group-hover:bg-hover-background group-hover:text-foreground"
+                  )}>
                     {item.count}
                   </span>
                 </Link>
@@ -96,7 +107,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation du bas */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
+        <div className="mt-8 pt-6 border-t border-card-border">
           <div className="space-y-1">
             {bottomNavigation.map((item) => {
               const isActive = pathname === item.href;
@@ -105,13 +116,16 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group',
                     isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary/10 text-primary border border-primary/20'
+                      : 'text-foreground-secondary hover:bg-hover-background hover:text-foreground'
                   )}
                 >
-                  <item.icon className="mr-3 h-4 w-4" />
+                  <item.icon className={cn(
+                    "mr-3 h-5 w-5 transition-colors",
+                    isActive ? "text-primary" : "text-foreground-muted group-hover:text-foreground"
+                  )} />
                   {item.name}
                 </Link>
               );

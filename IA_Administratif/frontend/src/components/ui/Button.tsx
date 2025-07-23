@@ -9,14 +9,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, children, disabled, ...props }, ref) => {
-    const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+    const baseClasses = 'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:pointer-events-none shadow-sm';
     
     const variants = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-      secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
-      outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-      ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-      destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      primary: 'bg-primary text-white hover:bg-primary-hover focus:ring-primary/20 shadow-primary/20',
+      secondary: 'bg-background-secondary text-foreground hover:bg-background-tertiary focus:ring-border-light border border-border',
+      outline: 'border border-border-light bg-transparent text-foreground-secondary hover:bg-hover-background hover:text-foreground focus:ring-primary/20',
+      ghost: 'text-foreground-secondary hover:bg-hover-background hover:text-foreground focus:ring-border-light',
+      destructive: 'bg-error text-white hover:bg-red-600 focus:ring-error/20 shadow-error/20',
     };
 
     const sizes = {

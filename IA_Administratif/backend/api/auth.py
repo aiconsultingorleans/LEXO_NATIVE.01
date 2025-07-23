@@ -2,7 +2,7 @@
 Endpoints d'authentification
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -13,6 +13,7 @@ from passlib.context import CryptContext
 
 from core.database import get_db
 from core.config import settings
+from core.rate_limit import auth_rate_limiter
 from models.user import User
 
 router = APIRouter()
@@ -107,8 +108,16 @@ async def get_current_user(
 
 # Endpoints
 @router.post("/register", response_model=UserResponse)
-async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
+async def register(
+    request: Request,
+    response: Response,
+    user_data: UserRegister, 
+    db: AsyncSession = Depends(get_db)
+):
     """Inscription d'un nouvel utilisateur"""
+    # Appliquer le rate limiting
+    await auth_rate_limiter.check_rate_limit(request, f"register:{user_data.email}")
+    
     # Vérifier si l'email existe déjà
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
@@ -119,9 +128,15 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     
     # Créer le nouvel utilisateur
     hashed_password = get_password_hash(user_data.password)
+    # Séparer le nom en first_name et last_name
+    name_parts = user_data.name.split(' ', 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+    
     user = User(
         email=user_data.email,
-        name=user_data.name,
+        first_name=first_name,
+        last_name=last_name,
         hashed_password=hashed_password
     )
     
@@ -133,8 +148,16 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(
+    request: Request,
+    response: Response,
+    user_data: UserLogin, 
+    db: AsyncSession = Depends(get_db)
+):
     """Connexion utilisateur"""
+    # Appliquer le rate limiting
+    await auth_rate_limiter.check_rate_limit(request, f"login:{user_data.email}")
+    
     result = await db.execute(select(User).where(User.email == user_data.email))
     user = result.scalar_one_or_none()
     
