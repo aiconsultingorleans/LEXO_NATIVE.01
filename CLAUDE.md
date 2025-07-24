@@ -166,69 +166,165 @@ async def process_document(file_path: str) -> ProcessedDocument:
 
 ```
 ~/Documents/LEXO_v1/
-├── OCR/                    # Dossier surveillé
-│   ├── factures/          # Auto-classé
-│   ├── impots/           
-│   ├── rib/              
-│   └── non_classes/       # En attente
+├── OCR/                         # 📁 Dossier surveillé pour upload documents
+│   ├── ATTESTATION_Edf OA.pdf  # Fichiers de test
+│   ├── Carte Rémi.pdf
+│   └── Carte senior Remi .PNG
 │
-├── backend/                # API FastAPI
-├── src/                    # Frontend Next.js
-├── ai_services/            # Services IA
-├── data/                   # Données locales
-├── training_dataset/       # Dataset ML
-├── deployment/             # Configs
-├── logs/                   # Logs
-├── public/                 # Assets
-├── docker-compose.yml      # Stack Docker
-├── package.json           # Deps Node.js
-├── next.config.ts         # Config Next.js
-├── CLAUDE.md              # Guide AI
-├── PLANNING.md            # Roadmap
-└── TACHES.md              # Tasks
+├── IA_Administratif/            # 🏗️ Projet principal (architecture Docker)
+│   ├── ai_services/             # 🤖 Services IA MLX natifs
+│   │   ├── document_analyzer.py # Service Mistral MLX (port 8004)
+│   │   ├── requirements.txt
+│   │   └── __init__.py
+│   │
+│   ├── backend/                 # 🐍 API FastAPI (port 8000)
+│   │   ├── api/                 # Endpoints API
+│   │   │   ├── auth.py          # Authentification JWT
+│   │   │   ├── documents.py     # CRUD documents
+│   │   │   ├── ocr_routes_simple.py  # OCR Tesseract
+│   │   │   ├── ocr_routes.py    # OCR avancé (TrOCR, LayoutLM)
+│   │   │   ├── document_intelligence.py  # Intégration Mistral
+│   │   │   └── health.py        # Health checks
+│   │   ├── core/                # Configuration
+│   │   │   ├── config.py
+│   │   │   ├── database.py
+│   │   │   └── rate_limit.py
+│   │   ├── models/              # Modèles SQLAlchemy
+│   │   │   ├── user.py
+│   │   │   └── document.py
+│   │   ├── ocr/                 # Pipeline OCR
+│   │   │   ├── tesseract_ocr.py
+│   │   │   ├── trocr_ocr.py
+│   │   │   ├── layoutlm_ocr.py
+│   │   │   ├── hybrid_ocr.py
+│   │   │   ├── image_preprocessor.py
+│   │   │   ├── table_detector.py
+│   │   │   ├── entity_extractor.py
+│   │   │   └── ocr_cache.py
+│   │   ├── alembic/             # Migrations DB
+│   │   ├── fixtures/            # Données de test
+│   │   ├── tests/               # Tests unitaires
+│   │   └── main.py              # Point d'entrée FastAPI
+│   │
+│   ├── frontend/                # ⚛️ Interface Next.js (port 3000)
+│   │   ├── src/
+│   │   │   ├── app/             # Pages Next.js 14
+│   │   │   │   ├── auth/        # Pages authentification
+│   │   │   │   ├── dashboard/   # Dashboard principal
+│   │   │   │   ├── admin/       # Interface admin
+│   │   │   │   └── layout.tsx   # Layout racine
+│   │   │   ├── components/      # Composants React
+│   │   │   │   ├── auth/        # AuthGuard, ActivityTracker
+│   │   │   │   ├── documents/   # DocumentUpload, DocumentsList
+│   │   │   │   ├── layout/      # Header, Sidebar, MainLayout
+│   │   │   │   └── ui/          # Button, Card, Input
+│   │   │   ├── hooks/           # Hooks personnalisés
+│   │   │   │   └── useAuth.ts
+│   │   │   ├── stores/          # État global Zustand
+│   │   │   │   └── authStore.ts
+│   │   │   ├── lib/             # Utilitaires
+│   │   │   └── types/           # Types TypeScript
+│   │   ├── public/              # Assets statiques
+│   │   ├── package.json
+│   │   └── next.config.ts
+│   │
+│   ├── data/                    # 💾 Données persistantes Docker
+│   │   ├── postgres/            # Données PostgreSQL
+│   │   ├── redis/               # Cache Redis
+│   │   └── chromadb/            # Base vectorielle
+│   │
+│   ├── config/                  # ⚙️ Configurations
+│   ├── logs/                    # 📝 Logs applicatifs
+│   ├── scripts/                 # 🛠️ Scripts utilitaires
+│   ├── tests/                   # 🧪 Tests d'intégration
+│   ├── ml_models/               # 🧠 Modèles ML téléchargés
+│   │   ├── mistral_7b_mlx/      # Modèle Mistral pour MLX
+│   │   ├── ocr_models/          # Modèles TrOCR, LayoutLM
+│   │   └── embeddings/          # Modèles d'embeddings
+│   │
+│   ├── docker-compose.yml       # 🐳 Stack Docker complète
+│   ├── start_document_analyzer.sh  # 🚀 Script démarrage MLX
+│   ├── stop_document_analyzer.sh   # 🛑 Script arrêt MLX
+│   └── README.md
+│
+├── src/                         # 📂 Composants dupliqués (legacy)
+│   └── components/documents/    # ⚠️ À supprimer (dans IA_Administratif/frontend)
+│
+├── start_all.sh                 # 🚀 Script démarrage complet
+├── stop_all.sh                  # 🛑 Script arrêt complet
+├── CLAUDE.md                    # 📖 Ce guide
+├── PLANNING.md                  # 🗓️ Roadmap projet
+├── TACHES.md                    # ✅ Suivi des tâches
+├── ARCHITECTURE_HYBRIDE_MISTRAL.md  # 🏗️ Doc architecture
+│
+└── tests_*.py                   # 🧪 Scripts de test divers
 ```
 
 ### Points Importants Navigation
 
-1. **Frontend Next.js** : Le code est dans `/src/` (pas `/frontend/`)
-2. **Backend FastAPI** : Code dans `/backend/app/`
-3. **Services IA** : Code dans `/ai_services/`
-4. **Docker Compose** : Stack complète à la racine
-5. **Configuration** : `.env` files à la racine
+1. **⚠️ Structure Hybride** : Projet principal dans `IA_Administratif/`
+2. **Frontend Next.js** : Code dans `IA_Administratif/frontend/src/`
+3. **Backend FastAPI** : Code dans `IA_Administratif/backend/`
+4. **Services IA MLX** : Code dans `IA_Administratif/ai_services/`
+5. **Docker Compose** : Stack dans `IA_Administratif/docker-compose.yml`
+6. **Scripts Globaux** : `start_all.sh` et `stop_all.sh` à la racine
 
 ### Raccourcis Utiles
 
-- **Pages Next.js** : `src/app/`
-- **Composants React** : `src/components/`
-- **API Backend** : `backend/app/api/`
-- **Modèles DB** : `backend/app/models/`
-- **Tests Backend** : `backend/tests/`
-- **Services IA** : `ai_services/`
+- **Pages Next.js** : `IA_Administratif/frontend/src/app/`
+- **Composants React** : `IA_Administratif/frontend/src/components/`
+- **API Backend** : `IA_Administratif/backend/api/`
+- **Modèles DB** : `IA_Administratif/backend/models/`
+- **Tests Backend** : `IA_Administratif/backend/tests/`
+- **Services IA** : `IA_Administratif/ai_services/`
+- **Pipeline OCR** : `IA_Administratif/backend/ocr/`
+- **Configuration Docker** : `IA_Administratif/docker-compose.yml`
 
 ## ⚡ Commandes Utiles
 
 ```bash
-# Backend
-cd ~/Documents/LEXO_v1/backend
+# 🚀 DÉMARRAGE COMPLET (recommandé)
+cd ~/Documents/LEXO_v1
+./start_all.sh                    # Démarre toute l'infrastructure
+./stop_all.sh                     # Arrête tout proprement
+
+# 🐍 Backend FastAPI
+cd ~/Documents/LEXO_v1/IA_Administratif/backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend
-cd ~/Documents/LEXO_v1
+# ⚛️ Frontend Next.js  
+cd ~/Documents/LEXO_v1/IA_Administratif/frontend
 npm install
-npm run dev
+npm run dev                       # http://localhost:3000
 
-# Tests
-pytest backend/tests/
-npm run test
+# 🤖 Service MLX (natif)
+cd ~/Documents/LEXO_v1/IA_Administratif
+./start_document_analyzer.sh     # Port 8004
+./stop_document_analyzer.sh
 
-# Docker (dev)
-docker-compose up -d
+# 🐳 Docker Stack
+cd ~/Documents/LEXO_v1/IA_Administratif
+docker-compose up -d             # Démarre PostgreSQL, Redis, ChromaDB
+docker-compose down              # Arrête les services
 
-# Migrations DB
-alembic upgrade head
+# 📊 Base de données
+cd ~/Documents/LEXO_v1/IA_Administratif/backend
+alembic upgrade head             # Migrations
+python scripts/load_fixtures_auto.py  # Données de test
+
+# 🧪 Tests
+cd ~/Documents/LEXO_v1/IA_Administratif/backend
+pytest tests/                    # Tests unitaires
+python test_ocr_pipeline.py      # Tests OCR
+cd ~/Documents/LEXO_v1/IA_Administratif/frontend
+npm run test                     # Tests frontend
+
+# 🔧 Build production
+cd ~/Documents/LEXO_v1/IA_Administratif/frontend
+npm run build                    # Build Next.js
 ```
 
 ## 🧪 Tests Prioritaires
@@ -306,6 +402,7 @@ alembic upgrade head
 - **UX simple** : L'utilisateur ne doit rien configurer
 - **Apprentissage** : Le système s'améliore avec l'usage
 - **Robustesse** : Gérer tous les cas d'erreur
+- **Journal** : les nouvelles fonctionalités et états de progression devront être ajoutés au fichier JOURNAL.md
 
 ## 🔗 Ressources
 

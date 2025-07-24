@@ -12,3 +12,6 @@ pydantic>=2.5.0
 # Utilitaires
 python-multipart>=0.0.6
 python-json-logger>=2.0.0
+
+# Additional dependencies
+sentencepiece>=0.2.0
