@@ -353,9 +353,27 @@ class TesseractOCR:
         return blocks
     
     def _convert_to_pil(self, image: Union[np.ndarray, str, Image.Image]) -> Image.Image:
-        """Convertit différents formats d'image vers PIL Image"""
+        """Convertit différents formats d'image vers PIL Image, y compris PDF"""
         if isinstance(image, str):
-            return Image.open(image)
+            # Gestion spéciale pour les PDFs
+            if image.lower().endswith('.pdf'):
+                try:
+                    from pdf2image import convert_from_path
+                    logger.info(f"Conversion PDF vers image: {image}")
+                    
+                    # Convertir la première page du PDF en image
+                    pages = convert_from_path(image, first_page=1, last_page=1, dpi=300)
+                    if pages:
+                        return pages[0].convert('RGB')
+                    else:
+                        raise ValueError("PDF vide ou non lisible")
+                        
+                except ImportError:
+                    raise RuntimeError("pdf2image non installé - Impossible de traiter les PDFs")
+                except Exception as e:
+                    raise ValueError(f"Erreur conversion PDF: {e}")
+            else:
+                return Image.open(image)
         elif isinstance(image, np.ndarray):
             # OpenCV vers PIL
             if len(image.shape) == 3:

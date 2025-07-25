@@ -56,6 +56,32 @@ class ImagePreprocessor:
             logger.error(f"Erreur lors du prétraitement de {image_path}: {str(e)}")
             raise
     
+    def process_image_array(self, image_array: np.ndarray) -> np.ndarray:
+        """
+        Pipeline de prétraitement pour un tableau numpy
+        
+        Args:
+            image_array: Image sous forme de tableau numpy
+            
+        Returns:
+            np.ndarray: Image prétraitée
+        """
+        try:
+            logger.debug(f"Prétraitement array, dimensions: {image_array.shape}")
+            
+            # Pipeline de prétraitement simplifié pour arrays
+            image = self.correct_rotation(image_array)
+            image = self.denoise_image(image)
+            image = self.detect_and_crop_borders(image)
+            image = self.optimize_contrast_brightness(image)
+            
+            return image
+            
+        except Exception as e:
+            logger.error(f"Erreur lors du prétraitement array: {str(e)}")
+            # Retourner l'image originale en cas d'erreur
+            return image_array
+    
     def load_image(self, image_path: str) -> np.ndarray:
         """
         Charge une image et gère différents formats (y compris PDF)

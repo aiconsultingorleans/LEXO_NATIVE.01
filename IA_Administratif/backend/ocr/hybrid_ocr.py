@@ -17,6 +17,8 @@ from PIL import Image
 from .trocr_ocr import TrOCREngine, TrOCRConfig
 from .tesseract_ocr import TesseractOCR, OCRResult
 from .image_preprocessor import ImagePreprocessor
+from .ocr_cache import OCRCacheManager, ImageHasher
+from .memory_optimizer import MemoryOptimizer, memory_optimized
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +80,39 @@ class HybridOCREngine:
         self._engines_initialized = False
         self._initialization_in_progress = False
         
+        # Cache OCR intelligent
+        if self.config.cache_results:
+            self.cache_manager = OCRCacheManager({
+                'type': 'hybrid',
+                'redis_url': 'redis://localhost:6379/0',
+                'cache_dir': self.config.cache_dir,
+                'max_size_mb': 200,
+                'default_ttl': 24 * 3600  # 24 heures
+            })
+            logger.info("💾 Cache OCR intelligent activé")
+        else:
+            self.cache_manager = None
+        
+        # Optimiseur de mémoire
+        self._memory_optimizer = MemoryOptimizer(
+            max_ram_percent=85.0,
+            max_gpu_percent=90.0,
+            cleanup_threshold_mb=1000.0,  # 1GB
+            auto_cleanup=True
+        )
+        logger.info("🧠 Optimiseur de mémoire activé")
+        
         # Ne pas initialiser immédiatement - attendre le premier usage
         logger.info("🚀 HybridOCREngine initialisé avec lazy loading")
         
-        # Statistiques
+        # Statistiques étendues
         self.stats = {
             "total_processed": 0,
             "trocr_used": 0,
             "tesseract_used": 0,
             "fallback_used": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
             "avg_processing_time": 0.0,
             "success_rate": 0.0
         }
@@ -122,9 +148,13 @@ class HybridOCREngine:
         finally:
             self._initialization_in_progress = False
     
+    @memory_optimized(cleanup_after=False, model_id="hybrid_ocr_engines")
     def _initialize_engines(self):
         """Initialise les moteurs OCR selon la configuration"""
         try:
+            # Log mémoire avant initialisation
+            self._memory_optimizer.monitor.log_memory_stats("Avant init moteurs - ")
+            
             # Initialisation TrOCR
             if self.config.trocr_enabled:
                 logger.info("Initialisation du moteur TrOCR...")
@@ -135,6 +165,13 @@ class HybridOCREngine:
                     cache_dir=self.config.cache_dir
                 )
                 self.trocr_engine = TrOCREngine(trocr_config)
+                
+                # Enregistrer le modèle TrOCR pour monitoring mémoire
+                self._memory_optimizer.register_model(
+                    "trocr_engine", 
+                    self.trocr_engine,
+                    cleanup_callback=self._cleanup_trocr
+                )
                 logger.info("TrOCR initialisé avec succès")
             
             # Initialisation Tesseract
@@ -143,11 +180,21 @@ class HybridOCREngine:
                 self.tesseract_engine = TesseractOCR(
                     default_lang=self.config.tesseract_lang
                 )
+                
+                # Enregistrer Tesseract pour monitoring
+                self._memory_optimizer.register_model(
+                    "tesseract_engine",
+                    self.tesseract_engine,
+                    cleanup_callback=self._cleanup_tesseract
+                )
                 logger.info("Tesseract initialisé avec succès")
             
             # Vérification qu'au moins un moteur est disponible
             if not self.trocr_engine and not self.tesseract_engine:
                 raise RuntimeError("Aucun moteur OCR n'a pu être initialisé")
+            
+            # Log mémoire après initialisation
+            self._memory_optimizer.monitor.log_memory_stats("Après init moteurs - ")
                 
         except Exception as e:
             logger.error(f"Erreur lors de l'initialisation des moteurs OCR: {str(e)}")
@@ -168,11 +215,29 @@ class HybridOCREngine:
         Returns:
             Résultat OCR optimal
         """
-        # Initialisation différée des moteurs OCR
-        self._ensure_engines_initialized()
-        
         start_time = time.time()
         strategy = strategy or self.config.strategy
+        
+        # Vérifier le cache d'abord
+        if self.cache_manager:
+            cached_result = self.cache_manager.get_cached_result(
+                image, 
+                f"hybrid_{strategy.value}",
+                {"strategy": strategy.value}
+            )
+            if cached_result:
+                self.stats["cache_hits"] += 1
+                self.stats["total_processed"] += 1
+                processing_time = time.time() - start_time
+                cached_result.quality_metrics["from_cache"] = True
+                cached_result.quality_metrics["cache_retrieval_time"] = processing_time
+                logger.info(f"🎯 Cache hit pour stratégie {strategy} ({processing_time:.3f}s)")
+                return cached_result
+            else:
+                self.stats["cache_misses"] += 1
+        
+        # Initialisation différée des moteurs OCR
+        self._ensure_engines_initialized()
         
         logger.info(f"Extraction hybride avec stratégie: {strategy}")
         
@@ -196,6 +261,19 @@ class HybridOCREngine:
             
             # Mise à jour des statistiques
             self._update_stats(result, time.time() - start_time)
+            
+            # Mettre en cache le résultat si le cache est activé
+            if self.cache_manager and result.confidence > 0.1:  # Ne cacher que les résultats valides
+                try:
+                    self.cache_manager.cache_result(
+                        image,
+                        f"hybrid_{strategy.value}",
+                        result,
+                        {"strategy": strategy.value}
+                    )
+                    logger.debug(f"💾 Résultat mis en cache pour stratégie {strategy}")
+                except Exception as cache_error:
+                    logger.warning(f"Erreur mise en cache: {cache_error}")
             
             return result
             
@@ -486,7 +564,74 @@ class HybridOCREngine:
     
     def get_stats(self) -> Dict[str, Any]:
         """Retourne les statistiques du moteur hybride"""
-        return self.stats.copy()
+        stats = self.stats.copy()
+        
+        # Ajouter les statistiques de cache si disponible
+        if self.cache_manager:
+            cache_stats = self.cache_manager.get_cache_stats()
+            stats["cache_stats"] = cache_stats
+            
+            # Calculer le taux de hit du cache
+            total_cache_requests = stats["cache_hits"] + stats["cache_misses"]
+            if total_cache_requests > 0:
+                stats["cache_hit_rate"] = round(stats["cache_hits"] / total_cache_requests * 100, 1)
+            else:
+                stats["cache_hit_rate"] = 0.0
+        
+        return stats
+    
+    def _cleanup_trocr(self):
+        """Callback de nettoyage pour TrOCR"""
+        if hasattr(self, 'trocr_engine') and self.trocr_engine:
+            try:
+                # Libérer les ressources TrOCR
+                if hasattr(self.trocr_engine, 'model') and self.trocr_engine.model:
+                    self.trocr_engine.model = None
+                if hasattr(self.trocr_engine, 'processor') and self.trocr_engine.processor:
+                    self.trocr_engine.processor = None
+                self.trocr_engine = None
+                logger.info("🧹 TrOCR engine libéré")
+            except Exception as e:
+                logger.warning(f"Erreur nettoyage TrOCR: {e}")
+    
+    def _cleanup_tesseract(self):
+        """Callback de nettoyage pour Tesseract"""
+        if hasattr(self, 'tesseract_engine') and self.tesseract_engine:
+            try:
+                self.tesseract_engine = None
+                logger.info("🧹 Tesseract engine libéré")
+            except Exception as e:
+                logger.warning(f"Erreur nettoyage Tesseract: {e}")
+    
+    def get_memory_stats(self) -> Dict[str, Any]:
+        """Retourne les statistiques de mémoire détaillées"""
+        if hasattr(self, '_memory_optimizer'):
+            return self._memory_optimizer.get_memory_report()
+        return {}
+    
+    def cleanup_memory(self, aggressive: bool = False) -> Dict[str, Any]:
+        """
+        Force un nettoyage de mémoire
+        
+        Args:
+            aggressive: Nettoyage agressif (décharge les modèles)
+            
+        Returns:
+            Statistiques du nettoyage
+        """
+        if hasattr(self, '_memory_optimizer'):
+            return self._memory_optimizer.cleanup_memory(aggressive)
+        return {}
+    
+    def __del__(self):
+        """Destructeur avec nettoyage automatique"""
+        try:
+            if hasattr(self, '_memory_optimizer'):
+                self._memory_optimizer.stop_monitoring()
+                if hasattr(self, 'trocr_engine') or hasattr(self, 'tesseract_engine'):
+                    self._memory_optimizer.cleanup_memory(aggressive=True)
+        except:
+            pass
     
     def get_engine_info(self) -> Dict[str, Any]:
         """Retourne les informations sur les moteurs disponibles"""

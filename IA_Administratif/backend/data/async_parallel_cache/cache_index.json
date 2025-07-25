@@ -1,0 +1,16 @@
+{
+  "ocr_hybrid_best_confidence_1be021d27844f9675632e73dbba8b96f11976a192ac752ad260b3adfe963b899_97d24547a88d7f3669993406e8da05b1": {
+    "timestamp": 1753447626.961493,
+    "ttl": 86400,
+    "size": 11747,
+    "metadata": {
+      "ocr_engine": "hybrid_best_confidence",
+      "params": {
+        "strategy": "best_confidence"
+      },
+      "word_count": 229,
+      "confidence": 0.89995670995671,
+      "processing_time": 3.207014
+    }
+  }
+}

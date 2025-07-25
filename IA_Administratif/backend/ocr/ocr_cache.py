@@ -62,8 +62,17 @@ class ImageHasher:
             Hash MD5 de l'image
         """
         try:
-            # Conversion vers PIL Image
+            # Gestion spéciale pour les fichiers
             if isinstance(image, (str, Path)):
+                image_path = str(image)
+                
+                # Pour les PDFs, utiliser hash du fichier directement
+                if image_path.lower().endswith('.pdf'):
+                    with open(image_path, 'rb') as f:
+                        file_content = f.read()
+                        return hashlib.sha256(file_content).hexdigest()
+                
+                # Pour les autres fichiers, utiliser PIL
                 pil_image = Image.open(image)
             elif isinstance(image, np.ndarray):
                 pil_image = Image.fromarray(image)
@@ -72,17 +81,14 @@ class ImageHasher:
             else:
                 raise ValueError(f"Type d'image non supporté: {type(image)}")
             
-            # Redimensionner pour normaliser (optionnel, pour plus de robustesse)
-            # pil_image = pil_image.resize((256, 256))
-            
             # Convertir en bytes
             import io
             img_bytes = io.BytesIO()
             pil_image.save(img_bytes, format='PNG')
             img_bytes = img_bytes.getvalue()
             
-            # Générer hash MD5
-            return hashlib.md5(img_bytes).hexdigest()
+            # Générer hash SHA256 (plus sûr que MD5)
+            return hashlib.sha256(img_bytes).hexdigest()
             
         except Exception as e:
             logger.error(f"Erreur génération hash image: {e}")

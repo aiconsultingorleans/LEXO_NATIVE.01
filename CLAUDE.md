@@ -1,464 +1,621 @@
-# 🤖 CLAUDE.md - Guide Claude Code pour LEXO v1
+# 🤖 CLAUDE2.md - Guide Technique LEXO v1 [État Actuel]
 
-## 📌 Contexte du Projet
+## 📌 Contexte Projet
 
-Tu travailles sur **LEXO v1**, une application SaaS locale de gestion administrative intelligente utilisant OCR et RAG. L'objectif est d'automatiser complètement le traitement documentaire pour les professions libérales.
+**LEXO v1** est une application SaaS locale de gestion administrative intelligente qui automatise complètement le traitement documentaire pour les professions libérales.
 
-**Environnement cible :** macOS (Mac mini M4 - 32 Go RAM)  
-**Architecture :** 100% locale avec capacités SaaS  
-**Technologies principales :** Python, FastAPI, Next.js, ChromaDB, Mistral 7B MLX
+**Environnement :** macOS (Mac mini M4 - 32 Go RAM)  
+**Architecture :** 100% locale avec pipeline IA hybride  
+**État :** MVP opérationnel - 7 étapes sur 12 complétées (82% fonctionnel)
 
-## 🎯 Objectifs Principaux
+---
 
-1. **Automatiser** le scan et la classification de documents (OCR intelligent)
-2. **Centraliser** l'information dans une base vectorielle (ChromaDB)
-3. **Permettre** des requêtes en langage naturel via RAG
-4. **Apprendre** continuellement des corrections utilisateur
-5. **Sécuriser** toutes les données localement
+## 🏗️ Architecture Hybride Opérationnelle
 
-## 🏗️ Architecture Technique
-
-### Backend (Python 3.11+)
+### Structure Principale
 ```
-backend/
-├── api/          # FastAPI endpoints
-├── core/         # Business logic
-├── models/       # SQLAlchemy models
-├── ocr/          # Pipeline OCR
-├── rag/          # ChromaDB + Mistral
-└── utils/        # Helpers
+~/Documents/LEXO_v1/
+├── IA_Administratif/            # 🏗️ PROJET PRINCIPAL
+│   ├── backend/                 # FastAPI (port 8000) ✅
+│   ├── frontend/                # Next.js (port 3000) ✅  
+│   ├── ai_services/             # Mistral MLX (port 8004) ✅
+│   ├── data/ + ml_models/       # Données + Modèles ✅
+│   └── docker-compose.yml       # Stack complète ✅
+├── OCR/                         # 📁 Dossier surveillé
+└── start_all.sh / stop_all.sh   # Scripts globaux ✅
 ```
 
-### Frontend (Next.js 14+)
+### Services Actifs
+| Service | Port | État | Fonction |
+|---------|------|------|----------|
+| **Backend FastAPI** | 8000 | ✅ | API, OCR, Classification |
+| **Frontend Next.js** | 3000 | ✅ | Interface utilisateur |
+| **Mistral MLX** | 8004 | ✅ | Analyse IA locale |
+| **ChromaDB** | 8001 | ✅ | Base vectorielle RAG |
+| **PostgreSQL** | 5432 | ✅ | Métadonnées |
+| **Redis** | 6379 | ✅ | Cache + queues |
+
+---
+
+## 🎯 État d'Avancement par Étapes
+
+### ✅ COMPLÉTÉES (Score: 85%+)
+1. **Étape 1-2 :** Fondations Backend + Frontend ✅ *100%*
+2. **Étape 3 :** Pipeline OCR (TrOCR + Tesseract + Hybride) ✅ *82%*
+3. **Étape 4 :** Classification automatique (9 catégories) ✅ *100%*
+4. **Étape 5 :** RAG + ChromaDB + Mistral MLX ✅ *95%*
+5. **Étape 7 :** Dashboard Analytics avancé ✅ *95%*
+
+### 🚧 EN COURS 
+- **Étape 6 :** Intégrations externes (Gmail, Calendar) *20%*
+- **Étape 8 :** Interface vocale *0%*
+- **Étape 9 :** Sécurité + Performance *40%*
+
+### 📋 PLANIFIÉES
+- **Étape 10-12 :** Tests, Déploiement, Post-launch
+
+---
+
+## ⚡ Pipeline Documentaire Unifié
+
+### Flux Opérationnel
+```mermaid
+graph LR
+    A[📄 Upload] --> B[🔍 OCR Hybride]
+    B --> C[🤖 Mistral MLX]
+    C --> D[🏷️ Classification]
+    D --> E[📁 Classement Auto]
+    E --> F[💾 ChromaDB + Cache]
 ```
-frontend/
-├── components/   # React components
-├── pages/        # Next.js pages
-├── hooks/        # Custom hooks
-├── store/        # Zustand state
-└── styles/       # Tailwind CSS
+
+### API Endpoints Clés
+```bash
+# Pipeline unifié (RECOMMANDÉ)
+POST /api/v1/documents/upload-and-process    # Upload + OCR + IA + Classification
+
+# Composants individuels  
+POST /api/v1/documents/upload               # Upload seul
+POST /api/v1/ocr/process                    # OCR hybride
+POST /api/v1/intelligence/analyze          # Analyse Mistral
+POST /api/v1/classification/classify       # Classification
+
+# RAG + Recherche
+POST /api/v1/rag/search                     # Recherche sémantique
+POST /api/v1/rag/chat                       # Chat avec contexte
 ```
 
-### Stack Technologique
-- **API** : FastAPI + PostgreSQL + Redis
-- **Frontend** : Next.js + React + Tailwind CSS
-- **OCR** : TrOCR + LayoutLMv3 + Tesseract
-- **RAG** : ChromaDB + Mistral 7B MLX
-- **Auth** : JWT + OAuth2
-- **MCP Context7** une recherche dans une documentation à jour sera prioritaire en cas de doute.
-- **Repo GitHub** : https://github.com/aiconsultingorleans/LEXO_v1
-- **Projet Next.js** : le projet Next.js est dans le dossier `/src/`
+---
 
-## 📋 Fonctionnalités Prioritaires
+## 🚀 Démarrage Optimisé (90 secondes)
 
-### Phase 1 - MVP (En cours)
-1. **Surveillance du dossier** `~/Documents/LEXO_v1/OCR`
-2. **OCR basique** sur PDF et images
-3. **Classification automatique** dans sous-dossiers
-4. **Interface web** minimale
-5. **Authentification** email/password
+### Commandes Essentielles
+```bash
+# 🚀 DÉMARRAGE COMPLET (recommandé)
+cd ~/Documents/LEXO_v1
+./start_all.sh                    # Démarre toute l'infrastructure
 
-### Phase 2 - Beta
-1. **RAG avec ChromaDB** pour recherche sémantique
-2. **Dashboard** avec analytics
-3. **Intégration Gmail** (OAuth2)
-4. **Assistant IA** pour génération de documents
+# 🐳 Services Docker
+cd IA_Administratif
+docker-compose up -d             # PostgreSQL, Redis, ChromaDB
 
-## 🛠️ Conventions de Code
+# 🤖 Service MLX natif
+./start_document_analyzer.sh     # Mistral MLX (port 8004)
 
-### Python Backend
+# 🛑 ARRÊT PROPRE
+./stop_all.sh                    # Arrête tout
+```
+
+### Performance Démarrage
+- **API prête** : ~30 secondes
+- **OCR disponible** : Lazy loading (premier document)
+- **Mistral chargé** : ~60 secondes
+- **Interface web** : Immédiat après API
+
+---
+
+## 🎨 Stack Technologique Validée
+
+### Backend Opérationnel
 ```python
-# Structure des endpoints FastAPI
-@router.post("/documents/upload")
-async def upload_document(
-    file: UploadFile,
+# FastAPI 0.115+ avec async
+# SQLAlchemy 2.0 + PostgreSQL 15
+# Redis 7 (cache + queues)
+# Alembic (migrations)
+
+# OCR Pipeline
+# - TrOCR (HuggingFace) ✅
+# - Tesseract 5 (fallback) ✅  
+# - LayoutLMv3 (structure) ✅
+# - OpenCV (prétraitement) ✅
+
+# IA Locale
+# - Mistral 7B MLX ✅
+# - ChromaDB 0.5+ ✅
+# - Sentence-Transformers ✅
+```
+
+### Frontend Moderne
+```typescript
+// Next.js 15 + React 19
+// TypeScript strict
+// Tailwind CSS 4
+// Zustand (state)
+// React Hook Form + Zod
+
+// Composants spécialisés
+// - DocumentUpload ✅
+// - DashboardWidget ✅  
+// - KPIWidget ✅
+// - VirtualizedDocumentList ✅
+```
+
+---
+
+## 📊 Fonctionnalités Opérationnelles
+
+### 1. Upload + Traitement Intelligent
+- **Drag & Drop** : PDF, images (PNG, JPG, TIFF) ✅
+- **Pipeline unifié** : Upload → OCR → IA → Classification ✅
+- **Feedback temps réel** : Progression + résultats enrichis ✅
+- **Performance** : <10 secondes par document ✅
+
+### 2. Classification Automatique (9 catégories)
+```typescript
+Categories = {
+  factures, rib, contrats, attestations, 
+  courriers, rapports, cartes_transport,
+  documents_personnels, non_classes
+}
+// Score moyen: 89.7% de confiance ✅
+```
+
+### 3. Dashboard Analytics
+- **KPIs temps réel** : Documents traités, précision OCR, sécurité ✅
+- **Graphiques** : Bar, Line, Pie charts avec Recharts ✅
+- **Timeline** : Activité récente avec événements colorés ✅
+- **Filtres avancés** : Date, catégorie, statut ✅
+
+### 4. RAG + Chat Intelligent  
+- **Recherche sémantique** : ChromaDB + embeddings multilingues ✅
+- **Chat contexte** : Mistral MLX avec sources citées ✅
+- **Performance** : <100ms retrieval, <2s génération ✅
+
+---
+
+## 🔧 Conventions de Code
+
+### Backend Python
+```python
+# Structure endpoints FastAPI
+@router.post("/endpoint")
+async def function_name(
+    param: Type,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-) -> DocumentResponse:
-    """Upload et traite un document."""
+    user: User = Depends(get_current_user)
+) -> ResponseModel:
+    """Description claire."""
     pass
 
-# Naming conventions
-# Classes : PascalCase
-# Functions : snake_case
-# Constants : UPPER_SNAKE_CASE
-# Private : _leading_underscore
+# Conventions
+# - Classes: PascalCase
+# - Functions: snake_case  
+# - Constants: UPPER_SNAKE_CASE
+# - Private: _leading_underscore
 ```
 
-### React/Next.js Frontend
+### Frontend TypeScript
 ```typescript
-// Structure des composants
-export const DocumentCard: FC<DocumentCardProps> = ({ 
-  document, 
-  onEdit, 
-  onDelete 
-}) => {
-  // Hooks en premier
-  const [isLoading, setIsLoading] = useState(false);
+// Composants React
+export const ComponentName: FC<Props> = ({ param }) => {
+  const [state, setState] = useState();
   
-  // Logic
-  
-  // Render
   return (
-    <div className="p-4 border rounded-lg">
+    <div className="tailwind-classes">
       {/* Content */}
     </div>
   );
 };
 
-// Naming conventions
-// Components : PascalCase
-// Hooks : use prefix (useDocument)
-// Utils : camelCase
-// Types : PascalCase with suffix (DocumentType)
+# Conventions
+# - Components: PascalCase
+# - Hooks: usePrefix
+# - Utils: camelCase
+# - Types: PascalCase + suffix
 ```
-
-### Structure des Données
-```typescript
-interface Document {
-  id: string;
-  filename: string;
-  category: DocumentCategory;
-  dateDocument: Date;
-  dateIndexation: Date;
-  confidenceScore: number;
-  entities: string[];
-  amount?: number;
-  customTags: string[];
-  ocrText: string;
-  embeddings?: number[];
-}
-```
-
-## 🔧 Pipeline OCR
-
-```python
-# Pipeline recommandé
-async def process_document(file_path: str) -> ProcessedDocument:
-    # 1. Prétraitement
-    image = preprocess_image(file_path)  # OpenCV
-    
-    # 2. Détection layout
-    layout = detect_layout(image)  # LayoutLMv3
-    
-    # 3. OCR
-    text = extract_text(image, layout)  # TrOCR + Tesseract fallback
-    
-    # 4. Extraction entités
-    entities = extract_entities(text)  # NER
-    logos = detect_logos(image)  # YOLO v8
-    
-    # 5. Classification
-    category = classify_document(text, entities, logos)
-    
-    # 6. Indexation
-    embeddings = generate_embeddings(text)  # Sentence Transformers
-    
-    return ProcessedDocument(
-        text=text,
-        category=category,
-        entities=entities,
-        embeddings=embeddings
-    )
-```
-
-## 📁 Arborescence du Projet
-
-```
-~/Documents/LEXO_v1/
-├── OCR/                         # 📁 Dossier surveillé pour upload documents
-│   ├── ATTESTATION_Edf OA.pdf  # Fichiers de test
-│   ├── Carte Rémi.pdf
-│   └── Carte senior Remi .PNG
-│
-├── IA_Administratif/            # 🏗️ Projet principal (architecture Docker)
-│   ├── ai_services/             # 🤖 Services IA MLX natifs
-│   │   ├── document_analyzer.py # Service Mistral MLX (port 8004)
-│   │   ├── requirements.txt
-│   │   └── __init__.py
-│   │
-│   ├── backend/                 # 🐍 API FastAPI (port 8000)
-│   │   ├── api/                 # Endpoints API
-│   │   │   ├── auth.py          # Authentification JWT
-│   │   │   ├── documents.py     # CRUD documents
-│   │   │   ├── ocr_routes_simple.py  # OCR Tesseract
-│   │   │   ├── ocr_routes.py    # OCR avancé (TrOCR, LayoutLM)
-│   │   │   ├── document_intelligence.py  # Intégration Mistral
-│   │   │   └── health.py        # Health checks
-│   │   ├── core/                # Configuration
-│   │   │   ├── config.py
-│   │   │   ├── database.py
-│   │   │   └── rate_limit.py
-│   │   ├── models/              # Modèles SQLAlchemy
-│   │   │   ├── user.py
-│   │   │   └── document.py
-│   │   ├── ocr/                 # Pipeline OCR
-│   │   │   ├── tesseract_ocr.py
-│   │   │   ├── trocr_ocr.py
-│   │   │   ├── layoutlm_ocr.py
-│   │   │   ├── hybrid_ocr.py
-│   │   │   ├── image_preprocessor.py
-│   │   │   ├── table_detector.py
-│   │   │   ├── entity_extractor.py
-│   │   │   └── ocr_cache.py
-│   │   ├── alembic/             # Migrations DB
-│   │   ├── fixtures/            # Données de test
-│   │   ├── tests/               # Tests unitaires
-│   │   └── main.py              # Point d'entrée FastAPI
-│   │
-│   ├── frontend/                # ⚛️ Interface Next.js (port 3000)
-│   │   ├── src/
-│   │   │   ├── app/             # Pages Next.js 14
-│   │   │   │   ├── auth/        # Pages authentification
-│   │   │   │   ├── dashboard/   # Dashboard principal
-│   │   │   │   ├── admin/       # Interface admin
-│   │   │   │   └── layout.tsx   # Layout racine
-│   │   │   ├── components/      # Composants React
-│   │   │   │   ├── auth/        # AuthGuard, ActivityTracker
-│   │   │   │   ├── documents/   # DocumentUpload, DocumentsList
-│   │   │   │   ├── layout/      # Header, Sidebar, MainLayout
-│   │   │   │   └── ui/          # Button, Card, Input
-│   │   │   ├── hooks/           # Hooks personnalisés
-│   │   │   │   └── useAuth.ts
-│   │   │   ├── stores/          # État global Zustand
-│   │   │   │   └── authStore.ts
-│   │   │   ├── lib/             # Utilitaires
-│   │   │   └── types/           # Types TypeScript
-│   │   ├── public/              # Assets statiques
-│   │   ├── package.json
-│   │   └── next.config.ts
-│   │
-│   ├── data/                    # 💾 Données persistantes Docker
-│   │   ├── postgres/            # Données PostgreSQL
-│   │   ├── redis/               # Cache Redis
-│   │   └── chromadb/            # Base vectorielle
-│   │
-│   ├── config/                  # ⚙️ Configurations
-│   ├── logs/                    # 📝 Logs applicatifs
-│   ├── scripts/                 # 🛠️ Scripts utilitaires
-│   ├── tests/                   # 🧪 Tests d'intégration
-│   ├── ml_models/               # 🧠 Modèles ML téléchargés
-│   │   ├── mistral_7b_mlx/      # Modèle Mistral pour MLX
-│   │   ├── ocr_models/          # Modèles TrOCR, LayoutLM
-│   │   └── embeddings/          # Modèles d'embeddings
-│   │
-│   ├── docker-compose.yml       # 🐳 Stack Docker complète
-│   ├── start_document_analyzer.sh  # 🚀 Script démarrage MLX
-│   ├── stop_document_analyzer.sh   # 🛑 Script arrêt MLX
-│   └── README.md
-│
-├── src/                         # 📂 Composants dupliqués (legacy)
-│   └── components/documents/    # ⚠️ À supprimer (dans IA_Administratif/frontend)
-│
-├── start_all.sh                 # 🚀 Script démarrage complet
-├── stop_all.sh                  # 🛑 Script arrêt complet
-├── CLAUDE.md                    # 📖 Ce guide
-├── PLANNING.md                  # 🗓️ Roadmap projet
-├── TACHES.md                    # ✅ Suivi des tâches
-├── ARCHITECTURE_HYBRIDE_MISTRAL.md  # 🏗️ Doc architecture
-│
-└── tests_*.py                   # 🧪 Scripts de test divers
-```
-
-### Points Importants Navigation
-
-1. **⚠️ Structure Hybride** : Projet principal dans `IA_Administratif/`
-2. **Frontend Next.js** : Code dans `IA_Administratif/frontend/src/`
-3. **Backend FastAPI** : Code dans `IA_Administratif/backend/`
-4. **Services IA MLX** : Code dans `IA_Administratif/ai_services/`
-5. **Docker Compose** : Stack dans `IA_Administratif/docker-compose.yml`
-6. **Scripts Globaux** : `start_all.sh` et `stop_all.sh` à la racine
-
-### Raccourcis Utiles
-
-- **Pages Next.js** : `IA_Administratif/frontend/src/app/`
-- **Composants React** : `IA_Administratif/frontend/src/components/`
-- **API Backend** : `IA_Administratif/backend/api/`
-- **Modèles DB** : `IA_Administratif/backend/models/`
-- **Tests Backend** : `IA_Administratif/backend/tests/`
-- **Services IA** : `IA_Administratif/ai_services/`
-- **Pipeline OCR** : `IA_Administratif/backend/ocr/`
-- **Configuration Docker** : `IA_Administratif/docker-compose.yml`
-
-## ⚡ Commandes Utiles
-
-```bash
-# 🚀 DÉMARRAGE COMPLET (recommandé)
-cd ~/Documents/LEXO_v1
-./start_all.sh                    # Démarre toute l'infrastructure
-./stop_all.sh                     # Arrête tout proprement
-
-# 🐍 Backend FastAPI
-cd ~/Documents/LEXO_v1/IA_Administratif/backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# ⚛️ Frontend Next.js  
-cd ~/Documents/LEXO_v1/IA_Administratif/frontend
-npm install
-npm run dev                       # http://localhost:3000
-
-# 🤖 Service MLX (natif)
-cd ~/Documents/LEXO_v1/IA_Administratif
-./start_document_analyzer.sh     # Port 8004
-./stop_document_analyzer.sh
-
-# 🐳 Docker Stack
-cd ~/Documents/LEXO_v1/IA_Administratif
-docker-compose up -d             # Démarre PostgreSQL, Redis, ChromaDB
-docker-compose down              # Arrête les services
-
-# 📊 Base de données
-cd ~/Documents/LEXO_v1/IA_Administratif/backend
-alembic upgrade head             # Migrations
-python scripts/load_fixtures_auto.py  # Données de test
-
-# 🧪 Tests
-cd ~/Documents/LEXO_v1/IA_Administratif/backend
-pytest tests/                    # Tests unitaires
-python test_ocr_pipeline.py      # Tests OCR
-cd ~/Documents/LEXO_v1/IA_Administratif/frontend
-npm run test                     # Tests frontend
-
-# 🔧 Build production
-cd ~/Documents/LEXO_v1/IA_Administratif/frontend
-npm run build                    # Build Next.js
-```
-
-## 🧪 Tests Prioritaires
-
-### Backend
-1. **OCR** : Tester rotation, qualité faible, multi-pages
-2. **Classification** : Vérifier précision > 90%
-3. **API** : Auth, upload, search endpoints
-4. **RAG** : Pertinence des résultats
-
-### Frontend
-1. **Upload** : Drag & drop, progress, erreurs
-2. **Dashboard** : Chargement des données
-3. **Search** : Filtres et résultats
-4. **Responsive** : Mobile, tablet, desktop
-
-## 🐛 Problèmes Connus
-
-1. **OCR sur PDF scannés** : Utiliser pdf2image avant OCR
-2. **Performance ChromaDB** : Batch les embeddings
-3. **Mémoire Mistral** : Utiliser quantization 4-bit
-4. **CORS Next.js** : Configurer dans next.config.js
-
-## 📊 Métriques à Suivre
-
-- **Précision OCR** : Log confidence scores
-- **Temps de traitement** : Timer chaque étape
-- **Taux de classification** : Track corrections
-- **Usage mémoire** : Monitor avec psutil
-
-## 🔐 Sécurité
-
-1. **Jamais de secrets dans le code**
-2. **Utiliser .env pour config**
-3. **Chiffrer documents sensibles**
-4. **Valider tous les inputs**
-5. **Rate limiting sur API**
-
-## 💡 Tips pour Claude Code
-
-### Pour l'OCR
-- Toujours prétraiter les images (deskew, denoise)
-- Utiliser plusieurs modèles et voter
-- Garder l'image originale
-
-### Pour le RAG
-- Chunker intelligemment (paragraphes complets)
-- Ajouter métadonnées aux embeddings
-- Utiliser hybrid search (dense + sparse)
-
-### Pour l'UI
-- Mobile-first avec Tailwind
-- Skeleton loaders partout
-- Feedback utilisateur immédiat
-- Animations subtiles (framer-motion)
-
-### Pour la Performance
-- Lazy loading des composants
-- Virtualisation des listes longues
-- Cache Redis pour requêtes fréquentes
-- Workers pour tâches lourdes
-
-## 🚀 Prochaines Étapes
-
-1. **Finaliser MVP** : OCR + classification basique
-2. **Intégrer ChromaDB** : Setup RAG pipeline
-3. **Améliorer UI** : Dashboard complet
-4. **Tests utilisateurs** : Feedback sur classification
-5. **Optimiser performance** : Profiling Python
-
-## 📝 Notes Importantes
-
-- **Local-first** : Tout doit fonctionner offline
-- **Privacy** : Aucune donnée ne sort du Mac
-- **UX simple** : L'utilisateur ne doit rien configurer
-- **Apprentissage** : Le système s'améliore avec l'usage
-- **Robustesse** : Gérer tous les cas d'erreur
-- **Journal** : les nouvelles fonctionalités et états de progression devront être ajoutés au fichier JOURNAL.md
-
-## 🚀 Démarrage Optimisé (Janvier 2025)
-
-### **Performance de Démarrage**
-- **Temps total** : ~90 secondes (amélioration de 65% vs version initiale)
-- **API disponible** : ~30 secondes après `./start_all.sh`
-- **OCR prêt** : Chargement à la demande (lazy loading)
-
-### **Architecture de Démarrage Rapide**
-```bash
-# 1. Cache ML Local (ZÉRO téléchargement)
-ml_models/
-├── transformers/
-│   ├── trocr-base-printed/          # 1.2GB (OCR principal)
-│   └── paraphrase-multilingual-MiniLM-L12-v2/  # 457MB (RAG)
-└── spacy/ (optionnel)
-
-# 2. Variables d'environnement critiques
-HF_OFFLINE=1                    # Force cache local uniquement
-TRANSFORMERS_OFFLINE=1          # Pas de téléchargement HuggingFace
-local_files_only=True          # Configuration TrOCR stricte
-```
-
-### **Lazy Loading OCR**
-- **Au démarrage** : API FastAPI prête, OCR **NON initialisé**
-- **Premier document** : OCR s'initialise automatiquement (~30s)
-- **Documents suivants** : Traitement immédiat (<5s)
-
-### **Migration des Modèles (1ère fois)**
-```bash
-# Migrer depuis cache système vers cache local
-cd IA_Administratif/scripts
-python migrate_models_to_local_cache.py
-
-# Valider la migration
-python validate_models_cache.py --verbose
-
-# Vérifier l'état OCR
-curl http://localhost:8000/api/v1/health/ocr
-```
-
-### **Monitoring du Démarrage**
-- `/api/v1/health` : Santé générale de l'API
-- `/api/v1/health/ocr` : État des moteurs OCR (initialisés ou non)
-- `/api/v1/watcher/status` : Statut du surveillance du dossier OCR
-
-## 🔗 Ressources
-
-- [FastAPI Docs](https://fastapi.tiangolo.com/)
-- [Next.js 14 Docs](https://nextjs.org/docs)
-- [ChromaDB Guide](https://docs.trychroma.com/)
-- [MLX Examples](https://github.com/ml-explore/mlx-examples)
-- [TrOCR Paper](https://arxiv.org/abs/2109.10282)
 
 ---
 
-**Rappel :** Ce projet vise à simplifier radicalement la gestion administrative. Chaque décision technique doit servir cet objectif. Si une fonctionnalité complique l'expérience utilisateur, elle doit être repensée ou supprimée.
+## 🧪 Tests Validés
 
-**Philosophie :** "It just works" - L'utilisateur dépose un document, LEXO fait le reste.
+### Scripts de Test Opérationnels
+```bash
+cd IA_Administratif/backend
+
+# Tests complets validés ✅
+python test_ocr_etape3.py        # OCR pipeline (82% succès)
+python test_rag_etape5.py        # RAG système (95% succès)  
+python test_complete_integration.py  # Pipeline intégré
+
+# Tests unitaires
+pytest tests/                    # Backend
+cd ../frontend && npm run test   # Frontend
+```
+
+### Validation Documents Réels
+- **Carte transport** : Classée "cartes_transport" (89.7% confiance) ✅
+- **Factures EDF** : Entités extraites + résumé IA ✅
+- **Documents scannés** : OCR hybride fonctionnel ✅
+
+---
+
+## 📁 Navigation Rapide
+
+### Chemins Critiques
+```bash
+# Backend API
+IA_Administratif/backend/api/documents.py      # Upload unifié
+IA_Administratif/backend/ocr/hybrid_ocr.py     # OCR principal
+IA_Administratif/backend/rag/mistral_wrapper.py # Interface Mistral
+
+# Frontend Interface  
+IA_Administratif/frontend/src/app/dashboard/page.tsx       # Dashboard principal
+IA_Administratif/frontend/src/components/documents/       # Upload + liste
+IA_Administratif/frontend/src/components/dashboard/       # Analytics
+
+# Services IA
+IA_Administratif/ai_services/document_analyzer.py         # Mistral MLX
+
+# Configuration
+IA_Administratif/docker-compose.yml           # Stack Docker
+IA_Administratif/backend/core/config.py       # Configuration
+```
+
+### Scripts Utiles
+```bash
+# Gestion projet
+./start_all.sh                    # Démarrage complet avec auto-correction
+./stop_all.sh                     # Arrêt propre avec sauvegarde
+./check_health.sh                 # Diagnostic complet système ✨ NOUVEAU
+IA_Administratif/start_document_analyzer.sh   # Mistral seul
+
+# Validation et diagnostic
+python test_complete_integration.py   # Test pipeline
+curl http://localhost:8000/api/v1/health  # Health check
+curl http://localhost:8000/api/v1/batch/status  # État progression batch ✨ NOUVEAU
+```
+
+---
+
+## 🔄 Redémarrage Serveur Next.js - Procédure Obligatoire
+
+### Cas nécessitant un redémarrage
+- **Nouveaux composants React** : Ajout de fichiers `.tsx` dans `/components`
+- **Modifications TypeScript** : Changements d'interfaces, types, hooks
+- **Nouvelles routes API** : Modifications backend affectant le frontend
+- **Modifications de configuration** : `next.config.js`, variables d'environnement
+- **Ajout de dépendances** : Nouveaux packages npm
+
+### Procédure standardisée OBLIGATOIRE
+
+```bash
+# 🔥 ÉTAPE 1 : Tuer le processus sur le port 3000
+lsof -ti:3000 | xargs kill -9
+
+# ⚙️ ÉTAPE 2 : Redémarrer Next.js sur le port 3000
+cd IA_Administratif/frontend
+npm run dev
+
+# ✅ VÉRIFICATION : Le serveur doit démarrer sur http://localhost:3000
+```
+
+### Alternative : Reset complet système
+
+```bash
+# 🛑 Arrêt complet de tous les services
+./stop_all.sh
+
+# 🚀 Redémarrage complet (recommandé après modifications importantes)
+./start_all.sh
+```
+
+### Commandes de diagnostic
+
+```bash
+# Vérifier les processus sur le port 3000
+lsof -i:3000
+
+# Vérifier tous les processus LEXO
+ps aux | grep -E "(next|node|npm)" | grep -v grep
+
+# Forcer l'arrêt de tous les processus Node.js (utiliser avec précaution)
+pkill -f "node.*next"
+```
+
+### ⚠️ RÈGLES CRITIQUES
+
+1. **Port 3000 OBLIGATOIRE** : Ne jamais utiliser un port alternatif (3001, 3002, etc.)
+2. **Intégrité ecosystem** : Le frontend doit toujours être sur le port 3000 pour cohérence avec le backend (port 8000)
+3. **Redémarrage systématique** : Après toute modification importante, TOUJOURS redémarrer
+4. **Vérification visuelle** : Toujours vérifier que les modifications sont prises en compte dans le navigateur
+
+### Workflow type après modifications
+
+```bash
+# 1. Modifications effectuées dans le code
+# 2. Arrêt propre du serveur Next.js
+lsof -ti:3000 | xargs kill -9
+
+# 3. Redémarrage sur port 3000
+cd IA_Administratif/frontend && npm run dev
+
+# 4. Vérification dans le navigateur sur http://localhost:3000
+# 5. Test des nouvelles fonctionnalités
+```
+
+### Dépannage port bloqué
+
+```bash
+# Si le port 3000 reste occupé après kill
+sudo lsof -ti:3000 | sudo xargs kill -9
+
+# En cas de problème persistant, redémarrage complet
+./stop_all.sh && sleep 5 && ./start_all.sh
+```
+
+**🎯 Principe fondamental** : Maintenir l'intégrité de l'architecture LEXO avec frontend:3000 + backend:8000 + services Docker
+
+---
+
+## 🛡️ Auto-correction et Diagnostic - Prévention des Problèmes
+
+### Problèmes automatiquement corrigés par start_all.sh
+
+Le script de démarrage détecte et corrige automatiquement ces problèmes courants :
+
+#### ✅ **Dépendances manquantes**
+```bash
+# Auto-détection et installation de psutil si manquant
+if ! docker compose exec -T backend python -c "import psutil"; then
+    log "Installation de psutil..."
+    docker compose exec -T backend pip install psutil==6.1.0
+    docker compose restart backend
+fi
+```
+
+#### ✅ **Comptes utilisateurs manquants**
+```bash
+# Vérification et création automatique des comptes
+USER_COUNT=$(vérification base de données)
+if [ "$USER_COUNT" = "0" ]; then
+    log "Création des comptes utilisateurs..."
+    docker compose exec -T backend python scripts/load_fixtures_auto.py
+fi
+```
+
+#### ✅ **Vérification compte admin**
+```bash
+# S'assurer que admin@lexo.fr existe toujours
+if [ "$ADMIN_EXISTS" != "True" ]; then
+    warning "Compte admin manquant, recréation..."
+    docker compose exec -T backend python scripts/load_fixtures_auto.py
+fi
+```
+
+### Script de diagnostic autonome
+
+```bash
+# 🔍 Diagnostic complet du système
+./check_health.sh
+
+# Vérifie automatiquement :
+# ✅ État des services Docker
+# ✅ Accessibilité des endpoints
+# ✅ Dépendances critiques (psutil, sqlalchemy, etc.)
+# ✅ Comptes utilisateurs et admin
+# ✅ Ports et connectivité
+# ✅ Nouvelles fonctionnalités (API batch progression)
+```
+
+### Protection contre les interruptions
+
+Le script `stop_all.sh` vérifie maintenant les traitements en cours :
+
+```bash
+# Vérification des tâches batch avant arrêt
+if curl -s http://localhost:8000/api/v1/batch/status | grep -q '"active_tasks": [1-9]'; then
+    warning "Des traitements batch sont en cours!"
+    echo "Voulez-vous vraiment arrêter ? [y/N]"
+    # Attend confirmation utilisateur
+fi
+```
+
+### Sauvegarde automatique
+
+Lors de l'arrêt, sauvegarde automatique dans `backups/YYYYMMDD/` :
+- **Statistiques système** : `stats_HHMMSS.json`
+- **État batch en cours** : `batch_status_HHMMSS.json`
+
+### Commandes de réparation rapide
+
+```bash
+# Problèmes généraux
+./stop_all.sh && ./start_all.sh
+
+# Diagnostic détaillé
+./check_health.sh
+
+# Corrections manuelles spécifiques
+cd IA_Administratif
+docker compose exec backend pip install psutil==6.1.0
+docker compose exec backend python scripts/load_fixtures_auto.py
+docker compose restart backend
+```
+
+**🎯 Objectif** : Plus jamais de problèmes de `psutil` manquant ou de comptes perdus !
+
+---
+
+## 🔍 Optimisations Performance
+
+### Cache Intelligent
+```python
+# Cache Mistral (70% amélioration)
+utils/mistral_cache.py: TTL 1h, hash-based keys
+
+# Cache OCR  
+ocr/ocr_cache.py: Redis + FileSystem hybrid
+
+# Cache modèles ML
+ml_models/: Local uniquement (HF_OFFLINE=1)
+```
+
+### Lazy Loading
+- **OCR** : Initialisé au premier document (évite 30s démarrage)
+- **Mistral** : Chargé en arrière-plan
+- **Composants React** : Chargement conditionnel
+
+---
+
+## 🚧 Points d'Amélioration
+
+### Performance
+- [ ] TrOCR réactivation (boucle infinie résolue)
+- [ ] Batch processing multi-documents
+- [ ] Cache intelligent embeddings
+
+### UX  
+- [ ] Mode sombre
+- [ ] Prévisualisation documents
+- [ ] Notifications push
+- [ ] Shortcuts clavier
+
+### Monitoring
+- [ ] Métriques détaillées pipeline
+- [ ] Alertes automatiques
+- [ ] Logs structurés
+
+---
+
+## 🎊 Points Forts Actuels
+
+1. **🎯 Pipeline Unifié** : Upload → OCR → IA → Classification fonctionnel
+2. **⚡ Performance** : <10s traitement, 89.7% précision classification
+3. **🛡️ Local-First** : 100% local, aucune donnée externe
+4. **📊 Analytics** : Dashboard temps réel opérationnel
+5. **🤖 IA Intégrée** : Mistral MLX + RAG + Classification automatique
+6. **🎨 UX Moderne** : Interface responsive + feedback temps réel
+
+---
+
+## 💡 Utilisation Optimale avec Claude Code
+
+### Pour OCR et traitement
+- Utiliser endpoint unifié `/upload-and-process` (recommandé)
+- Tests avec `test_ocr_etape3.py` pour validation
+- Cache automatique activé (performance)
+
+### Pour développement interface
+- Composants dans `IA_Administratif/frontend/src/components/`
+- State management avec Zustand
+- Mobile-first avec Tailwind
+
+### Pour débogage
+- Logs dans `IA_Administratif/logs/`
+- Health checks `/api/v1/health/*`
+- Monitoring `/api/v1/monitoring/stats`
+
+---
+
+## 🚀 Workflow de Validation Automatique
+
+### Commande de Validation Rapide
+
+**Déclencheur :** `"je valide"`
+
+**Action automatique :** Création d'une nouvelle branche + commit + README + push vers GitHub
+
+### Logique de Versioning Automatique
+
+```bash
+# Détection automatique du numéro de version suivant
+git branch -r | grep "origin/LEXO_v1\." | sed 's/.*LEXO_v1\.//' | sort -n | tail -1
+# Exemple : Si dernière version = LEXO_v1.5 → Nouvelle branche = LEXO_v1.6
+```
+
+### Processus Automatisé
+
+```bash
+# 1. Détection version suivante
+LATEST_VERSION=$(git branch -r | grep "origin/LEXO_v1\." | sed 's/.*LEXO_v1\.//' | sort -n | tail -1)
+NEW_VERSION=$((LATEST_VERSION + 1))
+NEW_BRANCH="LEXO_v1.${NEW_VERSION}"
+
+# 2. Création branche et commit
+git checkout -b ${NEW_BRANCH}
+git add -A
+git commit -m "feat: ${NEW_BRANCH} - Améliorations et nouvelles fonctionnalités
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# 3. Génération README résumé
+# Création automatique du README.md avec résumé des changements
+
+# 4. Push vers GitHub
+git push -u origin ${NEW_BRANCH}
+```
+
+### Template README Automatique
+
+```markdown
+# LEXO v1.x - Résumé des Modifications
+
+## 📊 Métadonnées
+- **Version :** LEXO_v1.x
+- **Date :** [Date automatique]
+- **Branche :** LEXO_v1.x
+- **Repo :** https://github.com/aiconsultingorleans/LEXO_v1
+
+## 🎯 Résumé des Changements
+[Résumé automatique généré par Claude des modifications effectuées]
+
+## 📁 Fichiers Modifiés
+[Liste automatique des fichiers modifiés avec description]
+
+## 🧪 Tests Validés
+[Tests exécutés et validés]
+
+## 🚀 Impact Business
+[Impact des modifications sur les fonctionnalités]
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+```
+
+### Utilisation
+
+```bash
+# L'utilisateur tape simplement :
+"je valide"
+
+# Claude exécute automatiquement :
+# ✅ Détection version (ex: v1.5 → v1.6)
+# ✅ Création branche LEXO_v1.6
+# ✅ Commit avec message standardisé
+# ✅ Génération README résumé
+# ✅ Push vers GitHub
+# ✅ Confirmation avec URL branche
+```
+
+### Repo GitHub Cible
+**URL :** https://github.com/aiconsultingorleans/LEXO_v1  
+**Format branches :** LEXO_v1.x (où x = numéro incrémental)  
+**Dernière version actuelle :** LEXO_v1.5
+
+---
+
+**📈 État Projet :** MVP opérationnel - Pipeline documentaire intelligent fonctionnel  
+**🎯 Prochaine étape :** Optimisation TrOCR + Interface mobile + Intégrations externes  
+**🚀 Philosophie :** "It just works" - L'utilisateur dépose un document, LEXO fait le reste
+
+*Dernière mise à jour : 25 juillet 2025 - Architecture hybride opérationnelle*

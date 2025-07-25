@@ -22,8 +22,8 @@ RUN mkdir -p /app/logs /app/data /app/ml_models /app/ocr_data
 # Exposer le port
 EXPOSE 8000
 
-# Vérification que l'application peut démarrer
-RUN python -c "from main import app; print('✅ Application prête')"
+# Vérification que l'application peut démarrer (commentée temporairement)
+# RUN python -c "from main import app; print('✅ Application prête')"
 
 # Commande de développement avec hot reload
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "info"]

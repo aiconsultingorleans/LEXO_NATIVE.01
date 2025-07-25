@@ -119,20 +119,36 @@ class TrOCREngine:
             else:
                 self.device = torch.device(self.config.device)
             
-            # Chargement du processeur et du modèle avec cache local uniquement
-            logger.info("Chargement du processeur TrOCR depuis le cache local...")
-            self.processor = TrOCRProcessor.from_pretrained(
-                self.config.model_name,
-                cache_dir=cache_dir,
-                local_files_only=True  # CACHE LOCAL UNIQUEMENT - PAS DE TÉLÉCHARGEMENT
-            )
+            # Utilisation du modèle local directement
+            model_path = os.path.join(cache_dir, "trocr-base-printed") if cache_dir else None
             
-            logger.info("Chargement du modèle TrOCR depuis le cache local...")
-            self.model = VisionEncoderDecoderModel.from_pretrained(
-                self.config.model_name,
-                cache_dir=cache_dir,
-                local_files_only=True  # CACHE LOCAL UNIQUEMENT - PAS DE TÉLÉCHARGEMENT
-            )
+            if model_path and os.path.exists(model_path):
+                logger.info(f"Chargement du processeur TrOCR depuis le modèle local: {model_path}")
+                self.processor = TrOCRProcessor.from_pretrained(
+                    model_path,
+                    local_files_only=True
+                )
+                
+                logger.info(f"Chargement du modèle TrOCR depuis le modèle local: {model_path}")
+                self.model = VisionEncoderDecoderModel.from_pretrained(
+                    model_path,
+                    local_files_only=True
+                )
+            else:
+                # Fallback avec le nom du modèle et cache
+                logger.info("Chargement du processeur TrOCR depuis le cache HuggingFace...")
+                self.processor = TrOCRProcessor.from_pretrained(
+                    self.config.model_name,
+                    cache_dir=cache_dir,
+                    local_files_only=True
+                )
+                
+                logger.info("Chargement du modèle TrOCR depuis le cache HuggingFace...")
+                self.model = VisionEncoderDecoderModel.from_pretrained(
+                    self.config.model_name,
+                    cache_dir=cache_dir,
+                    local_files_only=True
+                )
             
             # Déplacer le modèle sur le device approprié
             self.model.to(self.device)
@@ -151,7 +167,7 @@ class TrOCREngine:
     
     def _convert_to_pil(self, image_input: Union[str, Path, np.ndarray, Image.Image]) -> Image.Image:
         """
-        Convertit différents formats d'image vers PIL Image
+        Convertit différents formats d'image vers PIL Image, y compris PDF
         
         Args:
             image_input: Image au format chemin, numpy array ou PIL Image
@@ -162,7 +178,29 @@ class TrOCREngine:
         if isinstance(image_input, (str, Path)):
             if not os.path.exists(image_input):
                 raise FileNotFoundError(f"Fichier image non trouvé: {image_input}")
-            return Image.open(image_input).convert('RGB')
+            
+            image_path = str(image_input)
+            
+            # Gestion spéciale pour les PDFs
+            if image_path.lower().endswith('.pdf'):
+                try:
+                    from pdf2image import convert_from_path
+                    logger.info(f"Conversion PDF vers image: {image_path}")
+                    
+                    # Convertir la première page du PDF en image
+                    pages = convert_from_path(image_path, first_page=1, last_page=1, dpi=300)
+                    if pages:
+                        return pages[0].convert('RGB')
+                    else:
+                        raise ValueError("PDF vide ou non lisible")
+                        
+                except ImportError:
+                    raise RuntimeError("pdf2image non installé - Impossible de traiter les PDFs")
+                except Exception as e:
+                    raise ValueError(f"Erreur conversion PDF: {e}")
+            else:
+                # Images classiques
+                return Image.open(image_input).convert('RGB')
         
         elif isinstance(image_input, np.ndarray):
             # Conversion numpy vers PIL

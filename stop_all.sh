@@ -68,12 +68,31 @@ stop_process_by_pid() {
     fi
 }
 
-# 1. Sauvegarde des statistiques (optionnel)
+# 1. Sauvegarde des statistiques et vérifications préalables
 log "📊 Sauvegarde des statistiques..."
 if curl -s http://localhost:8000/api/v1/health > /dev/null 2>&1; then
     # Exporter les stats si l'API est disponible
     mkdir -p "$LEXO_DIR/backups/$(date +%Y%m%d)"
     curl -s http://localhost:8000/api/stats/export > "$LEXO_DIR/backups/$(date +%Y%m%d)/stats_$(date +%H%M%S).json" 2>/dev/null || true
+    
+    # Sauvegarder l'état des tâches batch en cours
+    curl -s http://localhost:8000/api/v1/batch/status > "$LEXO_DIR/backups/$(date +%Y%m%d)/batch_status_$(date +%H%M%S).json" 2>/dev/null || true
+    
+    success "✅ Statistiques sauvegardées"
+else
+    warning "Backend non accessible, sauvegarde ignorée"
+fi
+
+# Vérifier s'il y a des traitements batch en cours
+log "🔍 Vérification des traitements en cours..."
+if curl -s http://localhost:8000/api/v1/batch/status 2>/dev/null | grep -q '"active_tasks": [1-9]'; then
+    warning "⚠️  Des traitements batch sont en cours!"
+    echo "Voulez-vous vraiment arrêter ? Les traitements seront interrompus. [y/N]"
+    read -r CONFIRM
+    if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
+        echo "Arrêt annulé."
+        exit 0
+    fi
 fi
 
 # 2. Arrêt du watcher OCR

@@ -30,6 +30,42 @@ warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
+# Fonction pour corriger automatiquement les problèmes connus
+fix_known_issues() {
+    local issue_type=$1
+    log "🔧 Correction automatique: $issue_type"
+    
+    case $issue_type in
+        "psutil")
+            cd "$LEXO_DIR/IA_Administratif"
+            if docker compose ps backend | grep -q "running"; then
+                log "Installation de psutil dans le conteneur backend..."
+                docker compose exec -T backend pip install psutil==6.1.0
+                docker compose restart backend
+                success "✅ psutil installé et backend redémarré"
+            fi
+            ;;
+        "users")
+            cd "$LEXO_DIR/IA_Administratif"
+            if docker compose ps backend | grep -q "running"; then
+                log "Création des comptes utilisateurs manquants..."
+                docker compose exec -T backend python scripts/load_fixtures_auto.py
+                success "✅ Comptes utilisateurs créés"
+            fi
+            ;;
+        "deps")
+            cd "$LEXO_DIR/IA_Administratif"
+            if docker compose ps backend | grep -q "running"; then
+                log "Vérification et installation des dépendances manquantes..."
+                docker compose exec -T backend pip install -r requirements.txt
+                docker compose restart backend
+                success "✅ Dépendances vérifiées et backend redémarré"
+            fi
+            ;;
+    esac
+    cd "$LEXO_DIR"
+}
+
 # Vérification du répertoire
 cd "$(dirname "$0")"
 LEXO_DIR=$(pwd)
@@ -402,37 +438,117 @@ fi
 
 cd "$LEXO_DIR"
 
-# 7. Initialisation de la base de données
-log "🗄️  Initialisation de la base de données..."
+# 7. Vérification et installation des dépendances critiques
+log "🔧 Vérification des dépendances backend..."
 cd "$LEXO_DIR/IA_Administratif"
 if [ "$BACKEND_READY" = true ]; then
+    # Vérifier et installer psutil si manquant
+    if ! docker compose exec -T backend python -c "import psutil" 2>/dev/null; then
+        log "Installation de psutil dans le backend..."
+        docker compose exec -T backend pip install psutil==6.1.0
+        
+        # Redémarrer le backend pour prendre en compte la nouvelle dépendance
+        log "Redémarrage du backend pour appliquer les dépendances..."
+        docker compose restart backend
+        
+        # Attendre que le backend soit à nouveau prêt
+        BACKEND_RESTART_TIMEOUT=30
+        while [ $BACKEND_RESTART_TIMEOUT -gt 0 ]; do
+            if curl -s http://localhost:8000/api/v1/health | grep -q "healthy" 2>/dev/null; then
+                success "✅ Backend redémarré avec succès"
+                break
+            fi
+            sleep 1
+            BACKEND_RESTART_TIMEOUT=$((BACKEND_RESTART_TIMEOUT - 1))
+        done
+        
+        if [ $BACKEND_RESTART_TIMEOUT -eq 0 ]; then
+            error "❌ Échec du redémarrage du backend"
+            cd "$LEXO_DIR"
+            exit 1
+        fi
+    else
+        success "✅ Toutes les dépendances backend sont présentes"
+    fi
+else
+    warning "Backend non disponible, vérification des dépendances ignorée"
+fi
+
+# 8. Initialisation de la base de données
+log "🗄️  Initialisation de la base de données..."
+if [ "$BACKEND_READY" = true ]; then
+    # Appliquer les migrations
+    log "Application des migrations de base de données..."
     docker compose exec -T backend alembic upgrade head 2>/dev/null || warning "Migration déjà appliquée ou erreur"
     
-    # Charger les fixtures si la base est vide
-    if docker compose exec -T backend python -c "
+    # Vérifier et créer les comptes utilisateurs
+    log "Vérification des comptes utilisateurs..."
+    USER_COUNT=$(docker compose exec -T backend python -c "
 import asyncio
 from models.user import User
 from core.database import AsyncSessionLocal
 from sqlalchemy import select
 
 async def check_users():
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User))
-        count = len(result.scalars().all())
-        print(f'Users: {count}')
-        return count
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(User))
+            users = result.scalars().all()
+            return len(users)
+    except Exception as e:
+        return -1
 
 result = asyncio.run(check_users())
-" 2>/dev/null | grep -q "Users: 0"; then
-        log "Chargement des données de test..."
-        docker compose exec -T backend python scripts/load_fixtures_auto.py 2>/dev/null || warning "Échec du chargement des fixtures"
+print(result)
+" 2>/dev/null)
+    
+    if [ "$USER_COUNT" = "0" ] || [ "$USER_COUNT" = "-1" ]; then
+        log "Création des comptes utilisateurs par défaut..."
+        if docker compose exec -T backend python scripts/load_fixtures_auto.py 2>/dev/null; then
+            success "✅ Comptes utilisateurs créés avec succès"
+            echo ""
+            echo "🔑 Comptes de connexion disponibles:"
+            echo "  👑 Admin:      admin@lexo.fr / admin123"
+            echo "  👤 Utilisateur: jean.dupont@example.com / password123"
+            echo "  👁️  Lecture:    readonly@lexo.fr / readonly123"
+            echo ""
+        else
+            warning "⚠️  Échec de la création des comptes utilisateurs"
+        fi
+    else
+        success "✅ Comptes utilisateurs déjà existants ($USER_COUNT utilisateurs)"
+    fi
+    
+    # Vérification supplémentaire : s'assurer que le compte admin existe
+    ADMIN_EXISTS=$(docker compose exec -T backend python -c "
+import asyncio
+from models.user import User
+from core.database import AsyncSessionLocal
+from sqlalchemy import select
+
+async def check_admin():
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(User).where(User.email == 'admin@lexo.fr'))
+            admin = result.scalar_one_or_none()
+            return admin is not None
+    except Exception:
+        return False
+
+result = asyncio.run(check_admin())
+print('True' if result else 'False')
+" 2>/dev/null)
+    
+    if [ "$ADMIN_EXISTS" != "True" ]; then
+        warning "⚠️  Compte admin manquant, recréation..."
+        docker compose exec -T backend python scripts/load_fixtures_auto.py 2>/dev/null || true
     fi
 else
-    warning "Backend non disponible, migration de la base de données ignorée"
+    warning "Backend non disponible, initialisation de la base de données ignorée"
 fi
 cd "$LEXO_DIR"
 
-# 8. Démarrage du watcher OCR (optionnel)
+# 9. Démarrage du watcher OCR (optionnel)
 if [ -f "$LEXO_DIR/backend/app/services/ocr_watcher.py" ]; then
     log "👁️  Démarrage du watcher OCR..."
     cd "$LEXO_DIR/backend"
@@ -446,7 +562,7 @@ if [ -f "$LEXO_DIR/backend/app/services/ocr_watcher.py" ]; then
     fi
 fi
 
-# 9. Affichage du statut final
+# 10. Affichage du statut final
 echo ""
 log "🎉 LEXO v1 - Démarrage terminé!"
 echo ""
@@ -502,8 +618,33 @@ if [ "$BACKEND_READY" != true ] || [ "$FRONTEND_READY" != true ] || [ "$PG_READY
     ALL_SERVICES_OK=false
 fi
 
+# Vérifications supplémentaires des nouvelles fonctionnalités
+if [ "$BACKEND_READY" = true ]; then
+    log "🔍 Vérification des nouvelles fonctionnalités..."
+    
+    # Vérifier l'endpoint de progression batch
+    if curl -s http://localhost:8000/api/v1/batch/status >/dev/null 2>&1; then
+        success "✅ API de progression batch disponible"
+    else
+        warning "⚠️  API de progression batch non accessible"
+    fi
+    
+    # Vérifier les dépendances critiques
+    if docker compose exec -T backend python -c "import psutil; print('✅ psutil disponible')" 2>/dev/null | grep -q "psutil disponible"; then
+        success "✅ Dépendances critiques présentes"
+    else
+        warning "⚠️  Dépendances critiques manquantes"
+    fi
+fi
+
 if [ "$ALL_SERVICES_OK" = true ]; then
     success "✅ Tous les services sont opérationnels!"
+    echo ""
+    echo "🎉 Nouvelles fonctionnalités disponibles:"
+    echo "  ⚡ Barre de progression intelligente pour le traitement batch"
+    echo "  📊 Estimation temps réaliste basée sur performance"
+    echo "  🔄 Feedback temps réel avec fichier en cours"
+    echo "  ✅ Message final avec temps d'exécution"
 else
     warning "⚠️  Certains services ne sont pas accessibles"
     echo ""

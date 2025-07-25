@@ -1,0 +1,16 @@
+{
+  "ocr_hybrid_tesseract_only_1be021d27844f9675632e73dbba8b96f11976a192ac752ad260b3adfe963b899_c0388f9b09c68dae89fb0a6d1a8240e5": {
+    "timestamp": 1753447474.573834,
+    "ttl": 86400,
+    "size": 11481,
+    "metadata": {
+      "ocr_engine": "hybrid_tesseract_only",
+      "params": {
+        "strategy": "tesseract_only"
+      },
+      "word_count": 229,
+      "confidence": 0.89995670995671,
+      "processing_time": 3.207014
+    }
+  }
+}

@@ -9,6 +9,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
+import { BatchProgressDisplay } from '@/components/ui/ProgressBar';
 import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentsList } from '@/components/documents/DocumentsList';
@@ -41,6 +42,17 @@ function DashboardContent() {
   const [clearingRAG, setClearingRAG] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [compactUploadFiles, setCompactUploadFiles] = useState<UploadFile[]>([]);
+  
+  // État pour le suivi de progression batch
+  const [batchProgress, setBatchProgress] = useState({
+    isActive: false,
+    current: 0,
+    total: 0,
+    startTime: null as number | null,
+    currentFile: undefined as string | undefined,
+    completionTime: undefined as string | undefined,
+    batchId: null as number | null
+  });
 
   const handleRefresh = async () => {
     try {
@@ -184,6 +196,86 @@ function DashboardContent() {
     setCompactUploadFiles(prev => prev.filter(f => f.id !== id));
   };
 
+  // Polling de progression pour batch
+  const pollBatchProgress = async (batchId: number) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:8000/api/v1/batch/progress/${batchId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        // Si la progression n'existe plus, arrêter le polling
+        if (response.status === 404) {
+          setBatchProgress(prev => ({ ...prev, isActive: false }));
+          return;
+        }
+        throw new Error('Erreur lors de la récupération de la progression');
+      }
+
+      const progressData = await response.json();
+      
+      setBatchProgress(prev => ({
+        ...prev,
+        current: progressData.current,
+        total: progressData.total,
+        currentFile: progressData.current_file,
+        isActive: progressData.status !== 'completed'
+      }));
+
+      // Si terminé, afficher le temps total et arrêter le polling
+      if (progressData.status === 'completed') {
+        const completionTimeStr = `${progressData.completion_time.toFixed(1)}s`;
+        setBatchProgress(prev => ({
+          ...prev,
+          isActive: false,
+          completionTime: completionTimeStr
+        }));
+        
+        toast.success(
+          'Traitement batch terminé !',
+          `${progressData.total} fichiers analysés en ${completionTimeStr}`
+        );
+        
+        // Actualiser les données
+        setTimeout(() => {
+          handleRefresh();
+          setRefreshList(prev => prev + 1);
+        }, 1000);
+        
+        // Nettoyer la progression après 10 secondes
+        setTimeout(() => {
+          setBatchProgress({
+            isActive: false,
+            current: 0,
+            total: 0,
+            startTime: null,
+            currentFile: undefined,
+            completionTime: undefined,
+            batchId: null
+          });
+        }, 10000);
+        
+        return; // Arrêter le polling
+      }
+
+      // Continuer le polling si en cours
+      if (progressData.status === 'processing') {
+        setTimeout(() => pollBatchProgress(batchId), 500); // Poll toutes les 500ms
+      }
+
+    } catch (err) {
+      console.error('Erreur polling progression:', err);
+      // Arrêter le polling en cas d'erreur
+      setBatchProgress(prev => ({ ...prev, isActive: false }));
+    }
+  };
+
   const handleProcessUnprocessed = async () => {
     if (processingBatch) return;
     
@@ -197,7 +289,7 @@ function DashboardContent() {
       }
 
       // Scanner d'abord pour voir combien de fichiers
-      const scanResponse = await fetch('/api/v1/batch/scan-folder', {
+      const scanResponse = await fetch('http://localhost:8000/api/v1/batch/scan-folder', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -216,7 +308,7 @@ function DashboardContent() {
       }
 
       // Lancer le traitement
-      const processResponse = await fetch('/api/v1/batch/process-unprocessed', {
+      const processResponse = await fetch('http://localhost:8000/api/v1/batch/process-unprocessed', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -230,16 +322,24 @@ function DashboardContent() {
 
       const processData = await processResponse.json();
       
+      // Initialiser le suivi de progression
+      setBatchProgress({
+        isActive: true,
+        current: 0,
+        total: processData.count,
+        startTime: Date.now(),
+        currentFile: undefined,
+        completionTime: undefined,
+        batchId: processData.batch_id
+      });
+      
       toast.success(
         'Traitement lancé !',
         `${processData.count} fichiers sont en cours d'analyse automatique`
       );
       
-      // Actualiser les données après un délai
-      setTimeout(() => {
-        handleRefresh();
-        setRefreshList(prev => prev + 1);
-      }, 10000); // 10 secondes pour laisser le temps au traitement
+      // Démarrer le polling de progression
+      setTimeout(() => pollBatchProgress(processData.batch_id), 1000); // Démarrer après 1s
 
     } catch (err) {
       console.error('Erreur traitement batch:', err);
@@ -376,13 +476,16 @@ function DashboardContent() {
               variant="secondary" 
               size="lg"
               onClick={handleProcessUnprocessed}
-              disabled={processingBatch}
+              disabled={processingBatch || batchProgress.isActive}
               className="shadow-lg"
             >
               <Zap className="mr-2 h-5 w-5" />
-              {processingBatch ? 'Analyse en cours...' : 'Analyser les fichiers non traités'}
+              {processingBatch || batchProgress.isActive ? 'Analyse en cours...' : 'Analyser les fichiers non traités'}
             </Button>
           </div>
+
+          {/* Affichage de la progression batch */}
+          <BatchProgressDisplay batchProgress={batchProgress} />
 
           {/* Input file caché */}
           <input
