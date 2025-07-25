@@ -80,6 +80,14 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Variables d'environnement pour cache ML
+ENV TRANSFORMERS_CACHE=/app/ml_models/transformers
+ENV HF_DATASETS_CACHE=/app/ml_models/datasets  
+ENV HF_MODELS_CACHE=/app/ml_models/transformers
+ENV HF_HUB_CACHE=/root/.cache/huggingface/hub
+ENV SPACY_DATA=/app/ml_models/spacy
+ENV TORCH_HOME=/app/ml_models/torch
+
 # Installation des dépendances runtime uniquement (pas de build tools)
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \

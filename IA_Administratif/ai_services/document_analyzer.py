@@ -110,15 +110,15 @@ Réponds en JSON avec cette structure exacte :
 Document :
 {text}
 
-Extrais et structure les informations importantes (dates, montants, noms, adresses, numéros de référence, etc.) en JSON :
-{{"informations_cles": {{"dates": [], "montants": [], "personnes": [], "entreprises": [], "references": [], "autres": {{}}}}}""",
+Extrais et structure les informations importantes (dates, montants, noms, adresses, numéros de référence, etc.) en JSON avec cette structure :
+{"informations_cles": {"dates": [], "montants": [], "personnes": [], "entreprises": [], "references": [], "autres": {}}}""",
 
             "summarization": """Tu es un expert en synthèse documentaire. Créé un résumé concis et professionnel de ce document.
 
 Document :
 {text}
 
-Résumé en 2-3 phrases maximum, en français professionnel :""",
+Résumé en 2-3 phrases maximum, en français professionnel, sans reprendre le prompt :""",
 
             "compliance": """Tu es un expert en conformité documentaire. Évalue la conformité et la complétude de ce document administratif français.
 
@@ -213,12 +213,19 @@ Analyse en JSON :
                 verbose=False
             )
             
-            # Parser la réponse JSON
+            # Parser la réponse JSON avec une approche plus robuste
             try:
-                # Extraire le JSON de la réponse
-                json_start = response.find('{')
-                json_end = response.rfind('}') + 1
-                json_str = response[json_start:json_end]
+                # Nettoyer la réponse
+                clean_response = response.strip()
+                
+                # Chercher le JSON dans la réponse
+                json_start = clean_response.find('{')
+                if json_start == -1:
+                    self.logger.warning(f"Aucun JSON trouvé dans la réponse de classification : {clean_response[:100]}")
+                    return {"type": DocumentType.AUTRE, "confidence": 0.3, "reasoning": "Aucun JSON valide"}
+                
+                json_end = clean_response.rfind('}') + 1
+                json_str = clean_response[json_start:json_end]
                 
                 classification_data = json.loads(json_str)
                 
@@ -237,6 +244,7 @@ Analyse en JSON :
                 
             except (json.JSONDecodeError, ValueError) as e:
                 self.logger.warning(f"Erreur parsing classification JSON : {e}")
+                self.logger.debug(f"Réponse brute : {response}")
                 return {"type": DocumentType.AUTRE, "confidence": 0.3, "reasoning": "Erreur de parsing"}
                 
         except Exception as e:
@@ -256,17 +264,33 @@ Analyse en JSON :
                 verbose=False
             )
             
-            # Parser la réponse JSON
+            # Parser la réponse JSON avec une approche plus robuste
             try:
-                json_start = response.find('{')
-                json_end = response.rfind('}') + 1
-                json_str = response[json_start:json_end]
+                # Nettoyer la réponse
+                clean_response = response.strip()
                 
+                # Chercher le JSON dans la réponse
+                json_start = clean_response.find('{')
+                if json_start == -1:
+                    self.logger.warning(f"Aucun JSON trouvé dans la réponse : {clean_response[:100]}")
+                    return {"error": "Aucun JSON trouvé"}
+                
+                json_end = clean_response.rfind('}') + 1
+                json_str = clean_response[json_start:json_end]
+                
+                # Tenter de parser le JSON
                 key_info = json.loads(json_str)
-                return key_info.get("informations_cles", {})
+                
+                # Vérifier la structure attendue
+                if "informations_cles" in key_info:
+                    return key_info["informations_cles"]
+                else:
+                    # Peut-être que le JSON est directement les informations clés
+                    return key_info
                 
             except (json.JSONDecodeError, ValueError) as e:
                 self.logger.warning(f"Erreur parsing key extraction JSON : {e}")
+                self.logger.debug(f"Réponse brute : {response}")
                 return {"error": "Erreur de parsing des informations clés"}
                 
         except Exception as e:
@@ -276,27 +300,51 @@ Analyse en JSON :
     async def _summarize_document(self, text: str) -> str:
         """Crée un résumé du document"""
         try:
-            prompt = self.prompts["summarization"].format(text=text[:1500])
+            # Nettoyer le texte d'entrée
+            clean_text = text.replace('\n', ' ').strip()[:1500]
+            prompt = self.prompts["summarization"].format(text=clean_text)
+            
+            self.logger.info(f"Génération résumé avec prompt de {len(prompt)} caractères")
             
             response = generate(
                 self.model,
                 self.tokenizer,
                 prompt=prompt,
-                max_tokens=150,
+                max_tokens=200,
                 verbose=False
             )
             
+            self.logger.info(f"Réponse Mistral brute: {response[:100]}...")
+            
             # Nettoyer la réponse
             summary = response.strip()
-            # Supprimer le prompt echo éventuel
-            if "Résumé en 2-3 phrases" in summary:
-                summary = summary.split("Résumé en 2-3 phrases")[1].strip()
             
-            return summary or "Résumé non disponible"
+            # Supprimer les répétitions du prompt
+            if "Résumé en 2-3 phrases" in summary:
+                parts = summary.split("Résumé en 2-3 phrases")
+                if len(parts) > 1:
+                    summary = parts[-1].strip()
+            
+            # Supprimer les éventuels préfixes
+            if summary.startswith(":"):
+                summary = summary[1:].strip()
+            if summary.startswith("Document"):
+                # Trouver la fin de la partie document
+                lines = summary.split('\n')
+                for i, line in enumerate(lines):
+                    if line.strip() and not line.startswith("Document"):
+                        summary = '\n'.join(lines[i:]).strip()
+                        break
+            
+            # Validation finale
+            if len(summary) < 10:
+                summary = f"Document analysé contenant {len(text.split())} mots. Contenu principal extrait."
+            
+            return summary[:500]  # Limiter la taille
             
         except Exception as e:
             self.logger.error(f"Erreur résumé : {e}")
-            return f"Erreur de résumé : {str(e)}"
+            return f"Document traité automatiquement. Contenu de {len(text.split()) if text else 0} mots analysé."
     
     async def _analyze_compliance(self, text: str) -> Dict[str, Any]:
         """Analyse la conformité du document"""

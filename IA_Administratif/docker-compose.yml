@@ -54,6 +54,17 @@ services:
       - DATABASE_URL=postgresql+asyncpg://lexo:password@postgres:5432/lexo_dev
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=true
+      # 🚀 CACHE ML LOCAL UNIQUEMENT - ZÉRO TÉLÉCHARGEMENT
+      - TRANSFORMERS_CACHE=/app/ml_models/transformers
+      - HF_MODELS_CACHE=/app/ml_models/transformers
+      - HF_HUB_CACHE=/app/ml_models/transformers
+      - SPACY_DATA_DIR=/app/ml_models/spacy
+      # Forcer utilisation cache local (pas de téléchargement)
+      - HF_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      # Désactiver télémétrie pour performance
+      - HF_HUB_DISABLE_TELEMETRY=1
+      - TORCH_HOME=/app/ml_models/torch
     depends_on:
       postgres:
         condition: service_healthy

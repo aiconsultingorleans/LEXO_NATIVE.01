@@ -364,19 +364,92 @@ async def process_document_ocr(
             
             logger.info(f"Classification suggérée: {suggested_category}")
             
-            # 4. Calcul de la taille du fichier
+            # 4. Analyse avancée avec Mistral MLX (si disponible)
+            mistral_analysis = None
+            mistral_category_suggestion = None
+            summary = ""
+            
+            if ocr_result.text and len(ocr_result.text.strip()) > 50:
+                try:
+                    # Appel direct au service Mistral MLX natif
+                    mistral_result = await _call_mistral_service_direct(ocr_result.text)
+                    
+                    if mistral_result.get('success'):
+                        result_data = mistral_result.get('result', {})
+                        mistral_category_suggestion = result_data.get('document_type')
+                        summary = result_data.get('summary', '').strip()
+                        
+                        logger.info(f"🤖 Analyse Mistral: type={mistral_category_suggestion}, summary={len(summary)} chars")
+                        
+                        # Mapping des types Mistral vers nos catégories
+                        mistral_to_our_categories = {
+                            'facture': DocumentCategory.FACTURE,
+                            'rib': DocumentCategory.RIB, 
+                            'contrat': DocumentCategory.CONTRAT,
+                            'attestation': DocumentCategory.ATTESTATION,
+                            'courrier': DocumentCategory.COURRIER,
+                            'rapport': DocumentCategory.NON_CLASSE,
+                            'autre': DocumentCategory.NON_CLASSE
+                        }
+                        
+                        mistral_mapped_category = mistral_to_our_categories.get(mistral_category_suggestion, DocumentCategory.NON_CLASSE)
+                        
+                        # Si Mistral est confiant, utiliser sa suggestion
+                        mistral_confidence = result_data.get('confidence', 0)
+                        if mistral_confidence > 0.7:
+                            suggested_category = mistral_mapped_category
+                            logger.info(f"🔄 Classification Mistral utilisée: {suggested_category} (confiance: {mistral_confidence:.2f})")
+                        
+                except Exception as e:
+                    logger.warning(f"Analyse Mistral échouée: {e}")
+            
+            # 5. Classification hybride finale avec classification basée sur règles
+            from services.document_classifier import get_document_classifier
+            
+            try:
+                classifier = get_document_classifier()
+                classification_result = classifier.classify_document(
+                    filename=file.filename,
+                    ocr_text=ocr_result.text,
+                    entities=list(ocr_result.detected_entities.keys()) if ocr_result.detected_entities else []
+                )
+                
+                final_category = classification_result.category
+                final_confidence = classification_result.confidence
+                
+                # Combiner avec Mistral si disponible
+                if mistral_category_suggestion:
+                    # Booster la confiance si les deux méthodes s'accordent
+                    if suggested_category == DocumentCategory(final_category):
+                        final_confidence = min(0.98, final_confidence * 1.2)
+                        logger.info(f"🎯 Accord classification: {final_category} (confiance boostée: {final_confidence:.2f})")
+                
+                suggested_category = DocumentCategory(final_category)
+                
+                logger.info(f"🏷️ Classification finale: {final_category} (confiance: {final_confidence:.2f})")
+                logger.info(f"   📋 Raisonnement: {classification_result.reasoning}")
+                
+            except Exception as e:
+                logger.warning(f"Classification par règles échouée: {e}")
+                final_confidence = ocr_result.confidence
+            
+            # 6. Calcul de la taille du fichier
             file_size = os.path.getsize(temp_input_path)
             
-            # 5. Sauvegarde en base
+            # 7. Sauvegarde en base avec toutes les informations
             document = Document(
                 filename=file.filename,
                 original_filename=file.filename,
                 file_size=file_size,
                 mime_type=file.content_type or "application/octet-stream",
                 user_id=current_user.id,
-                category=request.category or suggested_category,
+                category=request.category or suggested_category.value,
                 ocr_text=ocr_result.text,
-                confidence_score=ocr_result.confidence
+                confidence_score=final_confidence,
+                entities=list(ocr_result.detected_entities.keys()) if ocr_result.detected_entities else [],
+                custom_tags=[suggested_category.value],
+                summary=summary if summary else f"Document {suggested_category.value} analysé automatiquement.",
+                processed_at=datetime.utcnow()
             )
             
             db.add(document)
@@ -392,10 +465,10 @@ async def process_document_ocr(
             
             return OCRProcessingResponse(
                 success=True,
-                message=f"OCR réussi: {ocr_result.word_count} mots extraits",
+                message=f"OCR + IA réussi: {ocr_result.word_count} mots extraits, classification {suggested_category.value}",
                 document_id=str(document.id),
                 extracted_text=ocr_result.text,
-                confidence_score=ocr_result.confidence,
+                confidence_score=final_confidence,
                 detected_entities=ocr_result.detected_entities,
                 suggested_category=suggested_category,
                 processing_time=processing_time
@@ -1078,6 +1151,38 @@ async def get_supported_formats():
             "TIFF est idéal pour les documents de qualité archivage"
         ]
     }
+
+
+async def _call_mistral_service_direct(text: str) -> dict:
+    """Appel direct au service Mistral MLX natif avec gestion d'erreur robuste"""
+    try:
+        import httpx
+        import os
+        
+        # Configuration service MLX
+        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        
+        # Limiter le texte pour éviter les timeouts
+        text_excerpt = text[:2000] if len(text) > 2000 else text
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"http://{mistral_host}:8004/analyze",
+                json={
+                    "text": text_excerpt,
+                    "analysis_types": ["classification", "summarization", "key_extraction"]
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"Erreur API Mistral: {response.status_code}")
+                return {"success": False, "error": f"HTTP {response.status_code}"}
+                
+    except Exception as e:
+        logger.warning(f"Erreur connexion Mistral: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @router.get("/preprocessing-options")

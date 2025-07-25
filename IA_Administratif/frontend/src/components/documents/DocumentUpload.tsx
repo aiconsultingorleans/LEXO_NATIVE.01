@@ -24,12 +24,12 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
 
     // Update status to uploading
     setFiles(prev => prev.map(f => 
-      f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 30 } : f
+      f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 20 } : f
     ));
 
     try {
-      // Upload file
-      const uploadResponse = await fetch('http://localhost:8000/api/v1/documents/upload', {
+      // Pipeline unifié : Upload + OCR + Mistral + Classification en un seul appel
+      const response = await fetch('http://localhost:8000/api/v1/documents/upload-and-process', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -37,89 +37,65 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
         body: formData
       });
 
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({ detail: 'Upload failed' }));
-        throw new Error(errorData.detail || 'Upload failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Pipeline processing failed' }));
+        throw new Error(errorData.detail || 'Pipeline processing failed');
       }
 
-      const uploadResult = await uploadResponse.json();
-      toast.success('Upload réussi', `Le fichier "${uploadedFile.file.name}" a été uploadé avec succès`);
+      toast.info('Pipeline démarré', `Traitement complet de "${uploadedFile.file.name}" en cours...`);
 
-      // Update status to processing
+      // Update status to processing (OCR + Mistral + Classification en cours)
       setFiles(prev => prev.map(f => 
-        f.id === uploadedFile.id ? { ...f, status: 'processing', progress: 60 } : f
+        f.id === uploadedFile.id ? { ...f, status: 'processing', progress: 70 } : f
       ));
 
-      // Process OCR
-      const ocrFormData = new FormData();
-      ocrFormData.append('file', uploadedFile.file);
+      const result = await response.json();
 
-      const ocrResponse = await fetch('http://localhost:8000/api/v1/ocr/process', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: ocrFormData
-      });
-
-      if (!ocrResponse.ok) {
-        const errorData = await ocrResponse.json().catch(() => ({ detail: 'OCR processing failed' }));
-        throw new Error(errorData.detail || 'OCR processing failed');
-      }
-
-      const ocrResult = await ocrResponse.json();
-      toast.success('OCR terminé', `Le texte a été extrait de "${uploadedFile.file.name}" avec ${(ocrResult.confidence * 100).toFixed(0)}% de confiance`);
-
-      // Update status to success
+      // Update status to success avec tous les résultats
       setFiles(prev => prev.map(f => 
         f.id === uploadedFile.id ? { 
           ...f, 
           status: 'success', 
           progress: 100,
-          result: ocrResult 
+          result: {
+            document_id: result.id,
+            category: result.category,
+            confidence_score: result.confidence_score,
+            summary: result.summary,
+            ocr_text: result.ocr_text,
+            word_count: result.ocr_text ? result.ocr_text.split(' ').length : 0,
+            entities: result.entities || [],
+            detected_entities: result.entities ? result.entities.reduce((acc: any, entity: string) => {
+              const [type, value] = entity.split(':');
+              if (type && value) {
+                if (!acc[type]) acc[type] = [];
+                acc[type].push(value);
+              }
+              return acc;
+            }, {}) : {}
+          }
         } : f
       ));
 
-      // Optional: Process with Mistral for advanced analysis
-      if (ocrResult.text) {
-        try {
-          const analysisResponse = await fetch('http://localhost:8000/api/v1/intelligence/analyze', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              text: ocrResult.text,
-              analysis_types: ['classification', 'key_extraction']
-            })
-          });
-
-          if (analysisResponse.ok) {
-            const analysisData = await analysisResponse.json();
-            setFiles(prev => prev.map(f => 
-              f.id === uploadedFile.id ? { 
-                ...f, 
-                result: { ...(f.result || {}), analysis: analysisData.result } 
-              } : f
-            ));
-            
-            if (analysisData.result?.classification?.type) {
-              toast.info('Classification IA', `Document classé comme: ${analysisData.result.classification.type}`);
-            }
-          }
-        } catch (error) {
-          toast.warning('Analyse IA', 'L\'analyse avancée a échoué, mais l\'OCR de base a réussi');
-        }
+      // Messages de succès détaillés
+      toast.success('Upload réussi', `"${uploadedFile.file.name}" a été uploadé avec succès`);
+      
+      if (result.category && result.category !== 'non_classes') {
+        toast.success('Classification IA', `Document classé comme: ${result.category} (${(result.confidence_score * 100).toFixed(0)}% confiance)`);
+      }
+      
+      if (result.summary) {
+        toast.info('Résumé généré', 'Un résumé intelligent a été généré par l\'IA');
       }
 
       if (onUploadComplete) {
         onUploadComplete();
       }
       
-      toast.success('Traitement terminé', `"${uploadedFile.file.name}" a été entièrement traité et indexé`);
+      toast.success('Pipeline complet terminé', `"${uploadedFile.file.name}" a été entièrement traité et indexé`);
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      const errorMessage = error instanceof Error ? error.message : 'Pipeline processing failed';
       
       setFiles(prev => prev.map(f => 
         f.id === uploadedFile.id ? { 
@@ -129,9 +105,9 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
         } : f
       ));
       
-      toast.error('Erreur de traitement', `Échec du traitement de "${uploadedFile.file.name}": ${errorMessage}`);
+      toast.error('Erreur Pipeline', `Échec du traitement complet de "${uploadedFile.file.name}": ${errorMessage}`);
     }
-  }, [onUploadComplete]);
+  }, [onUploadComplete, toast]);
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     // Handle rejected files
@@ -239,7 +215,7 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
                     {file.status === 'processing' && (
                       <div className="flex items-center space-x-2">
                         <Loader2 className="h-3 w-3 animate-spin text-purple-500" />
-                        <p className="text-xs text-purple-500">Traitement OCR...</p>
+                        <p className="text-xs text-purple-500">OCR + IA + Classification...</p>
                       </div>
                     )}
                     {file.status === 'success' && (
@@ -247,20 +223,56 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
                         <p className="text-xs text-green-500">✓ Traité avec succès</p>
                         {file.result && typeof file.result === 'object' ? (
                           <div className="mt-2 text-xs text-gray-600">
-                            <p>Texte extrait: {(file.result as any).word_count || 'N/A'} mots</p>
-                            {(file.result as any).confidence && (
-                              <p>Confiance: {((file.result as any).confidence * 100).toFixed(1)}%</p>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <p>📄 {(file.result as any).word_count || 'N/A'} mots extraits</p>
+                              {(file.result as any).confidence_score && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                                  {((file.result as any).confidence_score * 100).toFixed(0)}% confiance
+                                </span>
+                              )}
+                            </div>
+                            
+                            {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
+                              <p className="text-blue-600 font-medium mb-2">
+                                📂 Catégorie: {(file.result as any).category}
+                              </p>
                             )}
-                            {(file.result as any).analysis && (
-                              <div className="mt-1 p-2 bg-gray-50 rounded">
-                                <p className="font-medium">Analyse IA:</p>
-                                <p>Type: {(file.result as any).analysis.classification?.type}</p>
-                                {(file.result as any).analysis.entities?.dates?.length > 0 && (
-                                  <p>Dates: {(file.result as any).analysis.entities.dates.join(', ')}</p>
-                                )}
-                                {(file.result as any).analysis.entities?.amounts?.length > 0 && (
-                                  <p>Montants: {(file.result as any).analysis.entities.amounts.join(', ')}</p>
-                                )}
+                            
+                            {(file.result as any).summary && (
+                              <div className="mt-2 p-2 bg-purple-50 rounded">
+                                <p className="font-medium text-purple-700">🤖 Résumé IA:</p>
+                                <p className="text-purple-600 text-xs mt-1">
+                                  {(file.result as any).summary}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {(file.result as any).detected_entities && Object.keys((file.result as any).detected_entities).length > 0 && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded">
+                                <p className="font-medium text-blue-700">🔍 Entités détectées:</p>
+                                {Object.entries((file.result as any).detected_entities).map(([key, value]: [string, any]) => (
+                                  <p key={key} className="text-blue-600 text-xs">
+                                    {key}: {Array.isArray(value) ? value.join(', ') : value}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {(file.result as any).entities && (file.result as any).entities.length > 0 && (
+                              <div className="mt-2 p-2 bg-gray-50 rounded">
+                                <p className="font-medium text-gray-700">🏷️ Tags:</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {(file.result as any).entities.slice(0, 5).map((entity: string, idx: number) => (
+                                    <span key={idx} className="bg-gray-200 text-gray-700 px-1 rounded text-xs">
+                                      {entity.length > 20 ? entity.substring(0, 20) + '...' : entity}
+                                    </span>
+                                  ))}
+                                  {(file.result as any).entities.length > 5 && (
+                                    <span className="text-gray-500 text-xs">
+                                      +{(file.result as any).entities.length - 5} autres
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>

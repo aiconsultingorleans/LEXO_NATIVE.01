@@ -6,6 +6,7 @@ Surveille ~/Documents/LEXO_v1/OCR et déclenche automatiquement le traitement OC
 import asyncio
 import logging
 import time
+import os
 from pathlib import Path
 from typing import Dict, Set, Optional
 from datetime import datetime
@@ -159,30 +160,83 @@ class OCRFileHandler(FileSystemEventHandler):
                 except Exception as e:
                     logger.warning(f"Extraction d'entités échouée: {e}")
             
-            # Classification automatique avancée
+            # ÉTAPE 1: Analyse Mistral pour enrichir la classification
+            ocr_text = getattr(ocr_result, 'text', str(ocr_result))
+            mistral_analysis = None
+            mistral_category_suggestion = None
+            
+            if ocr_text and len(ocr_text.strip()) > 50:
+                try:
+                    mistral_analysis = await self._get_mistral_analysis(ocr_text)
+                    if mistral_analysis and mistral_analysis.get('success'):
+                        result_data = mistral_analysis.get('result', {})
+                        mistral_category_suggestion = result_data.get('document_type')
+                        logger.info(f"🤖 Analyse Mistral: type={mistral_category_suggestion}, confiance={result_data.get('confidence', 0)}")
+                except Exception as e:
+                    logger.warning(f"Analyse Mistral échouée: {e}")
+            
+            # ÉTAPE 2: Classification hybride (règles + Mistral)
             classifier = get_document_classifier()
             classification_result = classifier.classify_document(
                 filename=file_path.name,
-                ocr_text=getattr(ocr_result, 'text', ''),
+                ocr_text=ocr_text,
                 entities=entities
             )
-            category = classification_result.category
+            
+            # Affiner la classification avec l'analyse Mistral
+            final_category = classification_result.category
+            final_confidence = classification_result.confidence
+            
+            if mistral_category_suggestion and mistral_analysis:
+                mistral_confidence = mistral_analysis.get('result', {}).get('confidence', 0)
+                # Mapping des types Mistral vers nos catégories
+                mistral_to_our_categories = {
+                    'facture': 'factures',
+                    'rib': 'rib', 
+                    'contrat': 'contrats',
+                    'attestation': 'attestations',
+                    'courrier': 'courriers',
+                    'rapport': 'non_classes',
+                    'autre': 'non_classes'
+                }
+                
+                mistral_mapped_category = mistral_to_our_categories.get(mistral_category_suggestion, 'non_classes')
+                
+                # Si Mistral est très confiant et différent, privilégier Mistral
+                if mistral_confidence > 0.8 and mistral_mapped_category != final_category:
+                    logger.info(f"🔄 Classification ajustée: {final_category} → {mistral_mapped_category} (Mistral confiance: {mistral_confidence:.2f})")
+                    final_category = mistral_mapped_category
+                    final_confidence = min(0.95, (final_confidence + mistral_confidence) / 2)
+                # Si même catégorie, booster la confiance
+                elif mistral_mapped_category == final_category:
+                    final_confidence = min(0.98, final_confidence * 1.2)
             
             # Log du raisonnement de classification
-            logger.info(f"🏷️ Classification: {category} (confiance: {classification_result.confidence:.2f})")
+            logger.info(f"🏷️ Classification finale: {final_category} (confiance: {final_confidence:.2f})")
             logger.info(f"   📋 Raisonnement: {classification_result.reasoning}")
             if classification_result.matched_rules:
                 logger.info(f"   🎯 Règles: {', '.join(classification_result.matched_rules[:3])}")
             
-            # Génération de résumé Mistral
+            # ÉTAPE 3: Génération de résumé Mistral optimisé
             summary = ""
-            ocr_text = getattr(ocr_result, 'text', str(ocr_result))
-            if ocr_text and len(ocr_text.strip()) > 50:  # Seulement si assez de texte
+            if mistral_analysis and mistral_analysis.get('success'):
+                result_data = mistral_analysis.get('result', {})
+                summary = result_data.get('summary', '').strip()
+                
+                if not summary or len(summary) < 10:
+                    # Réessayer avec l'endpoint de résumé direct
+                    try:
+                        summary = await self._generate_mistral_summary(ocr_text, final_category)
+                    except Exception as e:
+                        logger.warning(f"Génération résumé Mistral échouée: {e}")
+                        summary = f"Document de type {final_category} analysé. Contenu de {len(ocr_text.split())} mots traité automatiquement."
+            else:
+                # Fallback si pas d'analyse Mistral
                 try:
-                    summary = await self._generate_mistral_summary(ocr_text, category)
+                    summary = await self._generate_mistral_summary(ocr_text, final_category)
                 except Exception as e:
                     logger.warning(f"Génération résumé Mistral échouée: {e}")
-                    summary = f"Résumé automatique non disponible. Document de type {category}."
+                    summary = f"Document de type {final_category} analysé. Contenu de {len(ocr_text.split())} mots traité automatiquement."
             
             # Récupérer l'utilisateur admin par défaut
             admin_user = await self._get_admin_user()
@@ -199,11 +253,11 @@ class OCRFileHandler(FileSystemEventHandler):
                     file_path=str(file_path),
                     file_size=file_size,
                     mime_type=mime_type,
-                    category=category,
-                    confidence_score=classification_result.confidence,
+                    category=final_category,
+                    confidence_score=final_confidence,
                     ocr_text=getattr(ocr_result, 'text', str(ocr_result))[:10000],  # Limiter la taille
                     entities=entities,
-                    custom_tags=[category],
+                    custom_tags=[final_category],
                     summary=summary,
                     processed_at=datetime.utcnow()
                 )
@@ -214,14 +268,15 @@ class OCRFileHandler(FileSystemEventHandler):
                 process_time = time.time() - start_time
                 
                 logger.info(f"✅ Document traité et sauvé: {file_path.name}")
-                logger.info(f"   📊 ID: {document.id} | Catégorie: {category}")
+                logger.info(f"   📊 ID: {document.id} | Catégorie: {final_category}")
                 logger.info(f"   🔍 Confiance: {document.confidence_score:.2f}")
                 logger.info(f"   📝 Texte: {len(document.ocr_text)} chars")
+                logger.info(f"   📄 Résumé: {len(summary)} chars")
                 logger.info(f"   🏷️ Entités: {len(entities)} trouvées")
                 logger.info(f"   ⏱️ Temps: {process_time:.2f}s")
                 
                 # Optionnel: déplacer le fichier vers un sous-dossier
-                await self._move_to_category_folder(file_path, category)
+                await self._move_to_category_folder(file_path, final_category)
                 
         except Exception as e:
             logger.error(f"❌ Erreur lors du traitement {file_path.name}: {e}")
@@ -285,6 +340,36 @@ class OCRFileHandler(FileSystemEventHandler):
         except Exception as e:
             logger.warning(f"Échec du déplacement vers {category}: {e}")
     
+    async def _get_mistral_analysis(self, text: str) -> dict:
+        """Obtient l'analyse complète du document depuis Mistral"""
+        try:
+            import httpx
+            
+            # Limiter le texte pour éviter les prompts trop longs
+            text_excerpt = text[:2000] if len(text) > 2000 else text
+            
+            # Appel à l'API Mistral locale (service document_analyzer)
+            # Utiliser host.docker.internal pour accès depuis container Docker
+            mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"http://{mistral_host}:8004/analyze",
+                    json={
+                        "text": text_excerpt,
+                        "analysis_types": ["classification", "summarization", "key_extraction"]
+                    }
+                )
+                
+                if response.status_code == 200:
+                    return response.json()
+                else:
+                    logger.warning(f"Erreur API Mistral: {response.status_code}")
+                    return {"success": False, "error": f"HTTP {response.status_code}"}
+                    
+        except Exception as e:
+            logger.warning(f"Erreur connexion Mistral: {e}")
+            return {"success": False, "error": str(e)}
+
     async def _generate_mistral_summary(self, text: str, category: str) -> str:
         """Génère un résumé du document avec Mistral"""
         try:
@@ -306,10 +391,12 @@ class OCRFileHandler(FileSystemEventHandler):
             text_excerpt = text[:2000] if len(text) > 2000 else text
             
             # Appel à l'API Mistral locale (service document_analyzer)
+            # Utiliser host.docker.internal pour accès depuis container Docker
+            mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Essayer d'abord l'endpoint /analyze
                 response = await client.post(
-                    "http://localhost:8004/analyze",
+                    f"http://{mistral_host}:8004/analyze",
                     json={
                         "text": text_excerpt,
                         "type": category,

@@ -64,7 +64,7 @@ class HybridOCREngine:
     
     def __init__(self, config: Optional[HybridOCRConfig] = None):
         """
-        Initialise le moteur OCR hybride
+        Initialise le moteur OCR hybride avec lazy loading
         
         Args:
             config: Configuration personnalisée
@@ -72,11 +72,14 @@ class HybridOCREngine:
         self.config = config or HybridOCRConfig()
         self.preprocessor = ImagePreprocessor()
         
-        # Initialisation des moteurs OCR
+        # Initialisation différée des moteurs OCR (lazy loading)
         self.trocr_engine = None
         self.tesseract_engine = None
+        self._engines_initialized = False
+        self._initialization_in_progress = False
         
-        self._initialize_engines()
+        # Ne pas initialiser immédiatement - attendre le premier usage
+        logger.info("🚀 HybridOCREngine initialisé avec lazy loading")
         
         # Statistiques
         self.stats = {
@@ -87,6 +90,37 @@ class HybridOCREngine:
             "avg_processing_time": 0.0,
             "success_rate": 0.0
         }
+    
+    def _ensure_engines_initialized(self):
+        """Assure que les moteurs OCR sont initialisés (lazy loading)"""
+        if self._engines_initialized:
+            return
+        
+        if self._initialization_in_progress:
+            # Attendre que l'initialisation en cours se termine
+            import time
+            max_wait = 30  # 30 secondes max
+            waited = 0
+            while self._initialization_in_progress and waited < max_wait:
+                time.sleep(0.1)
+                waited += 0.1
+            
+            if not self._engines_initialized:
+                raise RuntimeError("Timeout lors de l'initialisation des moteurs OCR")
+            return
+        
+        self._initialization_in_progress = True
+        logger.info("🔄 Initialisation des moteurs OCR (première utilisation)...")
+        
+        try:
+            self._initialize_engines()
+            self._engines_initialized = True
+            logger.info("✅ Moteurs OCR initialisés avec succès")
+        except Exception as e:
+            logger.error(f"❌ Erreur initialisation OCR: {e}")
+            raise
+        finally:
+            self._initialization_in_progress = False
     
     def _initialize_engines(self):
         """Initialise les moteurs OCR selon la configuration"""
@@ -134,6 +168,9 @@ class HybridOCREngine:
         Returns:
             Résultat OCR optimal
         """
+        # Initialisation différée des moteurs OCR
+        self._ensure_engines_initialized()
+        
         start_time = time.time()
         strategy = strategy or self.config.strategy
         

@@ -404,6 +404,51 @@ npm run build                    # Build Next.js
 - **Robustesse** : Gérer tous les cas d'erreur
 - **Journal** : les nouvelles fonctionalités et états de progression devront être ajoutés au fichier JOURNAL.md
 
+## 🚀 Démarrage Optimisé (Janvier 2025)
+
+### **Performance de Démarrage**
+- **Temps total** : ~90 secondes (amélioration de 65% vs version initiale)
+- **API disponible** : ~30 secondes après `./start_all.sh`
+- **OCR prêt** : Chargement à la demande (lazy loading)
+
+### **Architecture de Démarrage Rapide**
+```bash
+# 1. Cache ML Local (ZÉRO téléchargement)
+ml_models/
+├── transformers/
+│   ├── trocr-base-printed/          # 1.2GB (OCR principal)
+│   └── paraphrase-multilingual-MiniLM-L12-v2/  # 457MB (RAG)
+└── spacy/ (optionnel)
+
+# 2. Variables d'environnement critiques
+HF_OFFLINE=1                    # Force cache local uniquement
+TRANSFORMERS_OFFLINE=1          # Pas de téléchargement HuggingFace
+local_files_only=True          # Configuration TrOCR stricte
+```
+
+### **Lazy Loading OCR**
+- **Au démarrage** : API FastAPI prête, OCR **NON initialisé**
+- **Premier document** : OCR s'initialise automatiquement (~30s)
+- **Documents suivants** : Traitement immédiat (<5s)
+
+### **Migration des Modèles (1ère fois)**
+```bash
+# Migrer depuis cache système vers cache local
+cd IA_Administratif/scripts
+python migrate_models_to_local_cache.py
+
+# Valider la migration
+python validate_models_cache.py --verbose
+
+# Vérifier l'état OCR
+curl http://localhost:8000/api/v1/health/ocr
+```
+
+### **Monitoring du Démarrage**
+- `/api/v1/health` : Santé générale de l'API
+- `/api/v1/health/ocr` : État des moteurs OCR (initialisés ou non)
+- `/api/v1/watcher/status` : Statut du surveillance du dossier OCR
+
 ## 🔗 Ressources
 
 - [FastAPI Docs](https://fastapi.tiangolo.com/)

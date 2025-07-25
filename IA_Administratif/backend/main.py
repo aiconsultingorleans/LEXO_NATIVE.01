@@ -19,6 +19,7 @@ from api.document_intelligence import router as intelligence_router
 from api.batch_processing import router as batch_router
 from api.rag_clear import router as rag_clear_router
 from api.classification import router as classification_router
+from api.monitoring import router as monitoring_router
 # from api.rag_routes import router as rag_router  # Temporairement désactivé
 from core.config import settings
 from core.database import init_db
@@ -34,16 +35,20 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Cycle de vie de l'application"""
-    # Startup
-    logger.info("🚀 Démarrage de LEXO v1 Backend")
+    """Cycle de vie de l'application avec démarrage rapide"""
+    # Startup rapide
+    logger.info("🚀 Démarrage rapide de LEXO v1 Backend")
     await init_db()
     logger.info("✅ Base de données initialisée")
     
-    # Démarrer le service de surveillance OCR
+    # L'API est maintenant prête - OCR se chargera à la demande
+    logger.info("✅ API prête - OCR se chargera lors du premier usage")
+    
+    # Démarrer le service de surveillance OCR en arrière-plan (optionnel)
     try:
+        # Note: Le watcher initialisera l'OCR lors du premier fichier détecté
         watcher = start_ocr_watcher("/app/ocr_data")
-        logger.info("✅ Service de surveillance OCR démarré")
+        logger.info("✅ Service de surveillance OCR démarré (lazy loading)")
     except Exception as e:
         logger.error(f"❌ Échec démarrage surveillance OCR: {e}")
     
@@ -82,10 +87,26 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    """Middleware de logging des requêtes"""
+    """Middleware de logging des requêtes avec métriques"""
     start_time = time.time()
     
+    # Compter les requêtes
+    from api.monitoring import increment_metric, record_error
+    increment_metric("request_count")
+    
+    # Compter les opérations spécifiques
+    if "/ocr/" in request.url.path:
+        increment_metric("ocr_operations")
+    elif "/intelligence/" in request.url.path:
+        increment_metric("mistral_operations") 
+    elif "/classification/" in request.url.path:
+        increment_metric("classification_operations")
+    
     response = await call_next(request)
+    
+    # Compter les erreurs
+    if response.status_code >= 400:
+        record_error()
     
     process_time = time.time() - start_time
     logger.info(
@@ -118,6 +139,7 @@ app.include_router(ocr_router, tags=["OCR"])
 app.include_router(intelligence_router, tags=["Intelligence"])
 app.include_router(batch_router, tags=["Batch Processing"])
 app.include_router(rag_clear_router, prefix="/api/v1/rag", tags=["RAG"])
+app.include_router(monitoring_router, tags=["Monitoring"])
 # app.include_router(rag_router, tags=["RAG"])  # Temporairement désactivé
 
 

@@ -32,10 +32,23 @@ class TrOCRConfig:
     batch_size: int = 4
     max_length: int = 512
     device: str = "auto"  # auto, cpu, cuda, mps
-    cache_dir: Optional[str] = None
+    cache_dir: Optional[str] = None  # Sera configuré dynamiquement
     use_gpu: bool = True
     fallback_to_tesseract: bool = True
     confidence_threshold: float = 0.8
+    
+    def __post_init__(self):
+        """Configure le cache_dir selon l'environnement"""
+        if self.cache_dir is None:
+            # Détecter l'environnement Docker vs local
+            if os.path.exists("/app/ml_models/transformers"):
+                self.cache_dir = "/app/ml_models/transformers"
+            elif os.path.exists("/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers"):
+                self.cache_dir = "/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers"
+            else:
+                # Fallback vers le répertoire relatif
+                current_dir = Path(__file__).parent.parent
+                self.cache_dir = str(current_dir / "ml_models" / "transformers")
 
 
 class TrOCREngine:
@@ -86,6 +99,12 @@ class TrOCREngine:
         try:
             logger.info(f"Initialisation TrOCR avec le modèle: {self.config.model_name}")
             
+            # Configuration du cache depuis les variables d'environnement
+            cache_dir = os.getenv('TRANSFORMERS_CACHE', self.config.cache_dir)
+            if cache_dir:
+                os.makedirs(cache_dir, exist_ok=True)
+                logger.info(f"Cache TrOCR configuré: {cache_dir}")
+            
             # Détection automatique du device
             if self.config.device == "auto":
                 if torch.cuda.is_available() and self.config.use_gpu:
@@ -100,17 +119,19 @@ class TrOCREngine:
             else:
                 self.device = torch.device(self.config.device)
             
-            # Chargement du processeur et du modèle
-            logger.info("Téléchargement du processeur TrOCR...")
+            # Chargement du processeur et du modèle avec cache local uniquement
+            logger.info("Chargement du processeur TrOCR depuis le cache local...")
             self.processor = TrOCRProcessor.from_pretrained(
                 self.config.model_name,
-                cache_dir=self.config.cache_dir
+                cache_dir=cache_dir,
+                local_files_only=True  # CACHE LOCAL UNIQUEMENT - PAS DE TÉLÉCHARGEMENT
             )
             
-            logger.info("Téléchargement du modèle TrOCR...")
+            logger.info("Chargement du modèle TrOCR depuis le cache local...")
             self.model = VisionEncoderDecoderModel.from_pretrained(
                 self.config.model_name,
-                cache_dir=self.config.cache_dir
+                cache_dir=cache_dir,
+                local_files_only=True  # CACHE LOCAL UNIQUEMENT - PAS DE TÉLÉCHARGEMENT
             )
             
             # Déplacer le modèle sur le device approprié

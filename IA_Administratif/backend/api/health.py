@@ -67,3 +67,36 @@ async def detailed_health_check(db: AsyncSession = Depends(get_db)):
         health_status["status"] = "degraded"
     
     return health_status
+
+
+@router.get("/health/ocr")
+async def ocr_health_check():
+    """Vérification de santé des moteurs OCR avec lazy loading"""
+    try:
+        # Importer dynamiquement pour éviter l'initialisation au démarrage
+        from ocr.hybrid_ocr import HybridOCREngine
+        
+        # Créer une instance test (avec lazy loading)
+        engine = HybridOCREngine()
+        
+        # Vérifier l'état sans initialiser les moteurs
+        return {
+            "status": "ready",
+            "timestamp": datetime.utcnow().isoformat(),
+            "ocr_engines_initialized": engine._engines_initialized,
+            "initialization_in_progress": engine._initialization_in_progress,
+            "config": {
+                "trocr_enabled": engine.config.trocr_enabled,
+                "tesseract_enabled": engine.config.tesseract_enabled,
+                "strategy": engine.config.strategy.value,
+                "cache_dir": engine.config.cache_dir
+            },
+            "stats": engine.stats,
+            "message": "OCR engines will initialize on first use" if not engine._engines_initialized else "OCR engines ready"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": str(e)
+        }

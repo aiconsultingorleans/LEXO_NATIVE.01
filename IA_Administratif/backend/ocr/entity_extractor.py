@@ -140,10 +140,21 @@ class EntityExtractor:
         """Initialise le modèle spaCy si disponible"""
         try:
             import spacy
+            import os
+            
+            # Configuration du répertoire spaCy depuis les variables d'environnement
+            spacy_data_dir = os.getenv('SPACY_DATA')
+            if spacy_data_dir:
+                # Ajouter le répertoire au path de spaCy
+                import spacy.util
+                spacy.util.set_data_path(spacy_data_dir)
+                logger.info(f"Répertoire spaCy configuré: {spacy_data_dir}")
+            
             self.nlp = spacy.load(self.language)
             logger.info(f"Modèle spaCy chargé: {self.language}")
-        except (ImportError, OSError):
-            logger.warning("spaCy non disponible ou modèle non trouvé, utilisation des regex uniquement")
+        except (ImportError, OSError) as e:
+            logger.warning(f"spaCy non disponible ou modèle non trouvé: {e}")
+            logger.info("Utilisation des regex uniquement")
             self.nlp = None
     
     def extract_entities(self, text: str, entity_types: Optional[List[str]] = None) -> EntityExtractionResult:

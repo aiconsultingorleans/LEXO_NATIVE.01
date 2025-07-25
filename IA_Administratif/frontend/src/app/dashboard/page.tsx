@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStats } from '@/hooks/useStats';
 import { useToast } from '@/contexts/ToastContext';
@@ -9,9 +9,19 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
-import { FileText, Upload, Zap, Shield, RefreshCw, Database } from 'lucide-react';
+import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentsList } from '@/components/documents/DocumentsList';
+
+interface UploadFile {
+  file: File;
+  id: string;
+  status: 'pending' | 'uploading' | 'processing' | 'success' | 'error';
+  progress: number;
+  name: string;
+  result?: unknown;
+  error?: string;
+}
 
 export default function DashboardPage() {
   return (
@@ -23,20 +33,155 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { getUserFullName } = useAuth();
-  const { stats, activity, loading, error, refresh } = useStats();
+  const { stats, activity, loading, refresh } = useStats();
   const toast = useToast();
   const [showUpload, setShowUpload] = useState(false);
   const [refreshList, setRefreshList] = useState(0);
   const [processingBatch, setProcessingBatch] = useState(false);
   const [clearingRAG, setClearingRAG] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [compactUploadFiles, setCompactUploadFiles] = useState<UploadFile[]>([]);
 
   const handleRefresh = async () => {
     try {
       await refresh();
       toast.success('Données actualisées', 'Les statistiques ont été mises à jour');
-    } catch (err) {
+    } catch {
       toast.error('Erreur', 'Impossible d\'actualiser les données');
     }
+  };
+
+  const handleUploadClick = () => {
+    // Ouvrir le sélecteur de fichiers ET afficher la zone d'upload
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+    setShowUpload(true);
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    await processFiles(fileArray);
+    
+    // Reset the input
+    event.target.value = '';
+  };
+
+  const handleSingleFileUpload = async (uploadFile: UploadFile) => {
+    const formData = new FormData();
+    formData.append('file', uploadFile.file);
+
+    try {
+      // Update status to uploading
+      setCompactUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id ? { ...f, status: 'uploading', progress: 20 } : f
+      ));
+
+      // Pipeline unifié : Upload + OCR + Mistral + Classification en un seul appel
+      const response = await fetch('http://localhost:8000/api/v1/documents/upload-and-process', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+        throw new Error(errorData.detail || 'Pipeline processing failed');
+      }
+
+      // Update status to processing (OCR + Mistral en cours)
+      setCompactUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id ? { ...f, status: 'processing', progress: 70 } : f
+      ));
+
+      const result = await response.json();
+
+      // Update status to success avec tous les résultats
+      setCompactUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id ? { 
+          ...f, 
+          status: 'success', 
+          progress: 100,
+          result: {
+            document_id: result.id,
+            category: result.category,
+            confidence_score: result.confidence_score,
+            summary: result.summary,
+            word_count: result.ocr_text ? result.ocr_text.split(' ').length : 0,
+            entities_count: result.entities ? result.entities.length : 0
+          }
+        } : f
+      ));
+
+      // Message de succès détaillé
+      let successMessage = `"${uploadFile.file.name}" a été traité avec succès`;
+      if (result.category && result.category !== 'non_classes') {
+        successMessage += ` - Classé comme: ${result.category}`;
+      }
+      if (result.confidence_score) {
+        successMessage += ` (${(result.confidence_score * 100).toFixed(0)}% confiance)`;
+      }
+      
+      toast.success('Pipeline complet terminé', successMessage);
+
+      // Refresh data
+      setTimeout(() => {
+        handleRefresh();
+        setRefreshList(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      setCompactUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id ? { 
+          ...f, 
+          status: 'error', 
+          error: error instanceof Error ? error.message : 'Pipeline processing failed'
+        } : f
+      ));
+      toast.error('Erreur Pipeline', `Échec du traitement complet de "${uploadFile.file.name}": ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    }
+  };
+
+  const processFiles = async (files: File[]) => {
+    const newFiles: UploadFile[] = files.map(file => ({
+      file,
+      id: Math.random().toString(36).substr(2, 9),
+      status: 'pending' as const,
+      progress: 0,
+      name: file.name
+    }));
+
+    setCompactUploadFiles(prev => [...prev, ...newFiles]);
+    toast.info('Fichiers ajoutés', `${files.length} fichier${files.length > 1 ? 's' : ''} en cours de traitement`);
+
+    // Process each file
+    for (const uploadFile of newFiles) {
+      await handleSingleFileUpload(uploadFile);
+    }
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type === 'application/pdf' || file.type.startsWith('image/')
+    );
+    
+    if (files.length > 0) {
+      processFiles(files);
+    }
+  }, [processFiles]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const removeCompactFile = (id: string) => {
+    setCompactUploadFiles(prev => prev.filter(f => f.id !== id));
   };
 
   const handleProcessUnprocessed = async () => {
@@ -194,10 +339,10 @@ function DashboardContent() {
             <Button 
               size="lg" 
               className="shadow-lg"
-              onClick={() => setShowUpload(!showUpload)}
+              onClick={handleUploadClick}
             >
               <Upload className="mr-2 h-5 w-5" />
-              {showUpload ? 'Fermer l\'upload' : 'Uploader un document'}
+              Uploader un document
             </Button>
             <Button 
               variant="outline" 
@@ -238,6 +383,89 @@ function DashboardContent() {
               {processingBatch ? 'Analyse en cours...' : 'Analyser les fichiers non traités'}
             </Button>
           </div>
+
+          {/* Input file caché */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+        </div>
+
+        {/* Zone de drop compacte permanente */}
+        <div 
+          className="bg-card-background/50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="flex items-center justify-center space-x-3">
+            <Upload className="h-6 w-6 text-gray-400" />
+            <p className="text-sm text-gray-600">
+              ou glissez vos documents ici (PDF, images)
+            </p>
+          </div>
+          
+          {/* Liste des fichiers en cours de traitement dans la zone compacte */}
+          {compactUploadFiles.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {compactUploadFiles.map(file => (
+                <div key={file.id} className="flex items-center justify-between bg-background-secondary/50 p-2 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs text-gray-700 truncate max-w-40">{file.name}</span>
+                    {file.status === 'uploading' && (
+                      <span className="text-xs text-blue-500">Upload...</span>
+                    )}
+                    {file.status === 'processing' && (
+                      <span className="text-xs text-purple-500">OCR+IA...</span>
+                    )}
+                    {file.status === 'success' && (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-green-500">✓ Terminé</span>
+                        {file.result && typeof file.result === 'object' && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            <div className="flex items-center space-x-2">
+                              {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
+                                <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
+                                  📂 {(file.result as any).category}
+                                </span>
+                              )}
+                              {(file.result as any).confidence_score && (
+                                <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
+                                  {((file.result as any).confidence_score * 100).toFixed(0)}%
+                                </span>
+                              )}
+                            </div>
+                            {(file.result as any).summary && (
+                              <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
+                                💬 {(file.result as any).summary}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {file.status === 'error' && (
+                      <span className="text-xs text-red-500">✗</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeCompactFile(file.id);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -381,7 +609,7 @@ function DashboardContent() {
               <div className="text-center py-8 text-gray-500">
                 <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm">Aucune activité récente</p>
-                <p className="text-xs text-gray-400 mt-1">L'activité apparaîtra ici une fois que vous commencerez à uploader des documents</p>
+                <p className="text-xs text-gray-400 mt-1">L&apos;activité apparaîtra ici une fois que vous commencerez à uploader des documents</p>
               </div>
             )}
           </div>
