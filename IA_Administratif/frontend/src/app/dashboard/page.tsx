@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStats } from '@/hooks/useStats';
 import { useToast } from '@/contexts/ToastContext';
@@ -11,8 +11,23 @@ import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
 import { BatchProgressDisplay } from '@/components/ui/ProgressBar';
 import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
-import { DocumentUpload } from '@/components/documents/DocumentUpload';
-import { DocumentsList } from '@/components/documents/DocumentsList';
+
+// Lazy loading des composants non critiques
+const DocumentUpload = lazy(() => import('@/components/documents/DocumentUpload').then(module => ({ default: module.DocumentUpload })));
+const DocumentsList = lazy(() => import('@/components/documents/DocumentsList').then(module => ({ default: module.DocumentsList })));
+
+// Composants de loading pour les composants lazy
+const DocumentUploadSkeleton = () => (
+  <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+);
+
+const DocumentsListSkeleton = () => (
+  <div className="animate-pulse space-y-4">
+    {[1, 2, 3].map(i => (
+      <div key={i} className="bg-gray-200 h-16 rounded-lg"></div>
+    ))}
+  </div>
+);
 
 interface UploadFile {
   file: File;
@@ -34,7 +49,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { getUserFullName } = useAuth();
-  const { stats, activity, loading, refresh } = useStats();
+  const { stats, activity, loading, isFromCache, lastUpdate, refresh } = useStats();
   const toast = useToast();
   const [showUpload, setShowUpload] = useState(false);
   const [refreshList, setRefreshList] = useState(0);
@@ -42,16 +57,21 @@ function DashboardContent() {
   const [clearingRAG, setClearingRAG] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [compactUploadFiles, setCompactUploadFiles] = useState<UploadFile[]>([]);
+  const [showSecondaryContent, setShowSecondaryContent] = useState(false);
   
-  // État pour le statut des services
+  // État pour le statut des services avec polling adaptatif
   const [systemStatus, setSystemStatus] = useState<{
     pipeline: string;
     mistral: string;
     lastCheck: string;
+    stableCount: number;
+    pollInterval: number;
   }>({
     pipeline: 'unknown',
     mistral: 'unknown', 
-    lastCheck: ''
+    lastCheck: '',
+    stableCount: 0,
+    pollInterval: 30000 // Start with 30s
   });
   
   // État pour le suivi de progression batch
@@ -65,11 +85,12 @@ function DashboardContent() {
     batchId: null as number | null
   });
 
-  // Vérification statut système
+  // Vérification statut système avec polling adaptatif
   const checkSystemStatus = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8000/api/v1/health/pipeline', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/health/pipeline`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -78,22 +99,50 @@ function DashboardContent() {
 
       if (response.ok) {
         const data = await response.json();
-        setSystemStatus({
-          pipeline: data.pipeline_status,
-          mistral: data.components?.mistral_mlx?.status || 'unknown',
-          lastCheck: new Date().toLocaleTimeString()
+        const newPipeline = data.pipeline_status;
+        const newMistral = data.components?.mistral_mlx?.status || 'unknown';
+        
+        setSystemStatus(prevStatus => {
+          // Vérifier si le système est stable
+          const isStable = prevStatus.pipeline === newPipeline && prevStatus.mistral === newMistral;
+          const newStableCount = isStable ? prevStatus.stableCount + 1 : 0;
+          
+          // Ajuster l'intervalle de polling selon la stabilité
+          let newInterval = 30000; // Default 30s
+          if (newStableCount >= 5) { // Après 5 checks stables
+            newInterval = 60000; // Passer à 1 minute
+          } else if (newStableCount >= 10) { // Après 10 checks stables
+            newInterval = 120000; // Passer à 2 minutes
+          }
+          
+          console.log(`🔄 System polling: stable=${isStable}, count=${newStableCount}, interval=${newInterval/1000}s`);
+          
+          return {
+            pipeline: newPipeline,
+            mistral: newMistral,
+            lastCheck: new Date().toLocaleTimeString(),
+            stableCount: newStableCount,
+            pollInterval: newInterval
+          };
         });
       }
     } catch (error) {
       console.warn('Erreur vérification statut système:', error);
+      // Reset en cas d'erreur
+      setSystemStatus(prev => ({
+        ...prev,
+        stableCount: 0,
+        pollInterval: 30000
+      }));
     }
   };
 
   const handleRefresh = async () => {
     try {
-      await refresh();
+      await refresh(true); // Force refresh - bypass cache
       await checkSystemStatus(); // Vérifier aussi le statut système
-      toast.success('Données actualisées', 'Les statistiques ont été mises à jour');
+      const cacheStatus = isFromCache ? ' (cache)' : ' (fresh)';
+      toast.success('Données actualisées', `Les statistiques ont été mises à jour${cacheStatus}`);
     } catch {
       toast.error('Erreur', 'Impossible d\'actualiser les données');
     }
@@ -129,7 +178,8 @@ function DashboardContent() {
       ));
 
       // Pipeline unifié : Upload + OCR + Mistral + Classification en un seul appel
-      const response = await fetch('http://localhost:8000/api/v1/documents/upload-and-process', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/documents/upload-and-process`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -238,7 +288,8 @@ function DashboardContent() {
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8000/api/v1/batch/progress/${batchId}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/batch/progress/${batchId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -325,7 +376,8 @@ function DashboardContent() {
       }
 
       // Scanner d'abord pour voir combien de fichiers
-      const scanResponse = await fetch('http://localhost:8000/api/v1/batch/scan-folder', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const scanResponse = await fetch(`${apiUrl}/api/v1/batch/scan-folder`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -344,7 +396,7 @@ function DashboardContent() {
       }
 
       // Lancer le traitement
-      const processResponse = await fetch('http://localhost:8000/api/v1/batch/process-unprocessed', {
+      const processResponse = await fetch(`${apiUrl}/api/v1/batch/process-unprocessed`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -411,7 +463,8 @@ function DashboardContent() {
 
       console.log('RAG Clear - Token:', token ? 'Present' : 'Missing');
 
-      const response = await fetch('http://localhost:8000/api/v1/rag/clear', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/rag/clear`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -447,15 +500,34 @@ function DashboardContent() {
     }
   };
 
-  // Vérifier le statut au chargement et périodiquement
+  // Vérifier le statut au chargement avec polling adaptatif
   useEffect(() => {
     checkSystemStatus();
     
-    // Vérifier le statut toutes les 30 secondes
-    const interval = setInterval(checkSystemStatus, 30000);
+    let intervalId: any;
     
-    return () => clearInterval(interval);
-  }, []);
+    const setupInterval = () => {
+      intervalId = setInterval(checkSystemStatus, systemStatus.pollInterval);
+    };
+    
+    setupInterval();
+    
+    // Recreate interval when pollInterval changes
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [systemStatus.pollInterval]);
+
+  // Lazy load secondary content after main dashboard is loaded
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowSecondaryContent(true);
+      }, 1000); // Delay 1s after main content loads
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   if (loading) {
     return (
@@ -577,11 +649,31 @@ function DashboardContent() {
                 </span>
               </div>
             </div>
-            {systemStatus.lastCheck && (
-              <span className="text-xs text-gray-500">
-                Dernière vérification: {systemStatus.lastCheck}
-              </span>
-            )}
+            <div className="text-xs text-gray-500 space-y-1">
+              {systemStatus.lastCheck && (
+                <div className="flex items-center space-x-2">
+                  <span>Système vérifié: {systemStatus.lastCheck}</span>
+                  <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded text-xs">
+                    🔄 {systemStatus.pollInterval/1000}s
+                  </span>
+                  {systemStatus.stableCount >= 5 && (
+                    <span className="bg-green-100 text-green-700 px-1 py-0.5 rounded text-xs">
+                      ✅ Stable
+                    </span>
+                  )}
+                </div>
+              )}
+              {lastUpdate > 0 && (
+                <div className="flex items-center space-x-2">
+                  <span>Stats: {new Date(lastUpdate).toLocaleTimeString()}</span>
+                  {isFromCache && (
+                    <span className="bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-xs">
+                      📄 Cache
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {systemStatus.mistral === 'unavailable' && (
             <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
@@ -721,94 +813,111 @@ function DashboardContent() {
               <Upload className="w-5 h-5 text-primary" />
               Uploader des documents
             </h3>
-            <DocumentUpload 
-              onUploadComplete={() => {
-                setRefreshList(prev => prev + 1);
-                setTimeout(() => setShowUpload(false), 2000);
-              }}
-            />
+            <Suspense fallback={<DocumentUploadSkeleton />}>
+              <DocumentUpload 
+                onUploadComplete={() => {
+                  setRefreshList(prev => prev + 1);
+                  setTimeout(() => setShowUpload(false), 2000);
+                }}
+              />
+            </Suspense>
           </Card>
         )}
 
         {/* Documents List */}
         {!showUpload && (
           <Card className="p-6">
-            <DocumentsList refreshTrigger={refreshList} />
+            <Suspense fallback={<DocumentsListSkeleton />}>
+              <DocumentsList refreshTrigger={refreshList} />
+            </Suspense>
           </Card>
         )}
 
-        {/* Quick Actions */}
-        <div className="bg-card-background p-6 rounded-xl shadow-lg border border-card-border">
-          <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Actions rapides
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button 
-              variant="outline" 
-              className="justify-start h-12 hover:bg-hover-background"
-              onClick={() => setShowUpload(true)}
-            >
-              <Upload className="mr-3 h-5 w-5" />
-              Glisser-déposer des documents
-            </Button>
-            <Button variant="outline" className="justify-start h-12 hover:bg-hover-background">
-              <FileText className="mr-3 h-5 w-5" />
-              Rechercher dans mes documents
-            </Button>
-            <Button variant="outline" className="justify-start h-12 hover:bg-hover-background">
-              <Zap className="mr-3 h-5 w-5" />
-              Générer un rapport
-            </Button>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-card-background p-6 rounded-xl shadow-lg border border-card-border">
-          <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Activité récente
-          </h3>
-          <div className="space-y-4">
-            {activity.length > 0 ? (
-              activity.map((item) => {
-                const statusColors = {
-                  success: 'bg-success/5 border-success/10',
-                  warning: 'bg-warning/5 border-warning/10',
-                  error: 'bg-error/5 border-error/10',
-                  info: 'bg-primary/5 border-primary/10'
-                };
-                
-                const dotColors = {
-                  success: 'bg-success',
-                  warning: 'bg-warning',
-                  error: 'bg-error',
-                  info: 'bg-primary'
-                };
-
-                return (
-                  <div key={item.id} className={`flex items-center justify-between py-3 px-4 rounded-lg ${statusColors[item.status]} border`}>
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${dotColors[item.status]} rounded-full mr-4`}></div>
-                      <span className="text-sm text-foreground">{item.message}</span>
-                    </div>
-                    <span className="text-xs text-foreground-muted bg-background-secondary px-2 py-1 rounded-full">{item.timestamp}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">Aucune activité récente</p>
-                <p className="text-xs text-gray-400 mt-1">L&apos;activité apparaîtra ici une fois que vous commencerez à uploader des documents</p>
+        {/* Secondary Content - Lazy Loaded */}
+        {showSecondaryContent && (
+          <>
+            {/* Quick Actions */}
+            <div className="bg-card-background p-6 rounded-xl shadow-lg border border-card-border">
+              <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Actions rapides
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="justify-start h-12 hover:bg-hover-background"
+                  onClick={() => setShowUpload(true)}
+                >
+                  <Upload className="mr-3 h-5 w-5" />
+                  Glisser-déposer des documents
+                </Button>
+                <Button variant="outline" className="justify-start h-12 hover:bg-hover-background">
+                  <FileText className="mr-3 h-5 w-5" />
+                  Rechercher dans mes documents
+                </Button>
+                <Button variant="outline" className="justify-start h-12 hover:bg-hover-background">
+                  <Zap className="mr-3 h-5 w-5" />
+                  Générer un rapport
+                </Button>
               </div>
-            )}
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-card-background p-6 rounded-xl shadow-lg border border-card-border">
+              <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Activité récente
+              </h3>
+              <div className="space-y-4">
+                {activity.length > 0 ? (
+                  activity.map((item) => {
+                    const statusColors = {
+                      success: 'bg-success/5 border-success/10',
+                      warning: 'bg-warning/5 border-warning/10',
+                      error: 'bg-error/5 border-error/10',
+                      info: 'bg-primary/5 border-primary/10'
+                    };
+                    
+                    const dotColors = {
+                      success: 'bg-success',
+                      warning: 'bg-warning',
+                      error: 'bg-error',
+                      info: 'bg-primary'
+                    };
+
+                    return (
+                      <div key={item.id} className={`flex items-center justify-between py-3 px-4 rounded-lg ${statusColors[item.status]} border`}>
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 ${dotColors[item.status]} rounded-full mr-4`}></div>
+                          <span className="text-sm text-foreground">{item.message}</span>
+                        </div>
+                        <span className="text-xs text-foreground-muted bg-background-secondary px-2 py-1 rounded-full">{item.timestamp}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">Aucune activité récente</p>
+                    <p className="text-xs text-gray-400 mt-1">L&apos;activité apparaîtra ici une fois que vous commencerez à uploader des documents</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+        
+        {/* Loading skeleton for secondary content */}
+        {!showSecondaryContent && !loading && (
+          <div className="space-y-6">
+            <div className="animate-pulse bg-gray-200 h-32 rounded-xl"></div>
+            <div className="animate-pulse bg-gray-200 h-48 rounded-xl"></div>
           </div>
-        </div>
+        )}
       </div>
     </MainLayout>
   );

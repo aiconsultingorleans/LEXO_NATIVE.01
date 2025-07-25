@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     EMBEDDINGS_MODEL_PATH: str = "../ml_models/embeddings"
     
     # ChromaDB
-    CHROMA_PATH: str = "../data/chromadb"
+    CHROMA_PATH: str = "../data/chromadb_native"
     
     # File Upload
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB

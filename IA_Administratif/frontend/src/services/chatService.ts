@@ -17,7 +17,7 @@ interface ChatResponse {
 }
 
 class ChatService {
-  private baseUrl = 'http://localhost:8004';
+  private baseUrl = process.env.NEXT_PUBLIC_MISTRAL_URL || 'http://localhost:8004';
 
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     try {
