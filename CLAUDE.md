@@ -1,8 +1,8 @@
-# 🤖 CLAUDE.md - Guide Technique LEXO v1 Native [Architecture Native]
+# 🤖 CLAUDE.md - Guide Technique LEXO_NATIVE.01 [Architecture Native]
 
 ## 📌 Contexte Projet
 
-**LEXO v1 Native** est une application SaaS locale de gestion administrative intelligente qui automatise complètement le traitement documentaire pour les professions libérales.
+**LEXO_NATIVE.01** est une application SaaS locale de gestion administrative intelligente qui automatise complètement le traitement documentaire pour les professions libérales.
 
 **Environnement :** macOS (Mac mini M4 - 32 Go RAM)  
 **Architecture :** 100% native macOS avec pipeline IA optimisé Apple Silicon  
@@ -537,9 +537,9 @@ ml_models/: ARM64 optimisé uniquement (HF_OFFLINE=1, Metal backend)
 
 ### 🎯 Stratégie de Versionning Moderne
 
-Le projet LEXO v1 utilise maintenant un **workflow Git hybride** combinant :
+Le projet LEXO_NATIVE.01 utilise maintenant un **workflow Git hybride** combinant :
 - **Branches de fonctionnalités** avec préfixes conventionnels (feat/, fix/, docs/)  
-- **Système de versions incrémentales** LEXO_v1.x pour les releases
+- **Système de versions incrémentales** LEXO_NATIVE.0x pour les releases
 - **Commandes automatisées** pour simplifier le versionning
 
 ### 📋 Commandes Automatisées
@@ -638,7 +638,7 @@ const generateBranchName = (type: string, files: string[]) => {
 ### 🏗️ Intégration avec Architecture Existante
 
 #### **Respect des conventions LEXO :**
-- **Préservation** des branches LEXO_NATIVE_v1.x pour les releases majeures
+- **Préservation** des branches LEXO_NATIVE.0x pour les releases majeures
 - **Utilisation** des branches feature pour le développement incrémental
 - **Maintien** des métadonnées de génération Claude
 - **Cohérence** avec Git-Guide.md du projet
@@ -646,12 +646,12 @@ const generateBranchName = (type: string, files: string[]) => {
 #### **Workflow hybride :**
 ```mermaid
 graph LR
-    A[main] --> B[LEXO_NATIVE_v1.8]
+    A[main] --> B[LEXO_NATIVE.01]
     B --> C["je valide"]
     C --> D[feat/nouvelle_fonction]
     D --> E["final"]
     E --> F[main updated]
-    F --> G[LEXO_NATIVE_v1.9]
+    F --> G[LEXO_NATIVE.02]
 ```
 
 ### 💡 Avantages du Nouveau Workflow
@@ -743,23 +743,23 @@ git branch -d feat/dashboard_kpi_styles
 
 **Déclencheur :** `"je valide LEXO"` (pour compatibility)
 
-**Action automatique :** Création d'une nouvelle branche LEXO_NATIVE_v1.x + commit + push vers GitHub
+**Action automatique :** Création d'une nouvelle branche LEXO_NATIVE.0x + commit + push vers GitHub
 
 ### Logique de Versioning Automatique
 
 ```bash
 # Détection automatique du numéro de version suivant
-git branch -r | grep "origin/LEXO_NATIVE_v1\." | sed 's/.*LEXO_NATIVE_v1\.//' | sort -n | tail -1
-# Exemple : Si dernière version = LEXO_NATIVE_v1.5 → Nouvelle branche = LEXO_NATIVE_v1.6
+git branch -r | grep "origin/LEXO_NATIVE\." | sed 's/.*LEXO_NATIVE\.//' | sort -n | tail -1
+# Exemple : Si dernière version = LEXO_NATIVE.01 → Nouvelle branche = LEXO_NATIVE.02
 ```
 
 ### Processus Automatisé
 
 ```bash
 # 1. Détection version suivante
-LATEST_VERSION=$(git branch -r | grep "origin/LEXO_NATIVE_v1\." | sed 's/.*LEXO_NATIVE_v1\.//' | sort -n | tail -1)
-NEW_VERSION=$((LATEST_VERSION + 1))
-NEW_BRANCH="LEXO_NATIVE_v1.${NEW_VERSION}"
+LATEST_VERSION=$(git branch -r | grep "origin/LEXO_NATIVE\." | sed 's/.*LEXO_NATIVE\.//' | sort -n | tail -1)
+NEW_VERSION=$(printf "%02d" $((LATEST_VERSION + 1)))
+NEW_BRANCH="LEXO_NATIVE.${NEW_VERSION}"
 
 # 2. Création branche et commit
 git checkout -b ${NEW_BRANCH}
@@ -780,12 +780,12 @@ git push -u origin ${NEW_BRANCH}
 ### Template README Automatique
 
 ```markdown
-# LEXO_NATIVE v1.x - Résumé des Modifications
+# LEXO_NATIVE.0x - Résumé des Modifications
 
 ## 📊 Métadonnées
-- **Version :** LEXO_NATIVE_v1.x
+- **Version :** LEXO_NATIVE.0x
 - **Date :** [Date automatique]
-- **Branche :** LEXO_NATIVE_v1.x
+- **Branche :** LEXO_NATIVE.0x
 - **Repo :** https://github.com/aiconsultingorleans/LEXO_NATIVE.01
 
 ## 🎯 Résumé des Changements
@@ -810,8 +810,8 @@ git push -u origin ${NEW_BRANCH}
 "je valide"
 
 # Claude exécute automatiquement :
-# ✅ Détection version (ex: v1.5 → v1.6)
-# ✅ Création branche LEXO_NATIVE_v1.6
+# ✅ Détection version (ex: .01 → .02)
+# ✅ Création branche LEXO_NATIVE.02
 # ✅ Commit avec message standardisé
 # ✅ Génération README résumé
 # ✅ Push vers GitHub
@@ -820,7 +820,7 @@ git push -u origin ${NEW_BRANCH}
 
 ### Repo GitHub Natif Cible
 **URL :** https://github.com/aiconsultingorleans/LEXO_NATIVE.01  
-**Format branches :** feat/, fix/, docs/, perf/ (développement) + LEXO_NATIVE_v1.x (releases)  
+**Format branches :** feat/, fix/, docs/, perf/ (développement) + LEXO_NATIVE.0x (releases)  
 **Dernière version actuelle :** Architecture native opérationnelle
 
 ---
@@ -829,4 +829,4 @@ git push -u origin ${NEW_BRANCH}
 **🎯 Prochaine étape :** Packaging app macOS + App Store + Interface mobile native  
 **🚀 Philosophie :** "Native First" - Performance maximale Apple Silicon pour l'utilisateur
 
-*Dernière mise à jour : 25 juillet 2025 - Architecture native macOS opérationnelle*
+*Dernière mise à jour : 25 juillet 2025 - LEXO_NATIVE.01 architecture native macOS opérationnelle*
