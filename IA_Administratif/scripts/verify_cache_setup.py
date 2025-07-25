@@ -127,13 +127,7 @@ def test_spacy_cache() -> bool:
     try:
         import spacy
         
-        # Configurer le répertoire spaCy
-        spacy_data_dir = os.getenv('SPACY_DATA')
-        if spacy_data_dir:
-            import spacy.util
-            spacy.util.set_data_path(spacy_data_dir)
-            logger.info(f"  Répertoire spaCy configuré: {spacy_data_dir}")
-        
+        # Chargement direct du modèle spaCy (compatible v3.x)
         start_time = time.time()
         nlp = spacy.load('fr_core_news_sm')
         load_time = time.time() - start_time

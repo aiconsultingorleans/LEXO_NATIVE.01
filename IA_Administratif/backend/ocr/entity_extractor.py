@@ -140,16 +140,8 @@ class EntityExtractor:
         """Initialise le modèle spaCy si disponible"""
         try:
             import spacy
-            import os
             
-            # Configuration du répertoire spaCy depuis les variables d'environnement
-            spacy_data_dir = os.getenv('SPACY_DATA')
-            if spacy_data_dir:
-                # Ajouter le répertoire au path de spaCy
-                import spacy.util
-                spacy.util.set_data_path(spacy_data_dir)
-                logger.info(f"Répertoire spaCy configuré: {spacy_data_dir}")
-            
+            # Chargement direct du modèle spaCy (compatible v3.x)
             self.nlp = spacy.load(self.language)
             logger.info(f"Modèle spaCy chargé: {self.language}")
         except (ImportError, OSError) as e:

@@ -316,25 +316,50 @@ Analyse en JSON :
             
             self.logger.info(f"Réponse Mistral brute: {response[:100]}...")
             
-            # Nettoyer la réponse
+            # Nettoyer la réponse en profondeur
             summary = response.strip()
             
-            # Supprimer les répétitions du prompt
-            if "Résumé en 2-3 phrases" in summary:
-                parts = summary.split("Résumé en 2-3 phrases")
-                if len(parts) > 1:
+            # Supprimer le prompt entier qui peut être répété
+            prompt_phrases = [
+                "Tu es un expert en synthèse documentaire",
+                "Créé un résumé concis",
+                "Document :",
+                "Résumé en 2-3 phrases",
+                "maximum, en français professionnel",
+                "sans reprendre le prompt"
+            ]
+            
+            for phrase in prompt_phrases:
+                if phrase in summary:
+                    parts = summary.split(phrase)
                     summary = parts[-1].strip()
             
-            # Supprimer les éventuels préfixes
-            if summary.startswith(":"):
-                summary = summary[1:].strip()
-            if summary.startswith("Document"):
-                # Trouver la fin de la partie document
-                lines = summary.split('\n')
-                for i, line in enumerate(lines):
-                    if line.strip() and not line.startswith("Document"):
-                        summary = '\n'.join(lines[i:]).strip()
-                        break
+            # Supprimer les éventuels préfixes et suffixes
+            prefixes_to_remove = [":", "Document", "Résumé", "-"]
+            for prefix in prefixes_to_remove:
+                if summary.startswith(prefix):
+                    summary = summary[len(prefix):].strip()
+            
+            # Supprimer les répétitions de texte original
+            if len(summary) > 200 and clean_text[:50] in summary:
+                # Le résumé contient le texte original, on extrait seulement la fin
+                summary_start = summary.rfind(clean_text[:50])
+                if summary_start > 0:
+                    summary = summary[summary_start + len(clean_text[:50]):].strip()
+            
+            # Nettoyer les lignes vides et les caractères indésirables
+            summary = ' '.join(summary.split())
+            
+            # Si le résumé contient encore des fragments du prompt, le raccourcir
+            if any(p in summary.lower() for p in ["expert", "analyse", "document :", "résumé"]):
+                sentences = summary.split('.')
+                clean_sentences = []
+                for sentence in sentences:
+                    if not any(p in sentence.lower() for p in ["expert", "analyse document", "tu es"]):
+                        clean_sentences.append(sentence.strip())
+                summary = '. '.join(clean_sentences).strip()
+                if summary and not summary.endswith('.'):
+                    summary += '.'
             
             # Validation finale
             if len(summary) < 10:

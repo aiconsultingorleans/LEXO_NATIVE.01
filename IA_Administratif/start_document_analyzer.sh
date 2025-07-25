@@ -9,29 +9,44 @@ echo "=============================================="
 # Configuration
 SERVICE_NAME="Document Analyzer"
 SERVICE_PORT=8004
-PYTHON_ENV="python3"
+VENV_PATH="ai_services/venv"
 LOG_FILE="logs/document_analyzer.log"
 PID_FILE="pids/document_analyzer.pid"
 
 # Créer les dossiers nécessaires
 mkdir -p logs pids
 
-# Vérifier que MLX est installé
-echo "📦 Vérification des dépendances MLX..."
-if ! $PYTHON_ENV -c "import mlx.core, mlx_lm" 2>/dev/null; then
-    echo "❌ MLX ou mlx-lm non installé"
-    echo "💡 Installation requise :"
-    echo "   pip install mlx mlx-lm"
-    exit 1
+# Vérifier que l'environnement virtuel existe
+echo "📦 Vérification de l'environnement virtuel MLX..."
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+    echo "❌ Environnement virtuel MLX non trouvé"
+    echo "💡 Création de l'environnement virtuel..."
+    cd ai_services
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    deactivate
+    cd ..
+    echo "✅ Environnement virtuel créé"
+fi
+
+# Activer l'environnement virtuel et vérifier MLX
+source "$VENV_PATH/bin/activate"
+if ! python -c "import mlx.core, mlx_lm" 2>/dev/null; then
+    echo "❌ MLX ou mlx-lm non installé dans l'environnement virtuel"
+    echo "💡 Installation en cours..."
+    pip install mlx mlx-lm fastapi uvicorn
 fi
 
 # Vérifier que FastAPI est disponible
-if ! $PYTHON_ENV -c "import fastapi" 2>/dev/null; then
-    echo "❌ FastAPI non installé"
-    echo "💡 Installation requise :"
-    echo "   pip install fastapi uvicorn"
-    exit 1
+if ! python -c "import fastapi" 2>/dev/null; then
+    echo "❌ FastAPI non installé dans l'environnement virtuel"
+    echo "💡 Installation en cours..."
+    pip install fastapi uvicorn
 fi
+
+deactivate
 
 # Vérifier si le service est déjà en cours
 if [ -f "$PID_FILE" ]; then
@@ -60,9 +75,11 @@ echo "📂 Log file: $LOG_FILE"
 echo "🆔 PID file: $PID_FILE"
 echo "🌐 URL: http://127.0.0.1:$SERVICE_PORT"
 
-# Lancer le service en arrière-plan
+# Lancer le service en arrière-plan avec l'environnement virtuel
 cd ai_services
-nohup $PYTHON_ENV document_analyzer.py > "../$LOG_FILE" 2>&1 & echo $! > "../$PID_FILE"
+source venv/bin/activate
+nohup python document_analyzer.py > "../$LOG_FILE" 2>&1 & echo $! > "../$PID_FILE"
+deactivate
 
 # Attendre le démarrage
 sleep 3

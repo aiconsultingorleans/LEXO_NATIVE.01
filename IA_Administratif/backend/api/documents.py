@@ -174,7 +174,24 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
     start_time = time.time()
     
     try:
-        # 1. Préparation du fichier pour OCR
+        # 1. Analyse préliminaire avec Mistral MLX (basée sur le nom du fichier)
+        filename = Path(file_path).name
+        logger.info(f"🤖 Étape 1: Pré-analyse Mistral du fichier: {filename}")
+        
+        mistral_preanalysis = None
+        mistral_category_suggestion = None
+        
+        try:
+            # Analyse basée sur le nom de fichier et le type de document
+            mistral_preanalysis = await _get_mistral_filename_analysis(filename)
+            if mistral_preanalysis and mistral_preanalysis.get('success'):
+                result_data = mistral_preanalysis.get('result', {})
+                mistral_category_suggestion = result_data.get('document_type')
+                logger.info(f"🎯 Pré-analyse Mistral: type={mistral_category_suggestion}")
+        except Exception as e:
+            logger.warning(f"Pré-analyse Mistral échouée: {e}")
+        
+        # 2. Préparation du fichier pour OCR
         processing_path = str(file_path)
         temp_image_path = None
         
@@ -197,7 +214,7 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 logger.error(f"Erreur conversion PDF {Path(file_path).name}: {e}")
                 return
         
-        # 2. Traitement OCR avec le moteur hybride
+        # 3. Traitement OCR avec le moteur hybride
         from ocr.hybrid_ocr import HybridOCREngine, OCRStrategy
         from ocr.entity_extractor import EntityExtractor
         
@@ -234,22 +251,23 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 Path(temp_image_path).unlink()
                 logger.debug(f"Fichier temporaire supprimé: {temp_image_path}")
         
-        # 3. Analyse avancée avec Mistral MLX (service natif)
+        # 4. Analyse avancée post-OCR avec Mistral MLX (service natif)
         ocr_text = getattr(ocr_result, 'text', str(ocr_result))
         mistral_analysis = None
-        mistral_category_suggestion = None
         
         if ocr_text and len(ocr_text.strip()) > 50:
             try:
                 mistral_analysis = await _get_mistral_analysis(ocr_text)
                 if mistral_analysis and mistral_analysis.get('success'):
                     result_data = mistral_analysis.get('result', {})
-                    mistral_category_suggestion = result_data.get('document_type')
-                    logger.info(f"🤖 Analyse Mistral: type={mistral_category_suggestion}, confiance={result_data.get('confidence', 0)}")
+                    # Fusionner avec la pré-analyse si elle existe
+                    if not mistral_category_suggestion:
+                        mistral_category_suggestion = result_data.get('document_type')
+                    logger.info(f"🤖 Analyse Mistral post-OCR: type={mistral_category_suggestion}, confiance={result_data.get('confidence', 0)}")
             except Exception as e:
-                logger.warning(f"Analyse Mistral échouée: {e}")
+                logger.warning(f"Analyse Mistral post-OCR échouée: {e}")
         
-        # 4. Classification hybride (règles + Mistral)
+        # 5. Classification hybride (règles + Mistral + pré-analyse)
         from services.document_classifier import get_document_classifier
         
         classifier = get_document_classifier()
@@ -287,7 +305,7 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
             elif mistral_mapped_category == final_category:
                 final_confidence = min(0.98, final_confidence * 1.2)
         
-        # 5. Génération de résumé Mistral
+        # 6. Génération de résumé Mistral
         summary = ""
         if mistral_analysis and mistral_analysis.get('success'):
             result_data = mistral_analysis.get('result', {})
@@ -306,7 +324,7 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 logger.warning(f"Génération résumé Mistral échouée: {e}")
                 summary = f"Document de type {final_category} analysé. Contenu de {len(ocr_text.split())} mots traité automatiquement."
         
-        # 6. Mise à jour du document en base
+        # 7. Mise à jour du document en base
         from core.database import AsyncSessionLocal
         async with AsyncSessionLocal() as db:
             result = await db.execute(
@@ -336,7 +354,7 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 logger.info(f"   🏷️ Entités: {len(entities)} trouvées")
                 logger.info(f"   ⏱️ Temps: {process_time:.2f}s")
                 
-                # 7. Déplacer le fichier vers le dossier de catégorie
+                # 8. Déplacer le fichier vers le dossier de catégorie
                 await _move_to_category_folder(Path(file_path), final_category)
                 
             else:
@@ -464,6 +482,43 @@ async def _move_to_category_folder(file_path: Path, category: str):
         
     except Exception as e:
         logger.warning(f"Échec du déplacement vers {category}: {e}")
+
+
+async def _get_mistral_filename_analysis(filename: str) -> dict:
+    """Analyse préliminaire du document basée sur le nom de fichier"""
+    try:
+        import httpx
+        import os
+        
+        # Préparer un prompt spécialisé pour l'analyse du nom de fichier
+        prompt = f"""Analyse ce nom de fichier et détermine le type de document probable : "{filename}"
+        
+Types possibles : factures, rib, contrats, attestations, courriers, rapports, cartes_transport, documents_personnels, non_classes
+
+Réponds en JSON avec :
+- document_type: le type le plus probable
+- confidence: score de confiance (0-1)
+- reasoning: courte explication"""
+        
+        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"http://{mistral_host}:8004/analyze",
+                json={
+                    "text": prompt,
+                    "analysis_types": ["classification"]
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"Erreur API Mistral filename: {response.status_code}")
+                return {"success": False, "error": f"HTTP {response.status_code}"}
+                
+    except Exception as e:
+        logger.warning(f"Erreur pré-analyse Mistral filename: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @router.post("/upload-and-process", response_model=DocumentResponse)

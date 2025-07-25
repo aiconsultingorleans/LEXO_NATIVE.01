@@ -397,39 +397,38 @@ if [ -f "$LEXO_DIR/IA_Administratif/ai_services/document_analyzer.py" ]; then
 fi
 
 if [ "$MLX_AVAILABLE" = true ]; then
-    # Démarrer le service MLX natif
-    cd "$LEXO_DIR/IA_Administratif/ai_services"
-    if [ -f "venv/bin/activate" ]; then
-        source venv/bin/activate
-        # Vérifier si le service n'est pas déjà en cours
-        if ! curl -s http://localhost:8004/health >/dev/null 2>&1; then
-            nohup python document_analyzer.py > "$LEXO_DIR/logs/mlx_server.log" 2>&1 &
-            MLX_PID=$!
-            
-            # Sauvegarder le PID
-            echo $MLX_PID > "$LEXO_DIR/IA_Administratif/pids/document_analyzer.pid"
-            
-            # Attendre que MLX soit prêt (jusqu'à 30 secondes)
+    # Démarrer le service MLX natif en utilisant le script dédié
+    cd "$LEXO_DIR/IA_Administratif"
+    
+    # Vérifier si le service n'est pas déjà en cours
+    if ! curl -s http://localhost:8004/health >/dev/null 2>&1; then
+        log "Démarrage du service MLX via script dédié..."
+        
+        if ./start_document_analyzer.sh >/dev/null 2>&1; then
+            # Vérifier que le service est bien démarré
             MLX_TIMEOUT=30
             while [ $MLX_TIMEOUT -gt 0 ]; do
                 if curl -s http://localhost:8004/health | grep -q "healthy" 2>/dev/null; then
+                    if [ -f "pids/document_analyzer.pid" ]; then
+                        MLX_PID=$(cat "pids/document_analyzer.pid")
+                        success "✅ Service MLX (port 8004) - PID: $MLX_PID"
+                    else
+                        success "✅ Service MLX (port 8004) - Démarré"
+                    fi
                     break
                 fi
                 sleep 1
                 MLX_TIMEOUT=$((MLX_TIMEOUT - 1))
             done
             
-            if curl -s http://localhost:8004/health | grep -q "healthy" 2>/dev/null; then
-                success "✅ Service MLX (port 8004) - PID: $MLX_PID"
-            else
-                warning "⚠️  Service MLX démarré mais pas encore prêt - Vérifier logs/mlx_server.log"
+            if [ $MLX_TIMEOUT -eq 0 ]; then
+                warning "⚠️  Service MLX démarré mais pas encore prêt - Vérifier logs/document_analyzer.log"
             fi
         else
-            success "✅ Service MLX déjà actif (port 8004)"
+            warning "⚠️  Échec du démarrage du service MLX"
         fi
-        deactivate
     else
-        warning "Environnement virtuel MLX non trouvé"
+        success "✅ Service MLX déjà actif (port 8004)"
     fi
 else
     warning "⚠️  MLX n'est pas disponible - Service IA documentaire désactivé"
