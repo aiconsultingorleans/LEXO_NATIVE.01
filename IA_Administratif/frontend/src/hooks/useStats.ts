@@ -13,10 +13,28 @@ export function useStats(refreshInterval: number = 30000) {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [isFromCache, setIsFromCache] = useState(false);
 
-  const fetchStats = useCallback(async () => {
+  // Cache intelligent : 5 minutes pour les stats, 2 minutes pour l'activité
+  const STATS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const ACTIVITY_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
+  const fetchStats = useCallback(async (forceRefresh: boolean = false) => {
+    const now = Date.now();
+    
+    // Vérifier si on peut utiliser le cache
+    if (!forceRefresh && lastFetchTime > 0 && (now - lastFetchTime) < STATS_CACHE_DURATION) {
+      console.log('📊 Utilisation du cache pour les stats dashboard');
+      setIsFromCache(true);
+      return;
+    }
+
     try {
       setError(null);
+      setIsFromCache(false);
+      
+      console.log('📊 Récupération fresh des stats dashboard');
       const [statsData, activityData] = await Promise.all([
         apiService.getDashboardStats(),
         apiService.getRecentActivity()
@@ -24,19 +42,22 @@ export function useStats(refreshInterval: number = 30000) {
       
       setStats(statsData);
       setActivity(activityData);
+      setLastFetchTime(now);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des statistiques');
       console.error('Error fetching stats:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lastFetchTime]);
 
   useEffect(() => {
     fetchStats();
     
-    // Auto-refresh des statistiques
-    const interval = setInterval(fetchStats, refreshInterval);
+    // Auto-refresh intelligent des statistiques
+    const interval = setInterval(() => {
+      fetchStats(false); // Utilise le cache si disponible
+    }, refreshInterval);
     
     return () => clearInterval(interval);
   }, [fetchStats, refreshInterval]);
@@ -46,7 +67,9 @@ export function useStats(refreshInterval: number = 30000) {
     activity,
     loading,
     error,
-    refresh: fetchStats
+    isFromCache,
+    lastUpdate: lastFetchTime,
+    refresh: (force = true) => fetchStats(force)
   };
 }
 
@@ -57,7 +80,8 @@ export function useDocumentCount() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/documents?limit=1', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/api/v1/documents?limit=1`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`
           }
