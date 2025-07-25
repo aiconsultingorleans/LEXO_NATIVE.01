@@ -11,14 +11,14 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 
-from core.config import get_settings
+from core.config import settings
 from api.auth import get_current_user
 from models.user import User
 
 logger = logging.getLogger(__name__)
 
 # Configuration du service MLX natif
-DOCUMENT_ANALYZER_URL = "http://127.0.0.1:8004"
+DOCUMENT_ANALYZER_URL = "http://host.docker.internal:8004"
 DOCUMENT_ANALYZER_TIMEOUT = 30.0
 
 router = APIRouter(prefix="/api/v1/intelligence", tags=["Document Intelligence"])

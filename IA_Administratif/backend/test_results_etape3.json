@@ -1,0 +1,46 @@
+{
+  "dependencies": {
+    "tesseract_ocr": "✅ OK",
+    "trocr_ocr": "✅ OK",
+    "hybrid_ocr": "✅ OK",
+    "table_detector": "✅ OK",
+    "entity_extractor": "✅ OK",
+    "ocr_cache": "✅ OK",
+    "transformers": "✅ OK (v4.53.3)",
+    "spacy": "✅ OK (v3.8.7)",
+    "pytorch": "✅ OK (v2.7.1)"
+  },
+  "basic_ocr": {
+    "ATTESTATION_Edf OA.pdf": {
+      "status": "❌ Erreur: cannot identify image file '/Users/stephaneansel/Documents/LEXO_v1/OCR/ATTESTATION_Edf OA.pdf'"
+    },
+    "Carte senior Remi .PNG": {
+      "status": "❌ Erreur: 'str' object has no attribute 'get'"
+    },
+    "Carte Rémi.pdf": {
+      "status": "❌ Erreur: cannot identify image file '/Users/stephaneansel/Documents/LEXO_v1/OCR/Carte Rémi.pdf'"
+    }
+  },
+  "advanced_engines": {
+    "trocr_available": "✅ Module TrOCR importé",
+    "trocr_test": "⚠️ Aucun fichier image pour test",
+    "layoutlm_available": "✅ Module LayoutLM importé",
+    "hybrid_available": "✅ Module Hybrid OCR importé"
+  },
+  "specialized_features": {
+    "table_detector": "✅ Module détection tableaux importé",
+    "entity_extractor": "✅ Module extraction entités importé"
+  },
+  "cache_system": {
+    "cache_import": "✅ Module cache importé",
+    "cache_creation": "✅ Cache créé avec succès",
+    "cache_operations": "❌ Erreur opérations: 'OCRCacheManager' object has no attribute 'set'"
+  },
+  "api_endpoints": {
+    "/api/v1/ocr/simple": "❌ Status: 404",
+    "/api/v1/ocr/advanced": "❌ Status: 404",
+    "/api/v1/ocr/analyze-structure": "❌ Status: 404",
+    "/api/v1/ocr/detect-tables": "❌ Status: 404",
+    "/api/v1/ocr/extract-entities": "❌ Status: 404"
+  }
+}

@@ -10,7 +10,8 @@ import {
   FolderOpen,
   Receipt,
   Building,
-  CreditCard 
+  CreditCard,
+  MessageSquare 
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Tous les documents', href: '/documents', icon: FileText },
   { name: 'Upload', href: '/upload', icon: Upload },
+  { name: 'Chat Mistral', href: '/chat', icon: MessageSquare },
   { name: 'Recherche RAG', href: '/search', icon: Search },
 ];
 

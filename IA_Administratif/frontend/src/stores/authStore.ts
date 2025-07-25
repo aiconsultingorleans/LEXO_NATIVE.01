@@ -17,6 +17,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  loginTime: number | null;
+  lastActivity: number | null;
 }
 
 interface AuthActions {
@@ -30,6 +32,9 @@ interface AuthActions {
   refreshAuth: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  validateToken: () => Promise<boolean>;
+  updateActivity: () => void;
+  checkSessionExpiration: () => boolean;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -41,6 +46,8 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  loginTime: null,
+  lastActivity: null,
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -80,6 +87,7 @@ export const useAuthStore = create<AuthStore>()(
 
           const userData = await userResponse.json();
           
+          const now = Date.now();
           set({
             user: userData,
             accessToken: loginData.access_token,
@@ -87,7 +95,13 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            loginTime: now,
+            lastActivity: now,
           });
+          
+          // Store tokens in localStorage for API calls
+          localStorage.setItem('access_token', loginData.access_token);
+          localStorage.setItem('refresh_token', loginData.refresh_token);
         } catch (error) {
           set({
             isLoading: false,
@@ -130,7 +144,7 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         // Appel optionnel à l'API pour invalider le token côté serveur
-        fetch('/api/auth/logout', {
+        fetch('http://localhost:8000/api/v1/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${get().accessToken}`,
@@ -138,6 +152,10 @@ export const useAuthStore = create<AuthStore>()(
         }).catch(() => {
           // Ignorer les erreurs de logout côté serveur
         });
+
+        // Clear localStorage
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
 
         set({
           ...initialState,
@@ -152,7 +170,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         try {
-          const response = await fetch('/api/auth/refresh', {
+          const response = await fetch('http://localhost:8000/api/v1/auth/refresh', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -165,18 +183,84 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           const data = await response.json();
+          const now = Date.now();
           
           set({
             user: data.user,
             accessToken: data.access_token,
             refreshToken: data.refresh_token || refreshToken,
             isAuthenticated: true,
+            lastActivity: now,
           });
+          
+          // Update localStorage
+          localStorage.setItem('access_token', data.access_token);
+          if (data.refresh_token) {
+            localStorage.setItem('refresh_token', data.refresh_token);
+          }
         } catch (error) {
           // Si le refresh token est invalide, déconnecter l'utilisateur
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
           set({ ...initialState });
           throw error;
         }
+      },
+
+      validateToken: async () => {
+        const { accessToken } = get();
+        
+        if (!accessToken) {
+          return false;
+        }
+
+        try {
+          const response = await fetch('http://localhost:8000/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            set({ 
+              user: userData,
+              lastActivity: Date.now()
+            });
+            return true;
+          } else {
+            // Token invalide, déconnecter
+            get().logout();
+            return false;
+          }
+        } catch {
+          // Erreur réseau ou autre, déconnecter par sécurité
+          get().logout();
+          return false;
+        }
+      },
+
+      updateActivity: () => {
+        set({ lastActivity: Date.now() });
+      },
+
+      checkSessionExpiration: () => {
+        const { lastActivity, isAuthenticated } = get();
+        
+        if (!isAuthenticated || !lastActivity) {
+          return false;
+        }
+
+        const now = Date.now();
+        const oneHour = 60 * 60 * 1000; // 1 heure en millisecondes
+        
+        if (now - lastActivity > oneHour) {
+          // Session expirée
+          get().logout();
+          return true;
+        }
+        
+        return false;
       },
 
       clearError: () => set({ error: null }),
@@ -190,6 +274,8 @@ export const useAuthStore = create<AuthStore>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        loginTime: state.loginTime,
+        lastActivity: state.lastActivity,
       }),
     }
   )

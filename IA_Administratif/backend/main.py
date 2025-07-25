@@ -15,8 +15,14 @@ from api.auth import router as auth_router
 from api.documents import router as documents_router
 from api.health import router as health_router
 from api.ocr_routes_simple import router as ocr_router
+from api.document_intelligence import router as intelligence_router
+from api.batch_processing import router as batch_router
+from api.rag_clear import router as rag_clear_router
+from api.classification import router as classification_router
+# from api.rag_routes import router as rag_router  # Temporairement désactivé
 from core.config import settings
 from core.database import init_db
+from services.ocr_watcher import start_ocr_watcher, stop_ocr_watcher, get_watcher_status
 
 # Configuration du logging
 logging.basicConfig(
@@ -34,10 +40,24 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("✅ Base de données initialisée")
     
+    # Démarrer le service de surveillance OCR
+    try:
+        watcher = start_ocr_watcher("/app/ocr_data")
+        logger.info("✅ Service de surveillance OCR démarré")
+    except Exception as e:
+        logger.error(f"❌ Échec démarrage surveillance OCR: {e}")
+    
     yield
     
     # Shutdown
     logger.info("🛑 Arrêt de LEXO v1 Backend")
+    
+    # Arrêter le service de surveillance OCR
+    try:
+        stop_ocr_watcher()
+        logger.info("✅ Service de surveillance OCR arrêté")
+    except Exception as e:
+        logger.error(f"❌ Erreur arrêt surveillance OCR: {e}")
 
 
 # Création de l'app FastAPI
@@ -93,7 +113,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(health_router, prefix="/api/v1", tags=["Health"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(documents_router, prefix="/api/v1/documents", tags=["Documents"])
+app.include_router(classification_router, prefix="/api/v1/classification", tags=["Classification"])
 app.include_router(ocr_router, tags=["OCR"])
+app.include_router(intelligence_router, tags=["Intelligence"])
+app.include_router(batch_router, tags=["Batch Processing"])
+app.include_router(rag_clear_router, prefix="/api/v1/rag", tags=["RAG"])
+# app.include_router(rag_router, tags=["RAG"])  # Temporairement désactivé
 
 
 @app.get("/")
@@ -104,6 +129,12 @@ async def root():
         "version": "1.0.0",
         "status": "🚀 Opérationnel"
     }
+
+
+@app.get("/api/v1/watcher/status")
+async def watcher_status():
+    """Statut du service de surveillance OCR"""
+    return get_watcher_status()
 
 
 if __name__ == "__main__":

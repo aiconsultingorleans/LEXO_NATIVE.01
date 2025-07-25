@@ -11,10 +11,17 @@ from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 import json
 
-import spacy
-from spacy import displacy
-
 logger = logging.getLogger(__name__)
+
+# Import conditionnel de spaCy
+try:
+    import spacy
+    from spacy import displacy
+    SPACY_AVAILABLE = True
+    logger.info("spaCy disponible - extraction d'entités avancée activée")
+except ImportError:
+    SPACY_AVAILABLE = False
+    logger.warning("spaCy n'est pas disponible - utilisation des regex seulement")
 
 
 @dataclass

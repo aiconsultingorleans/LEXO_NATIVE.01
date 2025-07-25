@@ -41,6 +41,9 @@ class Document(Base):
     custom_tags = Column(JSON, default=list)
     embeddings_id = Column(String, nullable=True)
     
+    # Résumé Mistral
+    summary = Column(Text, nullable=True)
+    
     # Métadonnées
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     processed_at = Column(DateTime(timezone=True), nullable=True)

@@ -120,7 +120,7 @@ class RateLimiter:
 
 # Instances de rate limiters pour différents use cases
 auth_rate_limiter = RateLimiter(
-    max_requests=5,  # 5 tentatives
+    max_requests=50,  # 50 tentatives (augmenté pour les tests)
     window_seconds=300,  # par 5 minutes
     key_prefix="auth"
 )

@@ -24,13 +24,13 @@ from models.document import Document, DocumentCategory
 from ocr.image_preprocessor import ImagePreprocessor, preprocess_for_ocr
 from ocr.tesseract_ocr import TesseractOCR, OCRResult
 # Imports avancés commentés temporairement à cause de dépendances manquantes dans Docker
-# from ocr.trocr_ocr import TrOCREngine, TrOCRConfig
-# from ocr.hybrid_ocr import HybridOCREngine, HybridOCRConfig, OCRStrategy
-# from ocr.layoutlm_ocr import LayoutLMEngine, LayoutLMConfig
-# from ocr.table_detector import TableDetector, TableDetectorConfig, TableDetectionMethod
-# from ocr.entity_extractor import EntityExtractor, extract_document_metadata
-# from ocr.apple_silicon_optimizer import AppleSiliconOCROptimizer
-# from ocr.ocr_cache import OCRCacheManager
+from ocr.trocr_ocr import TrOCREngine, TrOCRConfig
+from ocr.hybrid_ocr import HybridOCREngine, HybridOCRConfig, OCRStrategy
+from ocr.layoutlm_ocr import LayoutLMEngine, LayoutLMConfig
+from ocr.table_detector import TableDetector, TableDetectorConfig, TableDetectionMethod
+from ocr.entity_extractor import EntityExtractor, extract_document_metadata
+from ocr.apple_silicon_optimizer import AppleSiliconOCROptimizer
+from ocr.ocr_cache import OCRCacheManager
 
 logger = logging.getLogger(__name__)
 

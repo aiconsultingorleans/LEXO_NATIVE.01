@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://lexo:password@localhost:5432/lexo_dev"
+    DATABASE_URL: str = "postgresql+asyncpg://lexo:password@localhost:5432/lexo_dev?ssl=false"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

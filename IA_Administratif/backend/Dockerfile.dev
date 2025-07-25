@@ -1,33 +1,29 @@
-FROM python:3.11-slim
+# 🚀 LEXO v1 - Dockerfile de développement optimisé
+# Utilise l'image de base avec spaCy pré-compilé pour un démarrage rapide
 
-# Set working directory
-WORKDIR /app
+FROM lexo-base:latest
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-fra \
-    poppler-utils \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+# Métadonnées
+LABEL maintainer="LEXO Team"
+LABEL description="LEXO Backend Development Container"
+LABEL version="1.0"
 
-# Install Python dependencies
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt
+# Variables d'environnement
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV DEBUG=true
 
-# Copy application code
-COPY . .
+# Copier le code de l'application
+COPY . /app/
 
-# Create necessary directories
-RUN mkdir -p /app/logs /app/data /app/ml_models
+# Créer les répertoires spécifiques au développement
+RUN mkdir -p /app/logs /app/data /app/ml_models /app/ocr_data
 
-# Expose port
+# Exposer le port
 EXPOSE 8000
 
-# Development command with hot reload
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Vérification que l'application peut démarrer
+RUN python -c "from main import app; print('✅ Application prête')"
+
+# Commande de développement avec hot reload
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "info"]

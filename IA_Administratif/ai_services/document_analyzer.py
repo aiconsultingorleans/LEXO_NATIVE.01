@@ -70,6 +70,14 @@ class DocumentAnalysisRequest(BaseModel):
     custom_prompt: Optional[str] = None
 
 
+class ChatRequest(BaseModel):
+    """Requête de chat conversationnel"""
+    message: str
+    conversation_id: Optional[str] = "default"
+    max_tokens: Optional[int] = 2000
+    system_prompt: Optional[str] = None
+
+
 class DocumentAnalyzer:
     """
     Analyseur de documents intelligent utilisant Mistral MLX
@@ -338,6 +346,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Stockage des conversations en mémoire (simple pour MVP)
+conversations_storage = {}
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -348,7 +359,7 @@ app.add_middleware(
         "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -409,6 +420,128 @@ async def analyze_document_endpoint(request: DocumentAnalysisRequest):
     except Exception as e:
         logger.error(f"Erreur endpoint analyze : {e}")
         return {"success": False, "error": str(e)}
+
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    """Endpoint de chat conversationnel avec Mistral"""
+    try:
+        # Prompt système par défaut
+        default_system_prompt = """Tu es Mistral, un assistant IA spécialisé dans l'analyse de documents administratifs pour LEXO v1.
+
+CONTEXTE:
+- Tu aides les utilisateurs à analyser leurs documents (factures, RIB, impôts, attestations, contrats)
+- Tu peux expliquer le contenu des documents, extraire des informations clés, et répondre aux questions
+- Les documents ont déjà été traités par OCR et analyse préliminaire
+
+CAPACITÉS:
+- Analyse et résumé de documents
+- Extraction d'informations clés (dates, montants, entités)
+- Classification et catégorisation
+- Réponse aux questions sur le contenu
+- Conseils sur l'organisation documentaire
+
+STYLE:
+- Sois professionnel mais accessible
+- Utilise un langage clair et précis
+- Structure tes réponses avec des puces ou sections si nécessaire
+- Cite les éléments spécifiques du document quand pertinent
+- Si tu n'es pas sûr, indique-le clairement
+
+SÉCURITÉ:
+- Ne jamais révéler d'informations personnelles sensibles
+- Respecter la confidentialité
+- Signaler si un document semble contenir des données sensibles"""
+
+        # Utiliser le prompt système fourni ou celui par défaut
+        system_prompt = request.system_prompt or default_system_prompt
+        
+        # Construire le prompt complet
+        full_prompt = f"{system_prompt}\n\nUser: {request.message}\nAssistant:"
+        
+        # Générer la réponse avec Mistral
+        if document_analyzer.model is None:
+            raise HTTPException(status_code=503, detail="Modèle Mistral non chargé")
+        
+        start_time = time.time()
+        
+        # Générer la réponse
+        response = generate(
+            document_analyzer.model,
+            document_analyzer.tokenizer,
+            prompt=full_prompt,
+            max_tokens=request.max_tokens,
+            verbose=False
+        )
+        
+        processing_time = time.time() - start_time
+        
+        # Nettoyer la réponse (retirer le prompt)
+        if response.startswith(full_prompt):
+            response = response[len(full_prompt):].strip()
+        
+        # Compter les tokens (approximation)
+        tokens_used = len(response.split())
+        
+        # Stocker dans l'historique des conversations
+        if request.conversation_id not in conversations_storage:
+            conversations_storage[request.conversation_id] = {"messages": []}
+        
+        # Ajouter le message utilisateur et la réponse à l'historique
+        conversations_storage[request.conversation_id]["messages"].extend([
+            {
+                "role": "user",
+                "content": request.message,
+                "timestamp": time.time()
+            },
+            {
+                "role": "assistant", 
+                "content": response,
+                "timestamp": time.time(),
+                "tokens_used": tokens_used
+            }
+        ])
+        
+        return {
+            "response": response,
+            "conversation_id": request.conversation_id,
+            "tokens_used": tokens_used,
+            "processing_time": processing_time,
+            "timestamp": time.time()
+        }
+        
+    except Exception as e:
+        logger.error(f"Erreur endpoint chat : {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur de génération: {str(e)}")
+
+
+@app.get("/conversations/{conversation_id}")
+async def get_conversation_history(conversation_id: str):
+    """Récupérer l'historique d'une conversation"""
+    try:
+        conversation = conversations_storage.get(conversation_id, {"messages": []})
+        return {
+            "conversation_id": conversation_id,
+            "messages": conversation["messages"]
+        }
+    except Exception as e:
+        logger.error(f"Erreur récupération conversation : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/conversations/{conversation_id}")
+async def clear_conversation(conversation_id: str):
+    """Effacer une conversation"""
+    try:
+        if conversation_id in conversations_storage:
+            del conversations_storage[conversation_id]
+        return {
+            "success": True,
+            "message": f"Conversation {conversation_id} effacée"
+        }
+    except Exception as e:
+        logger.error(f"Erreur effacement conversation : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/document-types")

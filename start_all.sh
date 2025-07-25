@@ -157,14 +157,29 @@ cd "$LEXO_DIR/IA_Administratif" || {
     exit 1
 }
 
+# Vérifier si l'image de base spaCy existe
+log "🔍 Vérification de l'image de base spaCy..."
+if ! docker image inspect lexo-base:latest >/dev/null 2>&1; then
+    warning "Image de base spaCy non trouvée - construction nécessaire"
+    log "🏗️ Construction de l'image de base (5-8 minutes)..."
+    log "   Cette étape est nécessaire une seule fois"
+    
+    if ! ./build_base_image.sh; then
+        error "Échec de construction de l'image de base"
+        exit 1
+    fi
+    success "✅ Image de base construite avec succès"
+else
+    success "✅ Image de base spaCy disponible"
+fi
+
 # Nettoyer les conteneurs en état incohérent
 log "Nettoyage des conteneurs orphelins..."
 docker compose down --remove-orphans 2>/dev/null || true
-docker system prune -f --volumes 2>/dev/null || true
 
-# Démarrer les services avec rebuild si nécessaire
-log "Construction et démarrage des conteneurs..."
-if ! docker compose up -d --build --force-recreate; then
+# Démarrer les services avec build rapide (image de base déjà prête)
+log "🚀 Démarrage des conteneurs (build rapide avec cache spaCy)..."
+if ! docker compose up -d --build; then
     error "Échec du démarrage des services Docker"
     log "Tentative de diagnostic..."
     docker compose logs --tail=50
@@ -394,7 +409,21 @@ if [ "$BACKEND_READY" = true ]; then
     docker compose exec -T backend alembic upgrade head 2>/dev/null || warning "Migration déjà appliquée ou erreur"
     
     # Charger les fixtures si la base est vide
-    if docker compose exec -T backend python -c "from app.models.user import User; from app.core.database import SessionLocal; db = SessionLocal(); print('Users:', db.query(User).count()); db.close()" 2>/dev/null | grep -q "Users: 0"; then
+    if docker compose exec -T backend python -c "
+import asyncio
+from models.user import User
+from core.database import AsyncSessionLocal
+from sqlalchemy import select
+
+async def check_users():
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(User))
+        count = len(result.scalars().all())
+        print(f'Users: {count}')
+        return count
+
+result = asyncio.run(check_users())
+" 2>/dev/null | grep -q "Users: 0"; then
         log "Chargement des données de test..."
         docker compose exec -T backend python scripts/load_fixtures_auto.py 2>/dev/null || warning "Échec du chargement des fixtures"
     fi

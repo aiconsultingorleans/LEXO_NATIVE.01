@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # PostgreSQL Database
@@ -48,6 +48,8 @@ services:
       - ./ml_models:/app/ml_models
       - ./data:/app/data
       - ../OCR:/app/ocr_data
+      # Volume persistant pour cache Python/spaCy (évite recompilation)  
+      - python_cache:/opt/venv
     environment:
       - DATABASE_URL=postgresql+asyncpg://lexo:password@postgres:5432/lexo_dev
       - REDIS_URL=redis://redis:6379/0
@@ -107,6 +109,9 @@ volumes:
   redis_data:
     driver: local
   chromadb_data:
+    driver: local
+  # Volume persistant pour cache Python/spaCy
+  python_cache:
     driver: local
 
 networks:

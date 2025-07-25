@@ -1,0 +1,113 @@
+# 🏗️ LEXO v1 - Dockerfile de base avec spaCy pré-compilé
+# Ce Dockerfile compile spaCy et les dépendances ML lourdes une seule fois
+# Usage: docker build -f Dockerfile.base -t lexo-base:latest .
+
+FROM python:3.11-slim as builder
+
+# Métadonnées
+LABEL maintainer="LEXO Team"
+LABEL description="Base image with pre-compiled spaCy and ML dependencies"
+LABEL version="1.0"
+
+# Variables d'environnement pour la compilation
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies (uniquement pour la compilation)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    cmake \
+    pkg-config \
+    libopenblas-dev \
+    liblapack-dev \
+    gfortran \
+    && rm -rf /var/lib/apt/lists/*
+
+# Créer environnement virtuel pour isoler les packages
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Mise à jour pip et installation des outils de base
+RUN pip install --upgrade pip setuptools wheel
+
+# Copier requirements pour la compilation
+COPY requirements-minimal.txt /tmp/requirements-minimal.txt
+
+# Installation par étapes pour optimiser le cache Docker
+# 1. Framework de base (rapide)
+RUN pip install fastapi==0.115.6 uvicorn[standard]==0.34.0 python-multipart==0.0.19
+
+# 2. Base de données (rapide)  
+RUN pip install sqlalchemy[asyncio]==2.0.36 alembic==1.14.0 asyncpg==0.30.0 psycopg2-binary==2.9.10 redis==5.2.0
+
+# 3. Auth et sécurité (rapide)
+RUN pip install python-jose[cryptography]==3.3.0 passlib[bcrypt]==1.7.4 python-dotenv==1.0.1
+
+# 4. PyTorch d'abord (lent mais stable)
+RUN pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+
+# 5. Transformers et HuggingFace (moyennement lent)
+RUN pip install transformers==4.46.3 huggingface-hub==0.27.0
+
+# 6. spaCy - la partie la plus lente (compilation native)
+RUN pip install spacy==3.8.2 && \
+    python -m spacy download fr_core_news_sm && \
+    python -m spacy download en_core_web_sm
+
+# 7. Autres dépendances ML
+RUN pip install sentence-transformers==3.4.0 chromadb==1.0.15 pandas==2.3.1
+
+# 8. OCR et utilitaires (rapide)
+RUN pip install opencv-python-headless==4.10.0.84 pillow==11.0.0 pytesseract==0.3.13 pdf2image==1.17.0
+
+# 9. Le reste (très rapide)
+RUN pip install -r /tmp/requirements-minimal.txt
+
+# Vérification que spaCy fonctionne correctement
+RUN python -c "import spacy; nlp = spacy.load('fr_core_news_sm'); doc = nlp('Test spaCy en français'); print('spaCy OK:', [ent.text for ent in doc.ents])"
+
+# ==================================================
+# Stage 2: Image de runtime optimisée
+# ==================================================
+FROM python:3.11-slim as runtime
+
+# Variables d'environnement pour le runtime
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Installation des dépendances runtime uniquement (pas de build tools)
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-fra \
+    tesseract-ocr-eng \
+    poppler-utils \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libopenblas0 \
+    liblapack3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copier l'environnement Python pré-compilé depuis le builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Créer répertoires standards
+RUN mkdir -p /app/logs /app/data /app/ml_models /app/ocr_data
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Test final que tout fonctionne
+RUN python -c "import spacy, torch, transformers, chromadb; print('✅ Toutes les dépendances ML sont prêtes')"
+
+# Point d'entrée par défaut (sera surchargé)
+CMD ["python", "--version"]

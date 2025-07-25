@@ -1,6 +1,10 @@
-Merci de lire PLANNING.md, CLAUDE.md et TACHES.md pour parfaitement connaître le projet. Lis également les initial instructions du MCP Serena. Vérifie quelles sont les tâches déjà effectuées dans TACHES.md et continue avec les tâches non encore effectuées
+Merci de lire PLANNING.md, CLAUDE.md et TACHES.md pour parfaitement connaître le projet. Vérifie quelles sont les tâches déjà effectuées dans TACHES.md et continue avec les tâches non encore effectuées
 
-avant de lancer les tests mets à jour TACHES.md pour refléter l'état exact du projet   
+avant de lancer les tests mets à jour TACHES.md pour refléter l'état exact du projet 
+
+coche les étapes effectuées dans TACHES.md et ajoute un résumé détaillé dans JOURNAL.md
+
+fait un commit dans mon repo github sur une nouvelle branche (LEXO_v1.3) https://github.com/aiconsultingorleans/LEXO_v1
 
 Installer Serena : 
 uvx --from git+https://github.com/oraios/serena serena-mcp-server
@@ -10,3 +14,5 @@ Commande initiale pour utiliser Serena (alternative) :
 
 Serena indexation :
 uvx --from git+https://github.com/oraios/serena index-project
+
+claude-monitor

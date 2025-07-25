@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -19,25 +20,49 @@ export const AuthGuard = ({
 }: AuthGuardProps) => {
   const router = useRouter();
   const { isAuthenticated, user, isLoading } = useAuth();
+  const { validateToken, checkSessionExpiration } = useAuthStore();
+  const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
-    if (!isLoading) {
-      // Si l'authentification est requise mais l'utilisateur n'est pas connecté
-      if (requireAuth && !isAuthenticated) {
-        router.push('/auth/login');
+    const checkAuthentication = async () => {
+      // Vérifier l'expiration de session
+      const sessionExpired = checkSessionExpiration();
+      if (sessionExpired) {
+        router.push('/auth/login?reason=session_expired');
         return;
       }
 
-      // Si un rôle spécifique est requis
-      if (requireRole && (!user || user.role !== requireRole)) {
-        router.push('/403'); // Page d'accès refusé
-        return;
+      // Si l'utilisateur semble authentifié, vérifier la validité du token
+      if (isAuthenticated) {
+        const isValid = await validateToken();
+        if (!isValid) {
+          router.push('/auth/login?reason=invalid_token');
+          return;
+        }
       }
-    }
-  }, [isAuthenticated, user, isLoading, requireAuth, requireRole, router]);
+
+      setIsValidating(false);
+
+      if (!isLoading && !isValidating) {
+        // Si l'authentification est requise mais l'utilisateur n'est pas connecté
+        if (requireAuth && !isAuthenticated) {
+          router.push('/auth/login');
+          return;
+        }
+
+        // Si un rôle spécifique est requis
+        if (requireRole && (!user || user.role !== requireRole)) {
+          router.push('/403'); // Page d'accès refusé
+          return;
+        }
+      }
+    };
+
+    checkAuthentication();
+  }, [isAuthenticated, user, isLoading, requireAuth, requireRole, router, validateToken, checkSessionExpiration, isValidating]);
 
   // Afficher un loading pendant la vérification
-  if (isLoading) {
+  if (isLoading || isValidating) {
     return fallback || <LoadingSpinner />;
   }
 

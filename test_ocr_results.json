@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-23 19:19:19",
+  "timestamp": "2025-07-24 08:22:00",
   "dependencies": {
     "transformers": true,
     "datasets": true,
@@ -13,74 +13,90 @@
     "health": true,
     "auth": true,
     "cache": {
-      "error": "{\"detail\":\"Not Found\"}"
+      "success": true,
+      "cache_stats": {
+        "hybrid_stats": {
+          "redis_hits": 0,
+          "fs_hits": 0,
+          "misses": 0,
+          "stores": 0
+        },
+        "filesystem_cache": {
+          "total_entries": 0,
+          "total_size_mb": 0.0,
+          "max_size_mb": 500.0,
+          "usage_percent": 0.0,
+          "expired_entries": 0,
+          "recent_access_count": 0,
+          "cache_dir": "/tmp/lexo_ocr_cache"
+        },
+        "redis_cache": {
+          "redis_available": false
+        }
+      }
     }
   },
   "file_tests": {
     "ATTESTATION_Edf OA.pdf": {
       "preprocessing": {
-        "message": "Prétraitement réussi",
-        "quality_score": 0.8,
-        "preprocessing_applied": {
-          "rotate_correction": true,
-          "denoise": true,
-          "enhance_contrast": true,
-          "remove_borders": true
-        },
-        "processed_image_path": "/tmp/tmp7_l02iyl.pdf"
+        "error": "{\"detail\":\"Erreur de prétraitement: 400: Format non supporté: .pdf. Formats acceptés: PNG, JPG, TIFF, BMP\"}"
       },
       "advanced_ocr": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur OCR avancé: name 'AppleSiliconOCROptimizer' is not defined\"}"
       },
       "table_detection": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur de détection: name 'TableDetectionMethod' is not defined\"}"
       },
       "entity_extraction": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur d'extraction: cannot identify image file '/tmp/tmpiq0yilc4.pdf'\"}"
       }
     },
     "Carte Rémi.pdf": {
       "preprocessing": {
-        "message": "Prétraitement réussi",
-        "quality_score": 0.8,
-        "preprocessing_applied": {
-          "rotate_correction": true,
-          "denoise": true,
-          "enhance_contrast": true,
-          "remove_borders": true
-        },
-        "processed_image_path": "/tmp/tmpxjc7dss3.pdf"
+        "error": "{\"detail\":\"Erreur de prétraitement: 400: Format non supporté: .pdf. Formats acceptés: PNG, JPG, TIFF, BMP\"}"
       },
       "advanced_ocr": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur OCR avancé: name 'AppleSiliconOCROptimizer' is not defined\"}"
       },
       "table_detection": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur de détection: name 'TableDetectionMethod' is not defined\"}"
       },
       "entity_extraction": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur d'extraction: cannot identify image file '/tmp/tmpvcn7op5v.pdf'\"}"
       }
     },
     "Carte senior Remi .PNG": {
       "preprocessing": {
-        "message": "Prétraitement réussi",
-        "quality_score": 0.8,
-        "preprocessing_applied": {
-          "rotate_correction": true,
-          "denoise": true,
-          "enhance_contrast": true,
-          "remove_borders": true
+        "success": true,
+        "message": "Prétraitement réussi: 1 page(s) traitée(s)",
+        "processed_files": [
+          "Carte senior Remi _processed.png"
+        ],
+        "quality_scores": [
+          0.8095512566404395
+        ],
+        "processing_time": 0.406953,
+        "original_size": {
+          "width": 1290,
+          "height": 2796,
+          "channels": 3
         },
-        "processed_image_path": "/tmp/tmp8qhwdzrv.PNG"
+        "processed_sizes": [
+          {
+            "width": 1259,
+            "height": 1772,
+            "channels": 3
+          }
+        ]
       },
       "advanced_ocr": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur OCR avancé: name 'AppleSiliconOCROptimizer' is not defined\"}"
       },
       "table_detection": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur de détection: name 'TableDetectionMethod' is not defined\"}"
       },
       "entity_extraction": {
-        "error": "{\"detail\":\"Not Found\"}"
+        "error": "{\"detail\":\"Erreur d'extraction: name 'EntityExtractor' is not defined\"}"
       }
     }
   },
