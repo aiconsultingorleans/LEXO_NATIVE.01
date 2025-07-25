@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStats } from '@/hooks/useStats';
 import { useToast } from '@/contexts/ToastContext';
@@ -43,6 +43,17 @@ function DashboardContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [compactUploadFiles, setCompactUploadFiles] = useState<UploadFile[]>([]);
   
+  // État pour le statut des services
+  const [systemStatus, setSystemStatus] = useState<{
+    pipeline: string;
+    mistral: string;
+    lastCheck: string;
+  }>({
+    pipeline: 'unknown',
+    mistral: 'unknown', 
+    lastCheck: ''
+  });
+  
   // État pour le suivi de progression batch
   const [batchProgress, setBatchProgress] = useState({
     isActive: false,
@@ -54,9 +65,34 @@ function DashboardContent() {
     batchId: null as number | null
   });
 
+  // Vérification statut système
+  const checkSystemStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch('http://localhost:8000/api/v1/health/pipeline', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSystemStatus({
+          pipeline: data.pipeline_status,
+          mistral: data.components?.mistral_mlx?.status || 'unknown',
+          lastCheck: new Date().toLocaleTimeString()
+        });
+      }
+    } catch (error) {
+      console.warn('Erreur vérification statut système:', error);
+    }
+  };
+
   const handleRefresh = async () => {
     try {
       await refresh();
+      await checkSystemStatus(); // Vérifier aussi le statut système
       toast.success('Données actualisées', 'Les statistiques ont été mises à jour');
     } catch {
       toast.error('Erreur', 'Impossible d\'actualiser les données');
@@ -411,6 +447,16 @@ function DashboardContent() {
     }
   };
 
+  // Vérifier le statut au chargement et périodiquement
+  useEffect(() => {
+    checkSystemStatus();
+    
+    // Vérifier le statut toutes les 30 secondes
+    const interval = setInterval(checkSystemStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   if (loading) {
     return (
       <MainLayout>
@@ -498,6 +544,52 @@ function DashboardContent() {
           />
         </div>
 
+        {/* Indicateur de statut système */}
+        <div className="bg-card-background p-4 rounded-xl shadow-sm border border-card-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  systemStatus.pipeline === 'operational' ? 'bg-green-500' : 
+                  systemStatus.pipeline === 'degraded' ? 'bg-yellow-500' : 'bg-gray-400'
+                }`}></div>
+                <span className="text-sm font-medium">Pipeline documentaire</span>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  systemStatus.pipeline === 'operational' ? 'bg-green-100 text-green-800' : 
+                  systemStatus.pipeline === 'degraded' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {systemStatus.pipeline === 'operational' ? 'Opérationnel' : 
+                   systemStatus.pipeline === 'degraded' ? 'Dégradé' : 'Inconnu'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  systemStatus.mistral === 'healthy' ? 'bg-green-500' : 
+                  systemStatus.mistral === 'unavailable' ? 'bg-red-500' : 'bg-gray-400'
+                }`}></div>
+                <span className="text-sm font-medium">Mistral MLX</span>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  systemStatus.mistral === 'healthy' ? 'bg-green-100 text-green-800' : 
+                  systemStatus.mistral === 'unavailable' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {systemStatus.mistral === 'healthy' ? '🤖 Actif' : 
+                   systemStatus.mistral === 'unavailable' ? '❌ Indisponible' : '❓ Inconnu'}
+                </span>
+              </div>
+            </div>
+            {systemStatus.lastCheck && (
+              <span className="text-xs text-gray-500">
+                Dernière vérification: {systemStatus.lastCheck}
+              </span>
+            )}
+          </div>
+          {systemStatus.mistral === 'unavailable' && (
+            <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+              ⚠️ Mode fallback actif : OCR seul disponible (sans enrichissement IA)
+            </div>
+          )}
+        </div>
+
         {/* Zone de drop compacte permanente */}
         <div 
           className="bg-card-background/50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer"
@@ -521,10 +613,10 @@ function DashboardContent() {
                     <FileText className="h-4 w-4 text-gray-400" />
                     <span className="text-xs text-gray-700 truncate max-w-40">{file.name}</span>
                     {file.status === 'uploading' && (
-                      <span className="text-xs text-blue-500">Upload...</span>
+                      <span className="text-xs text-blue-500">📤 Upload... (20%)</span>
                     )}
                     {file.status === 'processing' && (
-                      <span className="text-xs text-purple-500">OCR+IA...</span>
+                      <span className="text-xs text-purple-500">🔍 OCR → 🤖 Mistral... (70%)</span>
                     )}
                     {file.status === 'success' && (
                       <div className="flex flex-col">

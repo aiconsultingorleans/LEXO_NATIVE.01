@@ -68,20 +68,39 @@ stop_process_by_pid() {
     fi
 }
 
-# 1. Sauvegarde des statistiques et vérifications préalables
-log "📊 Sauvegarde des statistiques..."
+# 1. Sauvegarde automatique des données critiques
+log "📊 Sauvegarde automatique des données..."
+BACKUP_DIR="$LEXO_DIR/backups/$(date +%Y%m%d)"
+mkdir -p "$BACKUP_DIR"
+
 if curl -s http://localhost:8000/api/v1/health > /dev/null 2>&1; then
     # Exporter les stats si l'API est disponible
-    mkdir -p "$LEXO_DIR/backups/$(date +%Y%m%d)"
-    curl -s http://localhost:8000/api/stats/export > "$LEXO_DIR/backups/$(date +%Y%m%d)/stats_$(date +%H%M%S).json" 2>/dev/null || true
+    curl -s http://localhost:8000/api/stats/export > "$BACKUP_DIR/stats_$(date +%H%M%S).json" 2>/dev/null || true
     
     # Sauvegarder l'état des tâches batch en cours
-    curl -s http://localhost:8000/api/v1/batch/status > "$LEXO_DIR/backups/$(date +%Y%m%d)/batch_status_$(date +%H%M%S).json" 2>/dev/null || true
+    curl -s http://localhost:8000/api/v1/batch/status > "$BACKUP_DIR/batch_status_$(date +%H%M%S).json" 2>/dev/null || true
     
     success "✅ Statistiques sauvegardées"
 else
-    warning "Backend non accessible, sauvegarde ignorée"
+    warning "Backend non accessible, sauvegarde stats ignorée"
 fi
+
+# Backup base de données PostgreSQL
+if docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ps postgres | grep -q "running"; then
+    log "💾 Backup PostgreSQL..."
+    docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" exec -T postgres pg_dump -U lexo lexo_dev > "$BACKUP_DIR/postgres_backup_$(date +%H%M%S).sql" 2>/dev/null || true
+    success "✅ Backup PostgreSQL terminé"
+fi
+
+# Backup Redis
+if docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ps redis | grep -q "running"; then
+    log "💾 Backup Redis..."
+    docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" exec -T redis redis-cli BGSAVE > /dev/null 2>&1 || true
+    success "✅ Backup Redis terminé"
+fi
+
+# Signaler les volumes Docker préservés
+log "🔒 Volumes Docker préservés : postgres_data, redis_data, chromadb_data, python_cache"
 
 # Vérifier s'il y a des traitements batch en cours
 log "🔍 Vérification des traitements en cours..."
@@ -105,7 +124,25 @@ if pgrep -f "ocr_watcher.py" > /dev/null; then
     success "✅ Processus watcher OCR arrêtés"
 fi
 
-# 3. Arrêt du service MLX
+# 3. Arrêt gracieux ordonné : Frontend → Backend → MLX → Databases
+log "🔄 Arrêt gracieux ordonné des services..."
+
+# 3.1. Arrêt Frontend (plus de nouveaux utilisateurs)
+if docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ps frontend | grep -q "running"; then
+    log "🌐 Arrêt Frontend (port 3000)..."
+    docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" stop frontend --timeout 15 2>/dev/null || true
+    success "✅ Frontend arrêté"
+fi
+
+# 3.2. Drain Backend (finir les requêtes en cours)
+if docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ps backend | grep -q "running"; then
+    log "🔧 Drain Backend (fin des requêtes en cours)..."
+    sleep 5  # Laisser le temps aux requêtes de se terminer
+    docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" stop backend --timeout 20 2>/dev/null || true
+    success "✅ Backend arrêté"
+fi
+
+# 3.3. Arrêt service MLX
 log "🤖 Arrêt du service MLX..."
 stop_process_by_pid "$LEXO_DIR/IA_Administratif/pids/document_analyzer.pid" "Service MLX"
 
@@ -121,20 +158,14 @@ if lsof -Pi :8004 -sTCP:LISTEN -t >/dev/null 2>&1; then
     lsof -ti:8004 | xargs kill -9 2>/dev/null || true
 fi
 
-# 4. Arrêt des services Docker
-log "🐳 Arrêt des services Docker..."
-
-# Vérifier que Docker est accessible
-if ! docker info >/dev/null 2>&1; then
-    warning "Docker n'est pas accessible - arrêt des processus par PID seulement"
-else
-    # Aller dans le répertoire IA_Administratif
-    if [ -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ]; then
-        cd "$LEXO_DIR/IA_Administratif"
-        
-        # Arrêt gracieux des conteneurs
-        log "Arrêt des conteneurs Docker..."
-        docker compose stop --timeout 30 2>/dev/null || docker-compose stop --time 30 2>/dev/null || true
+# 3.4. Arrêt bases de données (PostgreSQL, Redis, ChromaDB)
+log "🗄️ Arrêt des bases de données..."
+if docker compose -f "$LEXO_DIR/IA_Administratif/docker-compose.yml" ps | grep -q "running"; then
+    cd "$LEXO_DIR/IA_Administratif"
+    
+    # Arrêt gracieux des services restants (databases)
+    log "Arrêt des services de données..."
+    docker compose stop --timeout 30 2>/dev/null || docker-compose stop --time 30 2>/dev/null || true
         
         # Attendre l'arrêt complet (max 45 secondes)
         TIMEOUT=45
@@ -157,9 +188,9 @@ else
             sleep 2
         fi
         
-        # Suppression des conteneurs et nettoyage
-        log "Suppression des conteneurs..."
-        docker compose down --remove-orphans --volumes 2>/dev/null || docker-compose down --remove-orphans --volumes 2>/dev/null || true
+        # Suppression des conteneurs SANS VOLUMES (préservation des données)
+        log "Suppression des conteneurs (données préservées)..."
+        docker compose down --remove-orphans 2>/dev/null || docker-compose down --remove-orphans 2>/dev/null || true
         
         # Nettoyage des images orphelines
         log "Nettoyage des ressources Docker..."

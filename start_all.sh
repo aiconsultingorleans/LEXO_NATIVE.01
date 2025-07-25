@@ -3,8 +3,33 @@
 # 🚀 LEXO v1 - Script de démarrage complet
 # Démarre tous les services nécessaires pour LEXO v1
 # Architecture: Docker (backend, frontend, db) + MLX natif
+#
+# Usage: ./start_all.sh [--recovery] [--no-browser]
+#   --recovery  : Mode récupération (rebuild complet)
+#   --no-browser: Ne pas ouvrir le navigateur
 
 set -e  # Arrêt en cas d'erreur
+
+# Paramètres de démarrage
+RECOVERY_MODE=false
+OPEN_BROWSER=true
+
+# Analyser les arguments
+for arg in "$@"; do
+    case $arg in
+        --recovery)
+            RECOVERY_MODE=true
+            shift
+            ;;
+        --no-browser)
+            OPEN_BROWSER=false
+            shift
+            ;;
+        *)
+            # Argument inconnu
+            ;;
+    esac
+done
 
 # Couleurs pour les logs
 RED='\033[0;31m'
@@ -99,6 +124,42 @@ if [ "$(echo "$PYTHON_VERSION < 3.11" | bc)" -eq 1 ]; then
 fi
 
 success "✅ Prérequis vérifiés"
+
+# 1.5. Mode Recovery (si demandé)
+if [ "$RECOVERY_MODE" = true ]; then
+    warning "🔄 MODE RECOVERY ACTIVÉ - Reconstruction complète"
+    log "⚠️  Cette opération va :"
+    log "   • Arrêter tous les services"
+    log "   • Supprimer et reconstruire les conteneurs Docker"
+    log "   • Réinstaller les dépendances MLX"
+    log "   • Vérifier l'intégrité des volumes"
+    
+    echo "Voulez-vous continuer ? [y/N]"
+    read -r CONFIRM_RECOVERY
+    if [ "$CONFIRM_RECOVERY" != "y" ] && [ "$CONFIRM_RECOVERY" != "Y" ]; then
+        echo "Mode recovery annulé."
+        exit 0
+    fi
+    
+    # Arrêt forcé de tous les services
+    log "🛑 Arrêt forcé de tous les services..."
+    ./stop_all.sh 2>/dev/null || true
+    
+    # Suppression des conteneurs et images
+    cd "$LEXO_DIR/IA_Administratif"
+    log "🗑️ Suppression conteneurs et rebuild..."
+    docker compose down --remove-orphans 2>/dev/null || true
+    docker compose build --no-cache 2>/dev/null || true
+    
+    # Réinstallation environnement MLX
+    if [ -d "ai_services/venv" ]; then
+        log "🔄 Réinstallation environnement MLX..."
+        rm -rf "ai_services/venv"
+    fi
+    
+    cd "$LEXO_DIR"
+    success "✅ Mode recovery terminé, démarrage normal..."
+fi
 
 # 2. Nettoyage des processus zombies
 log "🧹 Nettoyage des processus existants..."
@@ -437,9 +498,33 @@ fi
 
 cd "$LEXO_DIR"
 
+# 6.5. Configuration réseau pour communication Docker → Mistral MLX
+log "🌐 Configuration réseau Docker → Mistral..."
+cd "$LEXO_DIR/IA_Administratif"
+
+if [ "$BACKEND_READY" = true ] && curl -s http://localhost:8004/health >/dev/null 2>&1; then
+    # Configurer host.docker.internal pour accès depuis conteneur backend
+    log "Configuration host.docker.internal dans conteneur backend..."
+    
+    # Obtenir l'IP du host depuis le conteneur
+    HOST_IP=$(docker compose exec -T backend sh -c "ip route | grep default | awk '{print \$3}'" 2>/dev/null || echo "host.docker.internal")
+    
+    # Ajouter l'entrée dans /etc/hosts du conteneur si nécessaire
+    docker compose exec -T backend sh -c "grep -q 'host.docker.internal' /etc/hosts || echo '$HOST_IP host.docker.internal' >> /etc/hosts" 2>/dev/null || true
+    
+    # Tester la connectivité Backend → Mistral
+    if docker compose exec -T backend curl -s --connect-timeout 5 http://host.docker.internal:8004/health >/dev/null 2>&1; then
+        success "✅ Communication Backend Docker → Mistral MLX opérationnelle"
+    else
+        warning "⚠️  Communication Backend → Mistral échoue, pipeline IA limité"
+        warning "   Le système fonctionnera mais sans enrichissement Mistral"
+    fi
+else
+    warning "⚠️  Backend ou Mistral non disponible, configuration réseau ignorée"
+fi
+
 # 7. Vérification et installation des dépendances critiques
 log "🔧 Vérification des dépendances backend..."
-cd "$LEXO_DIR/IA_Administratif"
 if [ "$BACKEND_READY" = true ]; then
     # Vérifier et installer psutil si manquant
     if ! docker compose exec -T backend python -c "import psutil" 2>/dev/null; then
@@ -604,7 +689,7 @@ echo "💡 Pour arrêter tous les services: ./stop_all.sh"
 echo ""
 
 # Ouvrir le navigateur (optionnel)
-if [ "$1" != "--no-browser" ]; then
+if [ "$OPEN_BROWSER" = true ]; then
     sleep 2
     if command -v open &> /dev/null; then
         open http://localhost:3000
@@ -617,9 +702,9 @@ if [ "$BACKEND_READY" != true ] || [ "$FRONTEND_READY" != true ] || [ "$PG_READY
     ALL_SERVICES_OK=false
 fi
 
-# Vérifications supplémentaires des nouvelles fonctionnalités
+# Vérifications approfondies santé système
 if [ "$BACKEND_READY" = true ]; then
-    log "🔍 Vérification des nouvelles fonctionnalités..."
+    log "🔍 Health checks approfondis..."
     
     # Vérifier l'endpoint de progression batch
     if curl -s http://localhost:8000/api/v1/batch/status >/dev/null 2>&1; then
@@ -633,6 +718,34 @@ if [ "$BACKEND_READY" = true ]; then
         success "✅ Dépendances critiques présentes"
     else
         warning "⚠️  Dépendances critiques manquantes"
+    fi
+    
+    # Test pipeline complet (Upload → OCR → Mistral)
+    log "🧪 Test pipeline documentaire..."
+    PIPELINE_TEST=$(curl -s -X GET http://localhost:8000/api/v1/health/pipeline 2>/dev/null || echo '{"pipeline_status": "unknown"}')
+    if echo "$PIPELINE_TEST" | grep -q '"pipeline_status": "operational"'; then
+        success "✅ Pipeline documentaire opérationnel"
+    else
+        warning "⚠️  Pipeline documentaire partiellement fonctionnel"
+    fi
+    
+    # Communication Backend → Mistral
+    if docker compose exec -T backend curl -s --connect-timeout 3 http://host.docker.internal:8004/health >/dev/null 2>&1; then
+        success "✅ Communication Backend → Mistral MLX active"
+    else
+        warning "⚠️  Communication Backend → Mistral limitée (fallback OCR seul)"
+    fi
+    
+    # Intégrité volumes Docker
+    log "💾 Vérification intégrité volumes..."
+    POSTGRES_VOLUME=$(docker volume inspect ia_administratif_postgres_data 2>/dev/null | jq -r '.[0].Mountpoint' 2>/dev/null || echo "non trouvé")
+    REDIS_VOLUME=$(docker volume inspect ia_administratif_redis_data 2>/dev/null | jq -r '.[0].Mountpoint' 2>/dev/null || echo "non trouvé")
+    CHROMA_VOLUME=$(docker volume inspect ia_administratif_chromadb_data 2>/dev/null | jq -r '.[0].Mountpoint' 2>/dev/null || echo "non trouvé")
+    
+    if [ "$POSTGRES_VOLUME" != "non trouvé" ] && [ "$REDIS_VOLUME" != "non trouvé" ] && [ "$CHROMA_VOLUME" != "non trouvé" ]; then
+        success "✅ Volumes Docker intègres et accessibles"
+    else
+        warning "⚠️  Certains volumes Docker inaccessibles"
     fi
 fi
 
