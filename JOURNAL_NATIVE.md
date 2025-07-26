@@ -10,7 +10,7 @@
 
 ## 📅 Entrées Journal
 
-### [26 Juillet 2025] - Démarrage Journal Natif
+### [26 Juillet 2025 - 08:50] - Démarrage Journal Natif
 
 #### 🎯 Objectif de la Journée
 - Mise en place du système de journal de développement
@@ -52,7 +52,7 @@
 ## 📋 Template Entrée Quotidienne
 
 ```markdown
-### [DD Mois YYYY] - Titre Journée
+### [DD Mois YYYY - HH:MM] - Titre Session
 
 #### 🎯 Objectif de la Journée
 [Objectifs principaux de la session de travail]
@@ -127,15 +127,17 @@ Lors de l'exécution de "je valide", le système ajoute automatiquement :
 2. **Résumé des tâches** accomplies  
 3. **Impact technique** des changements
 4. **Mise à jour métriques** si applicable
-5. **Ajout entrée journal** avec horodatage
+5. **Ajout entrée journal** avec horodatage complet (DATE + HEURE)
+
+**⚠️ FORMAT OBLIGATOIRE :** `[DD Mois YYYY - HH:MM]` pour traçabilité temporelle précise
 
 ### Format Entrée Automatique
 ```markdown
-#### 🤖 [HH:MM] Commit Automatique via "je valide"
-- **Branche créée :** feat/nom_branche_generee
-- **Fichiers modifiés :** liste_fichiers
-- **Type modification :** feat/fix/docs/perf/refactor
-- **Impact :** description_automatique_impact
+#### 🤖 [26 Juillet 2025 - 09:08] Commit Automatique via "je valide"
+- **Branche créée :** feat/native_docker_cleanup
+- **Fichiers modifiés :** 8 fichiers (backend API + services + documentation)
+- **Type modification :** feat (nettoyage architecture native)
+- **Impact :** Suppression complète références Docker - Architecture 100% native macOS
 ```
 
 ---
