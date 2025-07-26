@@ -377,7 +377,7 @@ async def _get_mistral_analysis(text: str) -> dict:
             import os
             
             # Appel à l'API Mistral locale (service document_analyzer)
-            mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+            mistral_host = "localhost"  # Architecture native macOS
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"http://{mistral_host}:8004/analyze",
@@ -431,7 +431,7 @@ async def _generate_mistral_summary(text: str, category: str) -> str:
         text_excerpt = text[:2000] if len(text) > 2000 else text
         
         # Appel à l'API Mistral locale (service document_analyzer)
-        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        mistral_host = "localhost"  # Architecture native macOS
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"http://{mistral_host}:8004/analyze",
@@ -500,7 +500,7 @@ Réponds en JSON avec :
 - confidence: score de confiance (0-1)
 - reasoning: courte explication"""
         
-        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        mistral_host = "localhost"  # Architecture native macOS
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 f"http://{mistral_host}:8004/analyze",
@@ -734,7 +734,7 @@ async def _call_mistral_analysis(text: str) -> dict:
         import os
         
         # Configuration service MLX
-        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        mistral_host = "localhost"  # Architecture native macOS
         
         # Limiter le texte pour éviter les timeouts
         text_excerpt = text[:2000] if len(text) > 2000 else text

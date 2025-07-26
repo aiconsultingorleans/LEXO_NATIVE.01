@@ -349,8 +349,8 @@ class OCRFileHandler(FileSystemEventHandler):
             text_excerpt = text[:2000] if len(text) > 2000 else text
             
             # Appel à l'API Mistral locale (service document_analyzer)
-            # Utiliser host.docker.internal pour accès depuis container Docker
-            mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+            # Architecture native macOS
+            mistral_host = "localhost"
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"http://{mistral_host}:8004/analyze",
@@ -391,8 +391,8 @@ class OCRFileHandler(FileSystemEventHandler):
             text_excerpt = text[:2000] if len(text) > 2000 else text
             
             # Appel à l'API Mistral locale (service document_analyzer)
-            # Utiliser host.docker.internal pour accès depuis container Docker
-            mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+            # Architecture native macOS
+            mistral_host = "localhost"
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Essayer d'abord l'endpoint /analyze
                 response = await client.post(

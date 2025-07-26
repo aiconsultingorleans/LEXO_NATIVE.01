@@ -270,7 +270,8 @@ IA_Administratif/frontend/src/components/dashboard/       # Analytics
 # Services IA
 IA_Administratif/ai_services/document_analyzer.py         # Mistral MLX
 
-# Configuration
+# Documentation & Suivi
+JOURNAL_NATIVE.md                             # 📋 Journal développement quotidien
 Migration_Native.md                           # Guide migration complète
 IA_Administratif/backend/core/config.py       # Configuration native
 ```
@@ -552,7 +553,8 @@ Le projet LEXO_NATIVE.01 utilise maintenant un **workflow Git hybride** combinan
 2. **Génération automatique** du nom de branche avec bon préfix
 3. **Création de branche** feature depuis la branche courante
 4. **Commit conventionnel** avec message standardisé
-5. **Push vers GitHub** avec tracking automatique
+5. **Mise à jour automatique** du JOURNAL_NATIVE.md avec résumé des tâches
+6. **Push vers GitHub** avec tracking automatique
 
 **Exemples de branches générées :**
 ```bash
@@ -698,6 +700,14 @@ git commit -m "feat(dashboard): amélioration KPI et styles
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 
+# NOUVEAU : Mise à jour automatique du journal
+# Ajout entrée dans JOURNAL_NATIVE.md :
+#### 🤖 [14:32] Commit Automatique via "je valide"
+- **Branche créée :** feat/dashboard_kpi_styles
+- **Fichiers modifiés :** page.tsx, KPIWidget.tsx, styles.css
+- **Type modification :** feat (amélioration interface)
+- **Impact :** Optimisation dashboard + responsive design
+
 git push -u origin feat/dashboard_kpi_styles
 ```
 
@@ -810,11 +820,11 @@ git push -u origin ${NEW_BRANCH}
 "je valide"
 
 # Claude exécute automatiquement :
-# ✅ Détection version (ex: .01 → .02)
-# ✅ Création branche LEXO_NATIVE.02
-# ✅ Commit avec message standardisé
-# ✅ Génération README résumé
-# ✅ Push vers GitHub
+# ✅ Analyse intelligente des modifications
+# ✅ Création branche feat/fix/docs avec nom descriptif
+# ✅ Commit conventionnel avec message standardisé
+# ✅ Mise à jour automatique JOURNAL_NATIVE.md
+# ✅ Push vers GitHub avec tracking
 # ✅ Confirmation avec URL branche
 ```
 

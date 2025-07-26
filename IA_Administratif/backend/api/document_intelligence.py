@@ -1,6 +1,6 @@
 """
 API endpoints pour l'intelligence documentaire avec Mistral MLX
-Intégration du service d'analyse documentaire natif dans le backend Docker
+Intégration du service d'analyse documentaire natif macOS
 """
 
 import logging
@@ -18,7 +18,7 @@ from models.user import User
 logger = logging.getLogger(__name__)
 
 # Configuration du service MLX natif
-DOCUMENT_ANALYZER_URL = "http://host.docker.internal:8004"
+DOCUMENT_ANALYZER_URL = "http://localhost:8004"
 DOCUMENT_ANALYZER_TIMEOUT = 30.0
 
 router = APIRouter(prefix="/api/v1/intelligence", tags=["Document Intelligence"])

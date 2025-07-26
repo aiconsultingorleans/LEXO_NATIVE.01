@@ -1160,7 +1160,7 @@ async def _call_mistral_service_direct(text: str) -> dict:
         import os
         
         # Configuration service MLX
-        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        mistral_host = "localhost"  # Architecture native macOS
         
         # Limiter le texte pour éviter les timeouts
         text_excerpt = text[:2000] if len(text) > 2000 else text
