@@ -95,18 +95,26 @@ POST /api/v1/rag/chat                       # Chat avec contexte
 ### Commandes Essentielles
 ```bash
 # 🚀 DÉMARRAGE COMPLET NATIF (recommandé)
-cd ~/Documents/LEXO_v1
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./start_native.sh                 # Démarre toute l'infrastructure native
 
 # 🍺 Services Homebrew (auto-démarrage)
 brew services start postgresql@15 redis  # Si pas déjà actifs
 
 # 🤖 Services individuels (optionnel)
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./start_backend_native.sh        # Backend FastAPI seul
 ./start_frontend_native.sh       # Frontend Next.js seul
 
 # 🛑 ARRÊT PROPRE NATIF  
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./stop_native.sh                  # Arrête tous les processus LEXO
+
+# 🔄 ALTERNATIVES RACINE PROJET
+cd ~/Documents/LEXO_v1
+./start_all.sh                    # Démarrage global alternatif
+./stop_all.sh                     # Arrêt global alternatif
+./check_health.sh                 # Vérification état services
 ```
 
 ### Performance Démarrage Native
@@ -278,15 +286,22 @@ IA_Administratif/backend/core/config.py       # Configuration native
 
 ### Scripts Natifs Utiles
 ```bash
-# Gestion projet native
+# 🚀 Gestion projet native (niveau IA_Administratif)
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./start_native.sh                 # Démarrage complet natif optimisé (30s)
 ./stop_native.sh                  # Arrêt propre natif avec sauvegarde
 ./diagnostic_native.sh            # Diagnostic complet système natif ✨ NOUVEAU
 ./start_backend_native.sh         # Backend FastAPI seul
 ./start_frontend_native.sh        # Frontend Next.js seul
 
-# Validation et diagnostic natifs
-cd IA_Administratif/backend && source venv/bin/activate
+# 🔄 Gestion projet global (niveau racine)
+cd ~/Documents/LEXO_v1
+./start_all.sh                    # Démarrage alternatif racine
+./stop_all.sh                     # Arrêt alternatif racine  
+./check_health.sh                 # Vérification services ✨ NOUVEAU
+
+# 🧪 Validation et diagnostic natifs
+cd ~/Documents/LEXO_v1/IA_Administratif/backend && source venv/bin/activate
 python test_complete_integration.py   # Test pipeline natif
 curl http://localhost:8000/api/v1/health  # Health check natif
 curl http://localhost:8000/api/v1/batch/status  # État progression batch
@@ -339,6 +354,7 @@ cd IA_Administratif/frontend
 ps aux | grep -E "(uvicorn|next|python.*document_analyzer)" | grep -v grep
 
 # Diagnostic complet automatisé
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./diagnostic_native.sh
 
 # Logs temps réel pendant développement
@@ -359,6 +375,7 @@ tail -f logs/mistral_native.log &
 
 ```bash
 # 🚀 Démarrage quotidien (30 secondes)
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./start_native.sh
 
 # 💻 Développement toute la journée
@@ -368,6 +385,7 @@ tail -f logs/mistral_native.log &
 # - Tests unitaires instantanés
 
 # 🛑 Arrêt propre en fin de journée
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./stop_native.sh
 ```
 
@@ -410,6 +428,7 @@ python -c "import psutil" 2>/dev/null || pip install psutil==6.1.0
 
 ```bash
 # 🔍 Diagnostic complet du système natif
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./diagnostic_native.sh
 
 # Vérifie automatiquement :
@@ -445,9 +464,11 @@ Lors de l'arrêt, sauvegarde automatique dans `logs/backups/YYYYMMDD/` :
 
 ```bash
 # Problèmes généraux natifs
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./stop_native.sh && ./start_native.sh
 
 # Diagnostic détaillé natif
+cd ~/Documents/LEXO_v1/IA_Administratif
 ./diagnostic_native.sh
 
 # Corrections manuelles spécifiques
@@ -837,8 +858,78 @@ git push -u origin ${NEW_BRANCH}
 
 ---
 
+## 📁 Architecture Scripts & Outils - Guide Complet
+
+### 🗂️ Hiérarchie Scripts du Projet
+
+```
+~/Documents/LEXO_v1/
+├── 🚀 Scripts Niveau Racine (alternatives globales)
+│   ├── start_all.sh             # Démarrage alternatif complet
+│   ├── stop_all.sh              # Arrêt alternatif complet  
+│   └── check_health.sh          # Vérification état services
+│
+└── IA_Administratif/
+    ├── 🎯 Scripts Natifs Principaux (recommandés)
+    │   ├── start_native.sh       # 🚀 Démarrage natif optimisé
+    │   ├── stop_native.sh        # 🛑 Arrêt propre natif
+    │   └── diagnostic_native.sh  # 🔍 Diagnostic système complet
+    │
+    ├── 🔧 Scripts Composants Individuels
+    │   ├── start_backend_native.sh    # Backend FastAPI seul
+    │   ├── start_frontend_native.sh   # Frontend Next.js seul
+    │   ├── start_document_analyzer.sh # Service Mistral MLX seul
+    │   └── stop_document_analyzer.sh  # Arrêt service Mistral
+    │
+    └── 🧪 Scripts Utilitaires
+        ├── check_cache.sh        # Vérification cache système
+        └── build_base_image.sh   # Build image Docker (legacy)
+```
+
+### 🚀 Guide d'Utilisation Rapide
+
+#### **Usage Quotidien (Recommandé)**
+```bash
+# Démarrage développement
+cd ~/Documents/LEXO_v1/IA_Administratif
+./start_native.sh
+
+# Arrêt propre
+./stop_native.sh
+
+# Diagnostic en cas de problème
+./diagnostic_native.sh
+```
+
+#### **Alternatives Globales**
+```bash
+# Depuis la racine du projet
+cd ~/Documents/LEXO_v1
+./start_all.sh      # Alternative au start_native.sh
+./stop_all.sh       # Alternative au stop_native.sh
+./check_health.sh   # Vérification rapide services
+```
+
+#### **Démarrage Sélectif (Debug)**
+```bash
+cd ~/Documents/LEXO_v1/IA_Administratif
+
+# Services individuels
+./start_backend_native.sh    # Backend seul (port 8000)
+./start_frontend_native.sh   # Frontend seul (port 3000)
+./start_document_analyzer.sh # Mistral MLX seul (port 8004)
+```
+
+### 🎯 Priorité d'Usage
+
+1. **🥇 Scripts Natifs** (`IA_Administratif/`) : Performance optimale
+2. **🥈 Scripts Racine** : Alternatives de secours
+3. **🥉 Scripts Individuels** : Debug et développement ciblé
+
+---
+
 **📈 État Projet :** MVP natif opérationnel - Pipeline documentaire 2x plus performant  
 **🎯 Prochaine étape :** Packaging app macOS + App Store + Interface mobile native  
 **🚀 Philosophie :** "Native First" - Performance maximale Apple Silicon pour l'utilisateur
 
-*Dernière mise à jour : 25 juillet 2025 - LEXO_NATIVE.01 architecture native macOS opérationnelle*
+*Dernière mise à jour : 26 juillet 2025 - Architecture scripts corrigée + barre progression dashboard*

@@ -701,45 +701,66 @@ function DashboardContent() {
             <div className="mt-4 space-y-2">
               {compactUploadFiles.map(file => (
                 <div key={file.id} className="flex items-center justify-between bg-background-secondary/50 p-2 rounded-lg">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-1">
                     <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-700 truncate max-w-40">{file.name}</span>
-                    {file.status === 'uploading' && (
-                      <span className="text-xs text-blue-500">📤 Upload... (20%)</span>
-                    )}
-                    {file.status === 'processing' && (
-                      <span className="text-xs text-purple-500">🔍 OCR → 🤖 Mistral... (70%)</span>
-                    )}
-                    {file.status === 'success' && (
-                      <div className="flex flex-col">
-                        <span className="text-xs text-green-500">✓ Terminé</span>
-                        {file.result && typeof file.result === 'object' && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            <div className="flex items-center space-x-2">
-                              {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
-                                <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
-                                  📂 {(file.result as any).category}
-                                </span>
-                              )}
-                              {(file.result as any).confidence_score && (
-                                <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
-                                  {((file.result as any).confidence_score * 100).toFixed(0)}%
-                                </span>
-                              )}
-                            </div>
-                            {(file.result as any).summary && (
-                              <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
-                                💬 {(file.result as any).summary}
-                              </div>
-                            )}
-                          </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-700 truncate max-w-32">{file.name}</span>
+                        {file.status === 'uploading' && (
+                          <span className="text-xs text-blue-500">📤 Upload... ({file.progress}%)</span>
+                        )}
+                        {file.status === 'processing' && (
+                          <span className="text-xs text-purple-500">🔍 OCR → 🤖 Mistral... ({file.progress}%)</span>
                         )}
                       </div>
-                    )}
-                    {file.status === 'error' && (
-                      <span className="text-xs text-red-500">✗</span>
-                    )}
+                      
+                      {/* Barre de progression pour upload et processing */}
+                      {(file.status === 'uploading' || file.status === 'processing') && (
+                        <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                              file.status === 'uploading' ? 'bg-blue-500' : 'bg-purple-500'
+                            }`}
+                            style={{ width: `${file.progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  {/* Statut de succès et résultats */}
+                  {file.status === 'success' && (
+                    <div className="flex flex-col ml-2">
+                      <span className="text-xs text-green-500">✓ Terminé</span>
+                      {file.result && typeof file.result === 'object' && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          <div className="flex items-center space-x-2">
+                            {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
+                              <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
+                                📂 {(file.result as any).category}
+                              </span>
+                            )}
+                            {(file.result as any).confidence_score && (
+                              <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
+                                {((file.result as any).confidence_score * 100).toFixed(0)}%
+                              </span>
+                            )}
+                          </div>
+                          {(file.result as any).summary && (
+                            <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
+                              💬 {(file.result as any).summary}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Statut d'erreur */}
+                  {file.status === 'error' && (
+                    <span className="text-xs text-red-500">✗ {file.error}</span>
+                  )}
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
