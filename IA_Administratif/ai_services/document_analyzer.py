@@ -7,10 +7,13 @@ import asyncio
 import logging
 import time
 import json
+import re
 from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum
+from functools import wraps
+import threading
 
 # FastAPI pour l'API service
 from fastapi import FastAPI, HTTPException
@@ -25,7 +28,16 @@ except ImportError:
     logging.error("mlx_lm not installed. Run: pip install mlx-lm")
     raise
 
+# Configuration logging détaillé
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
+
+# Configuration timeouts
+MISTRAL_TIMEOUT = 30  # secondes
+MISTRAL_MAX_RETRIES = 2
 
 
 class DocumentType(Enum):
@@ -110,8 +122,10 @@ Réponds en JSON avec cette structure exacte :
 Document :
 {text}
 
-Extrais et structure les informations importantes (dates, montants, noms, adresses, numéros de référence, etc.) en JSON avec cette structure :
-{"informations_cles": {"dates": [], "montants": [], "personnes": [], "entreprises": [], "references": [], "autres": {}}}""",
+Extrais et structure les informations importantes (dates, montants, noms, adresses, numéros de référence, etc.) en JSON strict avec cette structure exacte :
+{{"dates": [], "montants": [], "personnes": [], "entreprises": [], "references": [], "autres": {{}}}}
+
+Réponds UNIQUEMENT par le JSON, sans texte supplémentaire.""",
 
             "summarization": """Tu es un expert en synthèse documentaire. Créé un résumé concis et professionnel de ce document.
 
@@ -193,109 +207,299 @@ Analyse en JSON :
             
             result.processing_time = time.time() - start_time
             
-            self.logger.info(f"Analyse terminée en {result.processing_time:.2f}s - Type: {result.document_type}")
+            self.logger.info(f"Analyse terminée en {result.processing_time:.2f}s - Type: {result.document_type.value if hasattr(result.document_type, 'value') else result.document_type} (conf: {result.confidence:.2f})")
             return result
             
         except Exception as e:
             self.logger.error(f"Erreur lors de l'analyse documentaire : {e}")
             raise HTTPException(status_code=500, detail=f"Erreur d'analyse : {str(e)}")
     
-    async def _classify_document(self, text: str) -> Dict[str, Any]:
-        """Classifie le type de document"""
-        try:
-            prompt = self.prompts["classification"].format(text=text[:2000])  # Limiter la taille
-            
-            response = generate(
-                self.model,
-                self.tokenizer,
-                prompt=prompt,
-                max_tokens=100,
-                verbose=False
-            )
-            
-            # Parser la réponse JSON avec une approche plus robuste
+    def _timeout_wrapper(self, func, *args, **kwargs):
+        """Wrapper pour ajouter timeout aux générations Mistral"""
+        result = {'value': None, 'error': None}
+        
+        def target():
             try:
-                # Nettoyer la réponse
-                clean_response = response.strip()
+                result['value'] = func(*args, **kwargs)
+            except Exception as e:
+                result['error'] = e
+        
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join(timeout=MISTRAL_TIMEOUT)
+        
+        if thread.is_alive():
+            self.logger.error(f"Timeout Mistral après {MISTRAL_TIMEOUT}s")
+            # Note: Impossible de killer proprement le thread MLX
+            raise TimeoutError(f"Génération Mistral timeout après {MISTRAL_TIMEOUT}s")
+        
+        if result['error']:
+            raise result['error']
+        
+        return result['value']
+    
+    def _robust_json_parse(self, response: str, expected_keys: List[str] = None) -> Dict[str, Any]:
+        """Parse JSON robuste avec gestion d'erreurs améliorée"""
+        self.logger.debug(f"Parsing JSON: {response[:200]}...")
+        
+        # Nettoyer la réponse
+        clean_response = response.strip()
+        
+        # Méthode 1: Chercher le JSON dans la réponse
+        json_patterns = [
+            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # JSON simple
+            r'\{.*?\}',  # JSON basique
+        ]
+        
+        for pattern in json_patterns:
+            matches = re.findall(pattern, clean_response, re.DOTALL)
+            for match in matches:
+                try:
+                    parsed = json.loads(match)
+                    if isinstance(parsed, dict):
+                        # Vérifier les clés attendues si spécifiées
+                        if expected_keys:
+                            if any(key in parsed for key in expected_keys):
+                                return parsed
+                        else:
+                            return parsed
+                except json.JSONDecodeError:
+                    continue
+        
+        # Méthode 2: Extraction par regex si JSON introuvable
+        self.logger.warning(f"JSON non trouvé, tentative extraction regex: {clean_response[:100]}")
+        
+        # Fallback pour classification
+        if 'type' in clean_response.lower():
+            type_match = re.search(r'["\']?type["\']?\s*:\s*["\']?([^,}"\'\n]+)', clean_response, re.IGNORECASE)
+            conf_match = re.search(r'["\']?confidence["\']?\s*:\s*([0-9.]+)', clean_response)
+            
+            if type_match:
+                return {
+                    'type': type_match.group(1).strip().strip('"\''),
+                    'confidence': float(conf_match.group(1)) if conf_match else 0.5,
+                    'reasoning': 'Extraction par regex'
+                }
+        
+        # Fallback final
+        self.logger.error(f"Impossible de parser JSON: {clean_response}")
+        return {'error': 'Parsing JSON échoué', 'raw_response': clean_response[:200]}
+    
+    async def _classify_document(self, text: str) -> Dict[str, Any]:
+        """Classifie le type de document avec gestion d'erreurs robuste"""
+        for attempt in range(MISTRAL_MAX_RETRIES + 1):
+            try:
+                self.logger.info(f"Classification tentative {attempt + 1}/{MISTRAL_MAX_RETRIES + 1}")
                 
-                # Chercher le JSON dans la réponse
-                json_start = clean_response.find('{')
-                if json_start == -1:
-                    self.logger.warning(f"Aucun JSON trouvé dans la réponse de classification : {clean_response[:100]}")
-                    return {"type": DocumentType.AUTRE, "confidence": 0.3, "reasoning": "Aucun JSON valide"}
+                prompt = self.prompts["classification"].format(text=text[:2000])
+                self.logger.debug(f"Prompt classification: {prompt[:100]}...")
                 
-                json_end = clean_response.rfind('}') + 1
-                json_str = clean_response[json_start:json_end]
+                # Génération avec timeout
+                response = self._timeout_wrapper(
+                    generate,
+                    self.model,
+                    self.tokenizer,
+                    prompt=prompt,
+                    max_tokens=100,
+                    verbose=False
+                )
                 
-                classification_data = json.loads(json_str)
+                self.logger.info(f"Réponse Mistral classification: {response[:100]}...")
+            
+                # Parser avec méthode robuste
+                classification_data = self._robust_json_parse(response, ['type', 'confidence'])
+                
+                if 'error' in classification_data:
+                    if attempt < MISTRAL_MAX_RETRIES:
+                        self.logger.warning(f"Tentative {attempt + 1} échouée, retry...")
+                        await asyncio.sleep(1)  # Petite pause avant retry
+                        continue
+                    else:
+                        self.logger.error(f"Toutes les tentatives échouées: {classification_data}")
+                        return {"type": DocumentType.AUTRE, "confidence": 0.2, "reasoning": "Parsing JSON échoué"}
                 
                 # Mapper vers notre enum
-                doc_type_str = classification_data.get("type", "autre")
+                doc_type_str = classification_data.get("type", "autre").lower()
                 try:
-                    doc_type = DocumentType(doc_type_str)
-                except ValueError:
+                    # Mapper les variantes possibles
+                    type_mapping = {
+                        'rib': DocumentType.RIB,
+                        'relevé identité bancaire': DocumentType.RIB,
+                        'facture': DocumentType.FACTURE,
+                        'invoice': DocumentType.FACTURE,
+                        'contrat': DocumentType.CONTRAT,
+                        'contract': DocumentType.CONTRAT,
+                        'attestation': DocumentType.ATTESTATION,
+                        'courrier': DocumentType.COURRIER,
+                        'rapport': DocumentType.RAPPORT,
+                        'autre': DocumentType.AUTRE
+                    }
+                    
+                    doc_type = type_mapping.get(doc_type_str, DocumentType.AUTRE)
+                except Exception:
                     doc_type = DocumentType.AUTRE
                 
-                return {
+                confidence = float(classification_data.get("confidence", 0.5))
+                confidence = max(0.0, min(1.0, confidence))  # Clamp entre 0 et 1
+                
+                result = {
                     "type": doc_type,
-                    "confidence": float(classification_data.get("confidence", 0.5)),
+                    "confidence": confidence,
                     "reasoning": classification_data.get("reasoning", "")
                 }
                 
-            except (json.JSONDecodeError, ValueError) as e:
-                self.logger.warning(f"Erreur parsing classification JSON : {e}")
-                self.logger.debug(f"Réponse brute : {response}")
-                return {"type": DocumentType.AUTRE, "confidence": 0.3, "reasoning": "Erreur de parsing"}
+                self.logger.info(f"Classification réussie: {doc_type.value} (conf: {confidence:.2f})")
+                return result
                 
-        except Exception as e:
-            self.logger.error(f"Erreur classification : {e}")
-            return {"type": DocumentType.AUTRE, "confidence": 0.0, "reasoning": str(e)}
+            except TimeoutError as e:
+                self.logger.error(f"Timeout classification tentative {attempt + 1}: {e}")
+                if attempt < MISTRAL_MAX_RETRIES:
+                    continue
+                else:
+                    return {"type": DocumentType.AUTRE, "confidence": 0.1, "reasoning": "Timeout Mistral"}
+                    
+            except Exception as e:
+                self.logger.error(f"Erreur classification tentative {attempt + 1}: {e}")
+                if attempt < MISTRAL_MAX_RETRIES:
+                    await asyncio.sleep(2)  # Pause plus longue en cas d'erreur
+                    continue
+                else:
+                    return {"type": DocumentType.AUTRE, "confidence": 0.0, "reasoning": f"Erreur: {str(e)}"}
+        
+        # Fallback final si toutes les tentatives échouent
+        return {"type": DocumentType.AUTRE, "confidence": 0.0, "reasoning": "Toutes tentatives échouées"}
     
     async def _extract_key_information(self, text: str) -> Dict[str, Any]:
-        """Extrait les informations clés du document"""
-        try:
-            prompt = self.prompts["key_extraction"].format(text=text[:2000])
-            
-            response = generate(
-                self.model,
-                self.tokenizer,
-                prompt=prompt,
-                max_tokens=200,
-                verbose=False
-            )
-            
-            # Parser la réponse JSON avec une approche plus robuste
+        """Extrait les informations clés du document avec parsing robuste"""
+        for attempt in range(MISTRAL_MAX_RETRIES + 1):
             try:
-                # Nettoyer la réponse
-                clean_response = response.strip()
+                self.logger.info(f"Extraction informations tentative {attempt + 1}/{MISTRAL_MAX_RETRIES + 1}")
                 
-                # Chercher le JSON dans la réponse
-                json_start = clean_response.find('{')
-                if json_start == -1:
-                    self.logger.warning(f"Aucun JSON trouvé dans la réponse : {clean_response[:100]}")
-                    return {"error": "Aucun JSON trouvé"}
+                prompt = self.prompts["key_extraction"].format(text=text[:2000])
+                self.logger.debug(f"Prompt extraction: {prompt[:100]}...")
                 
-                json_end = clean_response.rfind('}') + 1
-                json_str = clean_response[json_start:json_end]
+                # Génération avec timeout
+                response = self._timeout_wrapper(
+                    generate,
+                    self.model,
+                    self.tokenizer,
+                    prompt=prompt,
+                    max_tokens=200,
+                    verbose=False
+                )
                 
-                # Tenter de parser le JSON
-                key_info = json.loads(json_str)
+                self.logger.info(f"Réponse Mistral extraction: {response[:150]}...")
                 
-                # Vérifier la structure attendue
-                if "informations_cles" in key_info:
-                    return key_info["informations_cles"]
+                # Parser avec méthode robuste (sans clé 'informations_cles' maintenant)
+                key_info = self._robust_json_parse(response, ['dates', 'montants', 'personnes'])
+                
+                if 'error' in key_info:
+                    if attempt < MISTRAL_MAX_RETRIES:
+                        self.logger.warning(f"Extraction tentative {attempt + 1} échouée, retry...")
+                        await asyncio.sleep(1)
+                        continue
+                    else:
+                        # Fallback: Extraction basique par regex
+                        self.logger.warning("Fallback extraction regex")
+                        return self._fallback_extraction(text)
+                
+                # Valider et nettoyer la structure
+                validated_info = self._validate_extracted_info(key_info)
+                
+                self.logger.info(f"Extraction réussie: {len(validated_info)} catégories")
+                return validated_info
+                
+            except TimeoutError as e:
+                self.logger.error(f"Timeout extraction tentative {attempt + 1}: {e}")
+                if attempt < MISTRAL_MAX_RETRIES:
+                    continue
                 else:
-                    # Peut-être que le JSON est directement les informations clés
-                    return key_info
-                
-            except (json.JSONDecodeError, ValueError) as e:
-                self.logger.warning(f"Erreur parsing key extraction JSON : {e}")
-                self.logger.debug(f"Réponse brute : {response}")
-                return {"error": "Erreur de parsing des informations clés"}
-                
-        except Exception as e:
-            self.logger.error(f"Erreur extraction informations clés : {e}")
-            return {"error": str(e)}
+                    return self._fallback_extraction(text)
+                    
+            except Exception as e:
+                self.logger.error(f"Erreur extraction tentative {attempt + 1}: {e}")
+                if attempt < MISTRAL_MAX_RETRIES:
+                    await asyncio.sleep(2)
+                    continue
+                else:
+                    return self._fallback_extraction(text)
+        
+        # Fallback final
+        return self._fallback_extraction(text)
+    
+    def _validate_extracted_info(self, info: Dict[str, Any]) -> Dict[str, Any]:
+        """Valide et nettoie les informations extraites"""
+        validated = {
+            "dates": [],
+            "montants": [],
+            "personnes": [],
+            "entreprises": [],
+            "references": [],
+            "autres": {}
+        }
+        
+        for key in validated.keys():
+            if key in info:
+                value = info[key]
+                if isinstance(value, list):
+                    validated[key] = [str(item) for item in value if item]  # Nettoyer les valeurs vides
+                elif isinstance(value, dict):
+                    validated[key] = {k: str(v) for k, v in value.items() if v}
+                else:
+                    if key == "autres":
+                        validated[key] = {"info": str(value)} if value else {}
+                    else:
+                        validated[key] = [str(value)] if value else []
+        
+        return validated
+    
+    def _fallback_extraction(self, text: str) -> Dict[str, Any]:
+        """Extraction de secours par regex si Mistral échoue"""
+        self.logger.info("Utilisation extraction fallback par regex")
+        
+        result = {
+            "dates": [],
+            "montants": [],
+            "personnes": [],
+            "entreprises": [],
+            "references": [],
+            "autres": {"extraction_type": "fallback_regex"}
+        }
+        
+        # Extraction dates
+        date_patterns = [
+            r'\b\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}\b',
+            r'\b\d{1,2}\s+[a-zéèêôà]+\s+\d{4}\b'
+        ]
+        for pattern in date_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            result["dates"].extend(matches[:5])  # Limiter à 5
+        
+        # Extraction montants
+        montant_patterns = [
+            r'\b\d+[,\.]\d{2}\s*€\b',
+            r'\b\d+[,\.]\d{2}\s*euros?\b',
+            r'\btotal\s*:?\s*\d+[,\.]\d{2}\b'
+        ]
+        for pattern in montant_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            result["montants"].extend(matches[:3])  # Limiter à 3
+        
+        # Extraction références
+        ref_patterns = [
+            r'\bn[u°\s]*\d{6,}\b',
+            r'\bref[\s\.:]*\w+\d+\b',
+            r'\bfacture[\s\.:]*\w*\d+\b'
+        ]
+        for pattern in ref_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            result["references"].extend(matches[:3])
+        
+        # Nettoyer et dédupliquer
+        for key in ["dates", "montants", "references"]:
+            result[key] = list(set(result[key]))[:5]  # Dédoublonner et limiter
+        
+        return result
     
     async def _summarize_document(self, text: str) -> str:
         """Crée un résumé du document"""
