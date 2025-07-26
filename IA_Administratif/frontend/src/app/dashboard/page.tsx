@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
 import { BatchProgressDisplay } from '@/components/ui/ProgressBar';
+import { AnimatedProgressBar, ProgressBarStyles } from '@/components/ui/AnimatedProgressBar';
 import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
 
 // Lazy loading des composants non critiques
@@ -37,6 +38,8 @@ interface UploadFile {
   name: string;
   result?: unknown;
   error?: string;
+  isAnimating?: boolean;
+  startTime?: number;
 }
 
 export default function DashboardPage() {
@@ -170,11 +173,18 @@ function DashboardContent() {
   const handleSingleFileUpload = async (uploadFile: UploadFile) => {
     const formData = new FormData();
     formData.append('file', uploadFile.file);
+    const startTime = Date.now();
 
     try {
-      // Update status to uploading
+      // Start animation
       setCompactUploadFiles(prev => prev.map(f => 
-        f.id === uploadFile.id ? { ...f, status: 'uploading', progress: 20 } : f
+        f.id === uploadFile.id ? { 
+          ...f, 
+          status: 'uploading', 
+          progress: 0,
+          isAnimating: true,
+          startTime
+        } : f
       ));
 
       // Pipeline unifié : Upload + OCR + Mistral + Classification en un seul appel
@@ -192,11 +202,6 @@ function DashboardContent() {
         throw new Error(errorData.detail || 'Pipeline processing failed');
       }
 
-      // Update status to processing (OCR + Mistral en cours)
-      setCompactUploadFiles(prev => prev.map(f => 
-        f.id === uploadFile.id ? { ...f, status: 'processing', progress: 70 } : f
-      ));
-
       const result = await response.json();
 
       // Update status to success avec tous les résultats
@@ -205,6 +210,7 @@ function DashboardContent() {
           ...f, 
           status: 'success', 
           progress: 100,
+          isAnimating: false,
           result: {
             document_id: result.id,
             category: result.category,
@@ -237,7 +243,8 @@ function DashboardContent() {
       setCompactUploadFiles(prev => prev.map(f => 
         f.id === uploadFile.id ? { 
           ...f, 
-          status: 'error', 
+          status: 'error',
+          isAnimating: false,
           error: error instanceof Error ? error.message : 'Pipeline processing failed'
         } : f
       ));
@@ -539,6 +546,7 @@ function DashboardContent() {
 
   return (
     <MainLayout>
+      <ProgressBarStyles />
       <div className="space-y-8">
         {/* Hero Section */}
         <div className="text-center bg-gradient-to-br from-background-secondary to-background-tertiary p-8 rounded-2xl border border-card-border">
@@ -704,25 +712,34 @@ function DashboardContent() {
                   <div className="flex items-center space-x-2 flex-1">
                     <FileText className="h-4 w-4 text-gray-400" />
                     <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                      {/* Nom du fichier */}
+                      <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-700 truncate max-w-32">{file.name}</span>
-                        {file.status === 'uploading' && (
-                          <span className="text-xs text-blue-500">📤 Upload... ({file.progress}%)</span>
-                        )}
-                        {file.status === 'processing' && (
-                          <span className="text-xs text-purple-500">🔍 OCR → 🤖 Mistral... ({file.progress}%)</span>
-                        )}
                       </div>
                       
-                      {/* Barre de progression pour upload et processing */}
-                      {(file.status === 'uploading' || file.status === 'processing') && (
-                        <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                              file.status === 'uploading' ? 'bg-blue-500' : 'bg-purple-500'
-                            }`}
-                            style={{ width: `${file.progress}%` }}
-                          />
+                      {/* Barre de progression animée */}
+                      {(file.status === 'uploading' || file.status === 'processing') && file.isAnimating && (
+                        <AnimatedProgressBar
+                          isActive={true}
+                          estimatedDuration={8000}
+                          size="md"
+                          showText={true}
+                          showPercentage={false}
+                          onComplete={() => {
+                            // Animation complétée mais on garde le file en processing jusqu'à la réponse API
+                          }}
+                        />
+                      )}
+                      
+                      {/* Fallback pour statut sans animation */}
+                      {(file.status === 'uploading' || file.status === 'processing') && !file.isAnimating && (
+                        <div className="mt-1">
+                          <div className="text-xs text-gray-500 mb-1">
+                            {file.status === 'uploading' ? '📤 Upload...' : '🔍 Traitement...'}
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full bg-gray-400" style={{ width: '50%' }} />
+                          </div>
                         </div>
                       )}
                     </div>

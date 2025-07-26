@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
+import { AnimatedProgressBar, ProgressBarStyles } from '@/components/ui/AnimatedProgressBar';
 
 interface UploadedFile {
   file: File;
@@ -12,6 +13,8 @@ interface UploadedFile {
   progress: number;
   result?: unknown;
   error?: string;
+  isAnimating?: boolean;
+  startTime?: number;
 }
 
 export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => void }) {
@@ -21,10 +24,17 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
   const handleUpload = useCallback(async (uploadedFile: UploadedFile) => {
     const formData = new FormData();
     formData.append('file', uploadedFile.file);
+    const startTime = Date.now();
 
-    // Update status to uploading
+    // Start animation
     setFiles(prev => prev.map(f => 
-      f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 20 } : f
+      f.id === uploadedFile.id ? { 
+        ...f, 
+        status: 'uploading', 
+        progress: 0,
+        isAnimating: true,
+        startTime
+      } : f
     ));
 
     try {
@@ -44,11 +54,6 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
 
       toast.info('Pipeline démarré', `Traitement complet de "${uploadedFile.file.name}" en cours...`);
 
-      // Update status to processing (OCR + Mistral + Classification en cours)
-      setFiles(prev => prev.map(f => 
-        f.id === uploadedFile.id ? { ...f, status: 'processing', progress: 70 } : f
-      ));
-
       const result = await response.json();
 
       // Update status to success avec tous les résultats
@@ -57,6 +62,7 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
           ...f, 
           status: 'success', 
           progress: 100,
+          isAnimating: false,
           result: {
             document_id: result.id,
             category: result.category,
@@ -100,7 +106,8 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
       setFiles(prev => prev.map(f => 
         f.id === uploadedFile.id ? { 
           ...f, 
-          status: 'error', 
+          status: 'error',
+          isAnimating: false,
           error: errorMessage 
         } : f
       ));
@@ -162,7 +169,9 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
   });
 
   return (
-    <div className="space-y-6">
+    <>
+      <ProgressBarStyles />
+      <div className="space-y-6">
       {/* Dropzone */}
       <div
         {...getRootProps()}
@@ -283,11 +292,26 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
                       <p className="text-xs text-red-500">Erreur: {file.error}</p>
                     )}
                   </div>
-                  {(file.status === 'uploading' || file.status === 'processing') && (
+                  {(file.status === 'uploading' || file.status === 'processing') && file.isAnimating && (
+                    <div className="mt-2">
+                      <AnimatedProgressBar
+                        isActive={true}
+                        estimatedDuration={8000}
+                        fileName={file.file.name}
+                        size="lg"
+                        showText={true}
+                        showPercentage={true}
+                        onComplete={() => {
+                          // Animation complétée
+                        }}
+                      />
+                    </div>
+                  )}
+                  {(file.status === 'uploading' || file.status === 'processing') && !file.isAnimating && (
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
                       <div
-                        className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${file.progress}%` }}
+                        className="bg-gray-400 h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: '50%' }}
                       />
                     </div>
                   )}
@@ -303,6 +327,7 @@ export function DocumentUpload({ onUploadComplete }: { onUploadComplete?: () => 
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

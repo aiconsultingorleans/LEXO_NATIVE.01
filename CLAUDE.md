@@ -393,6 +393,208 @@ cd ~/Documents/LEXO_v1/IA_Administratif
 
 ---
 
+## 🔄 Politique Redémarrage Automatique des Serveurs - Développement Intelligent
+
+### 🎯 Règle Fondamentale Claude Code
+
+**Après toute modification de code, Claude détermine automatiquement si un redémarrage de serveur est nécessaire et l'exécute sans intervention manuelle.**
+
+### 📋 Table de Référence - Types de Modifications
+
+| Type de Fichier | Redémarrage Requis | Service | Action Claude |
+|------------------|-------------------|---------|---------------|
+| **Frontend Next.js** | | | |
+| `*.tsx`, `*.ts`, `*.jsx`, `*.js` | ❌ **Non** | - | HMR automatique instantané |
+| `*.css`, `*.scss`, `tailwind.config.js` | ❌ **Non** | - | Hot reload styles automatique |
+| `package.json` (dépendances) | ✅ **Oui** | Next.js | `cd frontend && npm install && npm run dev` |
+| `next.config.js`, `.env*` | ✅ **Oui** | Next.js | Redémarrage npm run dev |
+| **Backend FastAPI** | | | |
+| `*.py` (code application) | ❌ **Non** | - | Uvicorn --reload automatique |
+| `requirements.txt` | ✅ **Oui** | Backend | `pip install -r requirements.txt + restart uvicorn` |
+| `alembic/`, `.env` | ✅ **Oui** | Backend | Redémarrage backend complet |
+| **Services IA** | | | |
+| `ai_services/*.py` | ❌ **Non** | - | Python reload automatique |
+| Changement modèle MLX | ✅ **Oui** | Mistral MLX | Redémarrage service IA |
+| **Configuration Système** | | | |
+| `docker-compose.yml` | ❌ **N/A** | - | Architecture native uniquement |
+| Scripts `start_*.sh` | ✅ **Oui** | Tous | Redémarrage complet |
+
+### 🤖 Workflow Automatique Claude
+
+#### Après Chaque Modification
+```bash
+# 1. Analyse automatique des fichiers modifiés
+if [modifications nécessitent redémarrage]; then
+    echo "🔄 Redémarrage automatique détecté nécessaire"
+    
+    # 2. Exécution commandes appropriées
+    case $SERVICE in
+        "frontend") cd IA_Administratif/frontend && npm run dev ;;
+        "backend") cd IA_Administratif/backend && source venv/bin/activate && uvicorn ... ;;
+        "mistral") cd IA_Administratif/ai_services && python document_analyzer.py ;;
+        "complet") cd IA_Administratif && ./start_native.sh ;;
+    esac
+    
+    # 3. Vérification post-redémarrage
+    curl -s http://localhost:3000 >/dev/null && echo "✅ Frontend OK"
+    curl -s http://localhost:8000/api/v1/health >/dev/null && echo "✅ Backend OK"
+fi
+```
+
+### 🚀 Commandes de Redémarrage par Service
+
+#### **Frontend Next.js** (Port 3000)
+```bash
+# Redémarrage standard
+cd ~/Documents/LEXO_v1/IA_Administratif/frontend
+# Arrêt : Ctrl+C du processus npm run dev
+npm run dev
+
+# Redémarrage avec nettoyage cache (si problèmes)
+rm -rf .next/cache
+npm run dev
+
+# Temps redémarrage : ~5 secondes
+```
+
+#### **Backend FastAPI** (Port 8000)
+```bash
+# Redémarrage standard
+cd ~/Documents/LEXO_v1/IA_Administratif/backend
+source venv/bin/activate
+# Arrêt : Ctrl+C du processus uvicorn
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# Avec installation dépendances
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# Temps redémarrage : ~10 secondes
+```
+
+#### **Services IA Mistral MLX** (Port 8004)
+```bash
+# Redémarrage standard  
+cd ~/Documents/LEXO_v1/IA_Administratif/ai_services
+source venv/bin/activate
+# Arrêt : Ctrl+C du processus python
+python document_analyzer.py
+
+# Temps redémarrage : ~30 secondes (chargement modèles)
+```
+
+#### **Redémarrage Complet** (Tous services)
+```bash
+# Méthode recommandée pour changements majeurs
+cd ~/Documents/LEXO_v1/IA_Administratif
+./stop_native.sh
+./start_native.sh
+
+# Temps redémarrage complet : ~40 secondes
+```
+
+### 🔍 Détection Automatique Nécessité Redémarrage
+
+#### Règles de Détection Claude
+```bash
+# 1. Frontend Next.js
+if [[ $modified_files =~ package\.json|next\.config\.js|\.env ]] || [[ $new_dependencies == true ]]; then
+    restart_frontend=true
+fi
+
+# 2. Backend FastAPI  
+if [[ $modified_files =~ requirements\.txt|alembic/|config\.py|\.env ]] || [[ $new_dependencies == true ]]; then
+    restart_backend=true
+fi
+
+# 3. Services IA
+if [[ $modified_files =~ ml_models/|mistral.*config ]] || [[ $model_change == true ]]; then
+    restart_ai_services=true
+fi
+
+# 4. Configuration système
+if [[ $modified_files =~ start_.*\.sh|stop_.*\.sh ]] || [[ $system_config_change == true ]]; then
+    restart_all=true
+fi
+```
+
+### ⚡ Optimisations Performance Redémarrage
+
+#### **Next.js Turbopack** (Expérimental)
+```bash
+# Démarrage ultra-rapide (si activé)
+npm run dev -- --turbo
+# Redémarrage : ~2 secondes vs ~5 secondes
+```
+
+#### **Cache Préservation**
+- **Frontend** : Conservation `.next/cache` si possible
+- **Backend** : Préservation `__pycache__` entre redémarrages  
+- **IA** : Cache modèles MLX en mémoire si redémarrage partiel
+
+### 🔧 Diagnostic Post-Redémarrage
+
+#### Vérifications Automatiques Claude
+```bash
+# 1. Health checks endpoints
+curl -s http://localhost:3000 >/dev/null || echo "❌ Frontend inaccessible"
+curl -s http://localhost:8000/api/v1/health >/dev/null || echo "❌ Backend inaccessible"  
+curl -s http://localhost:8004/health >/dev/null || echo "❌ Services IA inaccessibles"
+
+# 2. Processus actifs
+ps aux | grep -E "(npm.*dev|uvicorn|python.*analyzer)" | grep -v grep
+
+# 3. Ports ouverts
+netstat -an | grep -E ":(3000|8000|8004).*LISTEN"
+
+# 4. Log des erreurs
+tail -n 10 logs/frontend_native.log logs/backend_native.log logs/mistral_native.log
+```
+
+### 📝 Log Redémarrages Automatiques
+
+#### Format Journal Automatique
+```markdown
+#### 🔄 [26 Juillet 2025 - 14:45] Redémarrage Automatique
+- **Déclencheur :** Modification package.json frontend
+- **Service redémarré :** Next.js (port 3000)
+- **Commande :** cd frontend && npm install && npm run dev
+- **Durée :** 8 secondes
+- **Résultat :** ✅ Service redémarré avec succès
+- **Health check :** ✅ http://localhost:3000 accessible
+```
+
+### 🎯 Cas Particuliers
+
+#### **Modifications Simultanées Multi-Services**
+```bash
+# Ordre de redémarrage optimisé :
+# 1. Services système (PostgreSQL, Redis) - si nécessaire
+# 2. Backend FastAPI - base de données dépendantes  
+# 3. Services IA Mistral - dépendant backend
+# 4. Frontend Next.js - interface utilisateur
+```
+
+#### **Développement sans Redémarrage**
+- **Modifications composants React** : HMR instantané
+- **Modifications CSS/Tailwind** : Hot reload styles
+- **Modifications code Python API** : Uvicorn --reload automatique
+- **Modifications services IA** : Import reload Python
+
+#### **Redémarrage Forcé Manuel**
+```bash
+# Si détection automatique échoue
+cd ~/Documents/LEXO_v1/IA_Administratif
+./stop_native.sh && ./start_native.sh
+
+# Ou service spécifique
+pkill -f "npm.*dev" && cd frontend && npm run dev
+```
+
+**🔧 Principe** : Claude optimise l'expérience développeur en redémarrant automatiquement uniquement quand nécessaire, préservant la performance du hot reload natif.
+
+---
+
 ## 🛡️ Auto-correction Native et Diagnostic - Stabilité Maximale
 
 ### Problèmes automatiquement corrigés par start_native.sh
