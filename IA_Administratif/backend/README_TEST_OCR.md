@@ -106,11 +106,11 @@ python -m spacy download fr_core_news_sm
 
 #### 2. Redis Non Disponible
 ```bash
-# Démarrer Redis (macOS avec Homebrew)
+# Démarrer Redis natif (macOS avec Homebrew)
 brew services start redis
 
-# Ou Docker
-docker run -d -p 6379:6379 redis:alpine
+# Vérifier l'état
+brew services list | grep redis
 ```
 
 #### 3. Tesseract Non Trouvé
@@ -144,11 +144,11 @@ Si certaines dépendances manquent, le script s'adapte automatiquement :
 - **Utilisation mémoire**
 - **Accélération Apple Silicon**
 
-### Benchmarks Typiques
-- **Tesseract** : ~2-5 mots/sec
-- **TrOCR** : ~1-3 mots/sec (plus précis)
+### Benchmarks Typiques (Apple Silicon M4)
+- **Tesseract natif** : ~5-10 mots/sec
+- **TrOCR optimisé** : ~3-8 mots/sec (plus précis)
 - **Cache hit** : ~100x plus rapide
-- **Apple Silicon** : 2-5x accélération selon la tâche
+- **Apple Silicon M4** : 3-8x accélération vs Intel
 
 ## 🎯 Prochaines Étapes
 

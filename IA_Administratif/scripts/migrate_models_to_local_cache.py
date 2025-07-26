@@ -326,11 +326,11 @@ class ModelCacheMigrator:
         config_content = f"""# 🚀 LEXO v1 - Configuration Cache ML Local
 # Généré automatiquement par migrate_models_to_local_cache.py
 
-# Variables d'environnement pour cache local uniquement
-TRANSFORMERS_CACHE=/app/ml_models/transformers
-HF_MODELS_CACHE=/app/ml_models/transformers
-HF_HUB_CACHE=/app/ml_models/transformers
-SPACY_DATA_DIR=/app/ml_models/spacy
+# Variables d'environnement pour cache natif macOS
+TRANSFORMERS_CACHE=/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers
+HF_MODELS_CACHE=/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers
+HF_HUB_CACHE=/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers
+SPACY_DATA_DIR=/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/spacy
 
 # Forcer utilisation cache local (pas de téléchargement)
 HF_OFFLINE=1

@@ -23,7 +23,7 @@ LEXO v1 est un assistant IA conçu pour automatiser complètement le traitement 
 - **OCR** : TrOCR + LayoutLMv3 + Tesseract
 - **RAG** : ChromaDB + Mistral 7B MLX
 - **Auth** : JWT + OAuth2
-- **Infrastructure** : Docker + Docker Compose
+- **Infrastructure** : Architecture native macOS
 
 ### Structure du Projet
 
@@ -45,16 +45,17 @@ IA_Administratif/
 │       └── types/       # Types TypeScript
 ├── ml_models/           # Modèles IA
 ├── data/                # Données (DB, cache)
-└── docker-compose.yml   # Orchestration
+└── start_native.sh      # Démarrage natif
 ```
 
 ## 🚀 Démarrage Rapide
 
 ### Prérequis
 
-- Docker Desktop
 - Node.js 20+
 - Python 3.11+
+- PostgreSQL 15 (Homebrew)
+- Redis 7 (Homebrew)
 - 16GB RAM minimum
 - macOS (optimisé pour Apple Silicon)
 
@@ -68,70 +69,66 @@ IA_Administratif/
 
 2. **Configuration initiale**
    ```bash
-   make setup-dev
+   cd IA_Administratif
+   ./start_native.sh
    ```
 
 3. **Démarrer les services**
    ```bash
-   make start
+   ./start_native.sh
    ```
 
 4. **Accéder aux applications**
    - 🌐 Frontend : http://localhost:3000
    - 🔌 API Backend : http://localhost:8000
    - 📚 Documentation API : http://localhost:8000/docs
-   - 🗄️ Adminer (BDD) : http://localhost:8080
+   - 🤖 Service IA Mistral : http://localhost:8004
 
 ## 📖 Commandes Utiles
 
 ```bash
-# Aide
-make help
+# Développement natif
+./start_native.sh    # Démarre tous les services natifs
+./stop_native.sh     # Arrête tous les services natifs
+./diagnostic_native.sh # Diagnostic système complet
 
-# Développement
-make start          # Démarre tous les services
-make stop           # Arrête tous les services
-make logs           # Affiche les logs
-make restart        # Redémarre tous les services
+# Services individuels
+./start_backend_native.sh  # Backend FastAPI seul
+./start_frontend_native.sh # Frontend Next.js seul
 
-# Code Quality
-make lint           # Vérification du code
-make format         # Formatage automatique
-make test           # Lance les tests
-make type-check     # Vérification TypeScript
+# Tests
+cd backend && python test_complete_integration.py
+cd frontend && npm run test
 
-# Base de données
-make db-migrate     # Applique les migrations
-make db-reset       # Remet à zéro la BDD
-make backup-db      # Sauvegarde la BDD
-
-# Maintenance
-make clean          # Nettoyage complet
-make update         # Met à jour les dépendances
-make health         # Vérifie la santé des services
+# Base de données (Homebrew)
+brew services start postgresql@15
+brew services start redis
 ```
 
 ## 🔧 Configuration
 
 ### Variables d'Environnement
 
-Copiez et modifiez les fichiers `.env.example` :
+La configuration native utilise les variables dans :
 
 ```bash
-# Backend
-cp .env.example .env
+# Configuration ML native
+config/ml_cache.env
 
-# Frontend
-cp frontend/.env.example frontend/.env.local
+# Variables backend
+backend/.env
+
+# Variables frontend
+frontend/.env.local
 ```
 
 ### Principales Configurations
 
-- **DATABASE_URL** : Connexion PostgreSQL
-- **REDIS_URL** : Connexion Redis
+- **TRANSFORMERS_CACHE** : Cache modèles natif
+- **DATABASE_URL** : PostgreSQL Homebrew
+- **REDIS_URL** : Redis natif
 - **JWT_SECRET_KEY** : Clé de chiffrement JWT
-- **UPLOAD_PATH** : Dossier surveillé pour OCR
-- **MISTRAL_MODEL_PATH** : Chemin vers Mistral 7B
+- **UPLOAD_PATH** : `/Users/stephaneansel/Documents/LEXO_v1/OCR/En attente`
 
 ## 📁 Surveillance de Dossier
 
@@ -150,14 +147,15 @@ LEXO surveille automatiquement le dossier :
 ## 🧪 Tests
 
 ```bash
-# Tous les tests
-make test
+# Tests backend natifs
+cd backend && source venv/bin/activate
+python test_complete_integration.py
 
-# Tests backend uniquement
-make test-backend
+# Tests frontend natifs
+cd frontend && npm run test
 
-# Tests frontend uniquement
-make test-frontend
+# Tests pipeline OCR
+cd backend && python test_ocr_etape3.py
 ```
 
 ## 📊 Fonctionnalités
@@ -194,11 +192,10 @@ make test-frontend
 
 ### Problèmes Courants
 
-1. **Port déjà utilisé**
+1. **Processus en cours**
    ```bash
-   make stop
-   make clean
-   make start
+   ./stop_native.sh
+   ./start_native.sh
    ```
 
 2. **Problème de permissions**
@@ -208,12 +205,12 @@ make test-frontend
 
 3. **Erreur de base de données**
    ```bash
-   make db-reset
+   brew services restart postgresql@15
    ```
 
 4. **Module Python manquant**
    ```bash
-   cd backend && pip install -r requirements.txt
+   cd backend && source venv/bin/activate && pip install -r requirements.txt
    ```
 
 ## 📚 Documentation

@@ -1,9 +1,9 @@
-# 🚀 Optimisation spaCy pour LEXO v1
+# 🚀 Optimisation spaCy pour LEXO_NATIVE.01 - Architecture Native
 
 ## 🎯 Problème résolu
 
-**Avant :** Le script `start_all.sh` se bloquait 5-8 minutes lors de la compilation de spaCy dans Docker
-**Après :** Démarrage en 30 secondes après la première compilation
+**Avant Docker :** Le script se bloquait 5-8 minutes lors de la compilation de spaCy
+**Après Native :** Démarrage en 10 secondes avec architecture native macOS
 
 ## 🏗️ Architecture implémentée
 

@@ -40,10 +40,8 @@ class TrOCRConfig:
     def __post_init__(self):
         """Configure le cache_dir selon l'environnement"""
         if self.cache_dir is None:
-            # Détecter l'environnement Docker vs local
-            if os.path.exists("/app/ml_models/transformers"):
-                self.cache_dir = "/app/ml_models/transformers"
-            elif os.path.exists("/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers"):
+            # Détecter l'environnement natif macOS
+            if os.path.exists("/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers"):
                 self.cache_dir = "/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers"
             else:
                 # Fallback vers le répertoire relatif

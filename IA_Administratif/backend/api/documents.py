@@ -115,8 +115,8 @@ async def upload_document(
     import os
     from datetime import datetime
     
-    # Create upload directory dans le dossier surveillé
-    upload_dir = "/app/ocr_data"
+    # Create upload directory dans le dossier natif
+    upload_dir = "/Users/stephaneansel/Documents/LEXO_v1/OCR/En attente"
     os.makedirs(upload_dir, exist_ok=True)
     
     # Save file directement dans le dossier surveillé
@@ -354,8 +354,12 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 logger.info(f"   🏷️ Entités: {len(entities)} trouvées")
                 logger.info(f"   ⏱️ Temps: {process_time:.2f}s")
                 
-                # 8. Déplacer le fichier vers le dossier de catégorie
-                await _move_to_category_folder(Path(file_path), final_category)
+                # 8. Déplacer le fichier vers le dossier de catégorie et mettre à jour le chemin
+                new_file_path = await _move_to_category_folder(Path(file_path), final_category)
+                
+                # 9. Mettre à jour le chemin du fichier en base
+                document.file_path = new_file_path
+                await db.commit()
                 
             else:
                 logger.error(f"Document {document_id} non trouvé en base")
@@ -457,14 +461,34 @@ async def _generate_mistral_summary(text: str, category: str) -> str:
         return f"Document {category} de {len(text.split())} mots analysé automatiquement."
 
 
-async def _move_to_category_folder(file_path: Path, category: str):
-    """Déplace le fichier vers le dossier de catégorie approprié"""
+async def _move_to_category_folder(file_path: Path, category: str) -> str:
+    """Déplace le fichier vers le dossier de catégorie approprié et retourne le nouveau chemin"""
+    logger = logging.getLogger(__name__)
     try:
-        # Créer le dossier de catégorie s'il n'existe pas
-        category_folder = file_path.parent / category
+        # Base directory pour la structure OCR native
+        base_ocr_dir = Path("/Users/stephaneansel/Documents/LEXO_v1/OCR")
+        
+        # Mapping des catégories vers les dossiers existants
+        category_mapping = {
+            'factures': 'factures',
+            'attestations': 'attestations', 
+            'rib': 'rib',
+            'contrats': 'contrats',
+            'impots': 'impots',
+            'courriers': 'non_classes',  # Pas de dossier courriers, on met dans non_classes
+            'cartes_transport': 'non_classes',  # Pas de dossier cartes_transport
+            'documents_personnels': 'non_classes',  # Pas de dossier documents_personnels 
+            'non_classes': 'non_classes'
+        }
+        
+        # Déterminer le dossier de destination
+        target_folder_name = category_mapping.get(category, 'non_classes')
+        category_folder = base_ocr_dir / target_folder_name
+        
+        # Créer le dossier s'il n'existe pas (normalement ils existent déjà)
         category_folder.mkdir(exist_ok=True)
         
-        # Destination
+        # Destination finale
         destination = category_folder / file_path.name
         
         # Éviter les conflits de noms
@@ -478,10 +502,14 @@ async def _move_to_category_folder(file_path: Path, category: str):
         
         # Déplacer le fichier
         file_path.rename(destination)
-        logger.info(f"📁 Fichier déplacé vers: {category}/{destination.name}")
+        logger.info(f"📁 Fichier déplacé vers: OCR/{target_folder_name}/{destination.name}")
+        
+        return str(destination)
         
     except Exception as e:
         logger.warning(f"Échec du déplacement vers {category}: {e}")
+        # Retourner le chemin original en cas d'échec
+        return str(file_path)
 
 
 async def _get_mistral_filename_analysis(filename: str) -> dict:
@@ -674,11 +702,14 @@ async def upload_and_process_document(
             if not summary:
                 summary = f"Document de type {final_category} analysé automatiquement. Contenu: {word_count} mots extraits avec {final_confidence:.1%} de confiance."
             
-            # 9. Sauvegarde en base de données
+            # 9. Déplacer le fichier vers le dossier de catégorie
+            final_file_path = await _move_to_category_folder(Path(temp_file_path), final_category)
+            
+            # 10. Sauvegarde en base de données avec le bon chemin
             document = Document(
                 filename=file.filename,
                 original_filename=file.filename,
-                file_path=temp_file_path,  # Stocké temporairement 
+                file_path=final_file_path,  # Chemin final dans le dossier de catégorie
                 file_size=len(content),
                 mime_type=file.content_type or "application/octet-stream",
                 user_id=current_user.id,
@@ -695,7 +726,7 @@ async def upload_and_process_document(
             await db.commit()
             await db.refresh(document)
             
-            # 10. Métriques finales
+            # 11. Métriques finales
             total_time = time.time() - start_time
             
             logger.info(f"✅ Pipeline unifié terminé avec succès:")
@@ -704,18 +735,19 @@ async def upload_and_process_document(
             logger.info(f"   📝 Texte: {len(ocr_text)} chars, {word_count} mots")
             logger.info(f"   📄 Résumé: {len(summary)} chars")
             logger.info(f"   🔍 Entités: {len(entities_data)}")
+            logger.info(f"   📁 Fichier: {final_file_path}")
             logger.info(f"   ⏱️ Temps total: {total_time:.2f}s")
             
             return document
             
         finally:
-            # Nettoyage des fichiers temporaires
-            for path in [temp_file_path, temp_image_path]:
-                if path and os.path.exists(path):
-                    try:
-                        os.unlink(path)
-                    except Exception as e:
-                        logger.warning(f"Échec suppression fichier temporaire {path}: {e}")
+            # Nettoyage uniquement des fichiers temporaires de conversion (pas le fichier principal)
+            if temp_image_path and os.path.exists(temp_image_path):
+                try:
+                    os.unlink(temp_image_path)
+                    logger.debug(f"Fichier temporaire de conversion supprimé: {temp_image_path}")
+                except Exception as e:
+                    logger.warning(f"Échec suppression fichier temporaire {temp_image_path}: {e}")
     
     except HTTPException:
         raise

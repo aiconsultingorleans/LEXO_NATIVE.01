@@ -87,9 +87,9 @@ class ModelCacheValidator:
         logger.info("🔧 Vérification des variables d'environnement...")
         
         required_vars = {
-            'TRANSFORMERS_CACHE': '/app/ml_models/transformers',
-            'HF_MODELS_CACHE': '/app/ml_models/transformers',
-            'HF_HUB_CACHE': '/app/ml_models/transformers',
+            'TRANSFORMERS_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
+            'HF_MODELS_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
+            'HF_HUB_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
             'HF_OFFLINE': '1',
             'TRANSFORMERS_OFFLINE': '1'
         }

@@ -445,7 +445,7 @@ class OCRFileHandler(FileSystemEventHandler):
 class OCRWatcherService:
     """Service principal de surveillance OCR"""
     
-    def __init__(self, watch_path: str = "/app/ocr_data"):
+    def __init__(self, watch_path: str = "/Users/stephaneansel/Documents/LEXO_v1/OCR/En attente"):
         self.watch_path = Path(watch_path)
         self.observer = None
         self.event_handler = OCRFileHandler()
@@ -486,7 +486,7 @@ class OCRWatcherService:
 _watcher_service: Optional[OCRWatcherService] = None
 
 
-def start_ocr_watcher(watch_path: str = "/app/ocr_data") -> OCRWatcherService:
+def start_ocr_watcher(watch_path: str = "/Users/stephaneansel/Documents/LEXO_v1/OCR/En attente") -> OCRWatcherService:
     """Démarre le service de surveillance OCR"""
     global _watcher_service
     

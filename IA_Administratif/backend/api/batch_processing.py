@@ -36,7 +36,7 @@ async def scan_ocr_folder(
 ):
     """Scanne le dossier OCR pour identifier les fichiers non traités"""
     
-    ocr_folder = Path("/app/ocr_data")
+    ocr_folder = Path("/Users/stephaneansel/Documents/LEXO_v1/OCR/En attente")
     if not ocr_folder.exists():
         raise HTTPException(status_code=404, detail="Dossier OCR introuvable")
     

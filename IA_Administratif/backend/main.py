@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
     # Démarrer le service de surveillance OCR en arrière-plan (optionnel)
     try:
         # Note: Le watcher initialisera l'OCR lors du premier fichier détecté
-        watcher = start_ocr_watcher("/app/ocr_data")
+        watcher = start_ocr_watcher(settings.UPLOAD_PATH)
         logger.info("✅ Service de surveillance OCR démarré (lazy loading)")
     except Exception as e:
         logger.error(f"❌ Échec démarrage surveillance OCR: {e}")

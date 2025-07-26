@@ -24,12 +24,12 @@ def check_environment_variables() -> Dict[str, str]:
     logger.info("🔍 Vérification des variables d'environnement...")
     
     expected_vars = {
-        'TRANSFORMERS_CACHE': '/app/ml_models/transformers',
-        'HF_DATASETS_CACHE': '/app/ml_models/datasets',
-        'HF_MODELS_CACHE': '/app/ml_models/transformers', 
-        'SPACY_DATA': '/app/ml_models/spacy',
-        'HF_HUB_CACHE': '/root/.cache/huggingface/hub',
-        'TORCH_HOME': '/app/ml_models/torch'
+        'TRANSFORMERS_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
+        'HF_DATASETS_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/datasets',
+        'HF_MODELS_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers', 
+        'SPACY_DATA': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/spacy',
+        'HF_HUB_CACHE': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
+        'TORCH_HOME': '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/torch'
     }
     
     results = {}
@@ -54,12 +54,11 @@ def check_cache_directories() -> Dict[str, bool]:
     logger.info("📁 Vérification des répertoires de cache...")
     
     cache_dirs = [
-        '/app/ml_models',
-        '/app/ml_models/transformers',
-        '/app/ml_models/spacy',
-        '/app/ml_models/datasets',
-        '/app/ml_models/torch',
-        '/root/.cache/huggingface'
+        '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models',
+        '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers',
+        '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/spacy',
+        '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/datasets',
+        '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/torch'
     ]
     
     results = {}
@@ -91,7 +90,7 @@ def test_transformers_cache() -> bool:
         
         # Tester avec un modèle léger
         model_name = "bert-base-uncased"  # Modèle léger pour test
-        cache_dir = os.getenv('TRANSFORMERS_CACHE', '/app/ml_models/transformers')
+        cache_dir = os.getenv('TRANSFORMERS_CACHE', '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers')
         
         logger.info(f"  Chargement tokenizer depuis cache: {cache_dir}")
         start_time = time.time()
@@ -156,7 +155,7 @@ def test_huggingface_cache() -> bool:
     """Test l'accès au cache HuggingFace"""
     logger.info("📦 Test du cache HuggingFace...")
     
-    hf_cache = os.getenv('HF_HUB_CACHE', '/root/.cache/huggingface/hub')
+    hf_cache = os.getenv('HF_HUB_CACHE', '/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/ml_models/transformers')
     cache_path = Path(hf_cache)
     
     if cache_path.exists():
@@ -295,7 +294,7 @@ def main():
         print(report)
         
         # Sauvegarder le rapport
-        report_file = Path("/app/logs/cache_verification_report.txt")
+        report_file = Path("/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/logs/cache_verification_report.txt")
         if report_file.parent.exists():
             with open(report_file, 'w', encoding='utf-8') as f:
                 f.write(report)
