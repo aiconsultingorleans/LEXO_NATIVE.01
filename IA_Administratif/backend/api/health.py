@@ -133,7 +133,7 @@ async def pipeline_health_check():
         import httpx
         import os
         
-        mistral_host = "host.docker.internal" if "DOCKER" in os.environ or "/app" in os.getcwd() else "localhost"
+        mistral_host = "localhost"  # Architecture native macOS
         
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(f"http://{mistral_host}:8004/health")

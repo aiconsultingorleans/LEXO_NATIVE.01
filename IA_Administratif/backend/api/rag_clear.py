@@ -40,8 +40,8 @@ async def clear_rag_database(
             
             logger.info("📋 Connexion à ChromaDB via client Python...")
             
-            # Connexion au serveur ChromaDB (nom du service Docker)
-            client = chromadb.HttpClient(host="chromadb", port=8000)
+            # Connexion au serveur ChromaDB natif (standalone)
+            client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
             
             # Lister toutes les collections
             collections = client.list_collections()
@@ -85,24 +85,9 @@ async def clear_rag_database(
         except ImportError:
             logger.warning("⚠️ ChromaDB client Python non disponible, utilisation de l'API REST...")
             
-            # Fallback vers l'API REST (méthode originale mais simplifiée)
-            chromadb_url = "http://localhost:8001"
-            
-            async with httpx.AsyncClient(timeout=30.0) as http_client:
-                try:
-                    # Reset complet via API interne si disponible
-                    reset_response = await http_client.post(f"{chromadb_url}/api/v1/reset")
-                    
-                    if reset_response.status_code == 200:
-                        logger.info("✅ Reset global ChromaDB réussi")
-                        collections_cleared = 1  # Indicateur de succès
-                    else:
-                        logger.warning(f"⚠️ Reset global non disponible: {reset_response.status_code}")
-                        # Pas d'erreur car ChromaDB peut être vide
-                        
-                except Exception as e:
-                    logger.warning(f"⚠️ Impossible d'utiliser l'API REST: {e}")
-                    # Pas d'erreur fatale
+            # Fallback : Si le client PersistentClient ne marche pas, pas de fallback REST en natif
+            logger.warning("⚠️ ChromaDB PersistentClient non disponible")
+            collections_cleared = 0
                     
         except Exception as e:
             error_msg = f"Erreur lors de la connexion à ChromaDB: {str(e)}"
@@ -132,7 +117,7 @@ async def clear_rag_database(
             "success": True,
             "message": f"Base RAG et documents vidés avec succès",
             "collections_cleared": collections_cleared,
-            "chromadb_url": "http://chromadb:8000",
+            "chromadb_path": settings.CHROMA_PATH,
             "timestamp": "2025-07-24 19:26:56"
         }
         
@@ -170,13 +155,13 @@ async def get_rag_status(
     """Récupère le statut de la base RAG"""
     
     try:
-        chromadb_url = "http://localhost:8001"
+        # ChromaDB natif - pas besoin d'URL en architecture native
         
         try:
             import chromadb
             
-            # Connexion au serveur ChromaDB (nom du service Docker)
-            client = chromadb.HttpClient(host="chromadb", port=8000)
+            # Connexion au serveur ChromaDB natif (standalone)
+            client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
             
             # Tester la connexion et lister les collections
             collections = client.list_collections()
@@ -188,14 +173,14 @@ async def get_rag_status(
                 "chromadb_accessible": True,
                 "total_collections": total_collections,
                 "collections": collection_names,
-                "chromadb_url": "http://chromadb:8000"
+                "chromadb_path": settings.CHROMA_PATH
             }
             
         except ImportError:
             return {
                 "chromadb_accessible": False,
                 "error": "ChromaDB Python client not available",
-                "chromadb_url": "http://chromadb:8000"
+                "chromadb_path": settings.CHROMA_PATH
             }
             
         except Exception as e:
@@ -203,25 +188,25 @@ async def get_rag_status(
             async with httpx.AsyncClient(timeout=10.0) as client:
                 try:
                     # Tester la connexion basique
-                    response = await client.get("http://chromadb:8000/")
+                    # Plus de fallback REST en natif
                 
                     return {
                         "chromadb_accessible": True,
                         "total_collections": 0,
                         "collections": [],
-                        "chromadb_url": "http://chromadb:8000",
+                        "chromadb_path": settings.CHROMA_PATH,
                         "note": "Status via REST API - limited info"
                     }
                 except Exception as rest_e:
                     return {
                         "chromadb_accessible": False,
                         "error": f"ChromaDB error: {str(e)}, REST fallback: {str(rest_e)}",
-                        "chromadb_url": "http://chromadb:8000"
+                        "chromadb_path": settings.CHROMA_PATH
                     }
                     
     except Exception as e:
         return {
             "chromadb_accessible": False,
             "error": f"Unexpected error: {str(e)}",
-            "chromadb_url": "http://localhost:8001"
+            "chromadb_path": settings.CHROMA_PATH
         }
