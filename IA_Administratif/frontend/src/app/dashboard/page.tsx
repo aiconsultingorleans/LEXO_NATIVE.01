@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
 import { BatchProgressDisplay } from '@/components/ui/ProgressBar';
+import { AnimatedProgressBar, ProgressBarStyles } from '@/components/ui/AnimatedProgressBar';
 import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
 
 // Lazy loading des composants non critiques
@@ -37,6 +38,8 @@ interface UploadFile {
   name: string;
   result?: unknown;
   error?: string;
+  isAnimating?: boolean;
+  startTime?: number;
 }
 
 export default function DashboardPage() {
@@ -170,11 +173,18 @@ function DashboardContent() {
   const handleSingleFileUpload = async (uploadFile: UploadFile) => {
     const formData = new FormData();
     formData.append('file', uploadFile.file);
+    const startTime = Date.now();
 
     try {
-      // Update status to uploading
+      // Start animation
       setCompactUploadFiles(prev => prev.map(f => 
-        f.id === uploadFile.id ? { ...f, status: 'uploading', progress: 20 } : f
+        f.id === uploadFile.id ? { 
+          ...f, 
+          status: 'uploading', 
+          progress: 0,
+          isAnimating: true,
+          startTime
+        } : f
       ));
 
       // Pipeline unifié : Upload + OCR + Mistral + Classification en un seul appel
@@ -192,11 +202,6 @@ function DashboardContent() {
         throw new Error(errorData.detail || 'Pipeline processing failed');
       }
 
-      // Update status to processing (OCR + Mistral en cours)
-      setCompactUploadFiles(prev => prev.map(f => 
-        f.id === uploadFile.id ? { ...f, status: 'processing', progress: 70 } : f
-      ));
-
       const result = await response.json();
 
       // Update status to success avec tous les résultats
@@ -205,6 +210,7 @@ function DashboardContent() {
           ...f, 
           status: 'success', 
           progress: 100,
+          isAnimating: false,
           result: {
             document_id: result.id,
             category: result.category,
@@ -237,7 +243,8 @@ function DashboardContent() {
       setCompactUploadFiles(prev => prev.map(f => 
         f.id === uploadFile.id ? { 
           ...f, 
-          status: 'error', 
+          status: 'error',
+          isAnimating: false,
           error: error instanceof Error ? error.message : 'Pipeline processing failed'
         } : f
       ));
@@ -539,6 +546,7 @@ function DashboardContent() {
 
   return (
     <MainLayout>
+      <ProgressBarStyles />
       <div className="space-y-8">
         {/* Hero Section */}
         <div className="text-center bg-gradient-to-br from-background-secondary to-background-tertiary p-8 rounded-2xl border border-card-border">
@@ -701,45 +709,75 @@ function DashboardContent() {
             <div className="mt-4 space-y-2">
               {compactUploadFiles.map(file => (
                 <div key={file.id} className="flex items-center justify-between bg-background-secondary/50 p-2 rounded-lg">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-1">
                     <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-700 truncate max-w-40">{file.name}</span>
-                    {file.status === 'uploading' && (
-                      <span className="text-xs text-blue-500">📤 Upload... (20%)</span>
-                    )}
-                    {file.status === 'processing' && (
-                      <span className="text-xs text-purple-500">🔍 OCR → 🤖 Mistral... (70%)</span>
-                    )}
-                    {file.status === 'success' && (
-                      <div className="flex flex-col">
-                        <span className="text-xs text-green-500">✓ Terminé</span>
-                        {file.result && typeof file.result === 'object' && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            <div className="flex items-center space-x-2">
-                              {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
-                                <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
-                                  📂 {(file.result as any).category}
-                                </span>
-                              )}
-                              {(file.result as any).confidence_score && (
-                                <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
-                                  {((file.result as any).confidence_score * 100).toFixed(0)}%
-                                </span>
-                              )}
-                            </div>
-                            {(file.result as any).summary && (
-                              <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
-                                💬 {(file.result as any).summary}
-                              </div>
+                    <div className="flex-1">
+                      {/* Nom du fichier */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-700 truncate max-w-32">{file.name}</span>
+                      </div>
+                      
+                      {/* Barre de progression animée */}
+                      {(file.status === 'uploading' || file.status === 'processing') && file.isAnimating && (
+                        <AnimatedProgressBar
+                          isActive={true}
+                          estimatedDuration={8000}
+                          size="md"
+                          showText={true}
+                          showPercentage={false}
+                          onComplete={() => {
+                            // Animation complétée mais on garde le file en processing jusqu'à la réponse API
+                          }}
+                        />
+                      )}
+                      
+                      {/* Fallback pour statut sans animation */}
+                      {(file.status === 'uploading' || file.status === 'processing') && !file.isAnimating && (
+                        <div className="mt-1">
+                          <div className="text-xs text-gray-500 mb-1">
+                            {file.status === 'uploading' ? '📤 Upload...' : '🔍 Traitement...'}
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full bg-gray-400" style={{ width: '50%' }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Statut de succès et résultats */}
+                  {file.status === 'success' && (
+                    <div className="flex flex-col ml-2">
+                      <span className="text-xs text-green-500">✓ Terminé</span>
+                      {file.result && typeof file.result === 'object' && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          <div className="flex items-center space-x-2">
+                            {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
+                              <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
+                                📂 {(file.result as any).category}
+                              </span>
+                            )}
+                            {(file.result as any).confidence_score && (
+                              <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
+                                {((file.result as any).confidence_score * 100).toFixed(0)}%
+                              </span>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
-                    {file.status === 'error' && (
-                      <span className="text-xs text-red-500">✗</span>
-                    )}
-                  </div>
+                          {(file.result as any).summary && (
+                            <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
+                              💬 {(file.result as any).summary}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Statut d'erreur */}
+                  {file.status === 'error' && (
+                    <span className="text-xs text-red-500">✗ {file.error}</span>
+                  )}
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
