@@ -2,6 +2,8 @@
 Endpoints de gestion des documents
 """
 
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -77,6 +79,101 @@ async def get_documents(
         total=total,
         page=page,
         limit=limit
+    )
+
+
+# Schemas pour structure dossiers OCR
+class FolderItem(BaseModel):
+    name: str
+    path: str
+    type: str  # 'folder' ou 'file'
+    count: int  # nombre de fichiers dans le dossier
+    children: List[FolderItem] = []
+
+
+class OCRFolderStructureResponse(BaseModel):
+    folders: List[FolderItem]
+    total_files: int
+
+
+@router.get("/ocr-folder-structure", response_model=OCRFolderStructureResponse)
+async def get_ocr_folder_structure(
+    current_user: User = Depends(get_current_user)
+):
+    """Récupère la structure hiérarchique des dossiers OCR avec comptage de fichiers"""
+    import os
+    from pathlib import Path
+    
+    # Chemin vers le dossier OCR (configurable)
+    ocr_base_path = Path(os.getenv("OCR_FOLDER_PATH", "/Users/stephaneansel/Documents/LEXO_v1/OCR"))
+    
+    if not ocr_base_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dossier OCR introuvable"
+        )
+    
+    # Extensions supportées
+    supported_extensions = {'.pdf', '.png', '.jpg', '.jpeg', '.tiff', '.bmp'}
+    
+    def scan_folder(folder_path: Path, max_depth: int = 3, current_depth: int = 0) -> FolderItem:
+        """Scanne récursivement un dossier et retourne sa structure"""
+        file_count = 0
+        children = []
+        
+        try:
+            # Compter les fichiers dans ce dossier
+            for item in folder_path.iterdir():
+                if item.is_file() and item.suffix.lower() in supported_extensions:
+                    file_count += 1
+                elif item.is_dir() and current_depth < max_depth:
+                    # Scanner récursivement les sous-dossiers
+                    child_folder = scan_folder(item, max_depth, current_depth + 1)
+                    children.append(child_folder)
+                    file_count += child_folder.count
+        except PermissionError:
+            # Ignorer les dossiers sans permission
+            pass
+        
+        return FolderItem(
+            name=folder_path.name,
+            path=str(folder_path.relative_to(ocr_base_path)),
+            type='folder',
+            count=file_count,
+            children=children
+        )
+    
+    # Scanner tous les dossiers du répertoire OCR
+    all_folders = []
+    total_files = 0
+    
+    try:
+        for item in ocr_base_path.iterdir():
+            if item.is_dir():
+                folder_info = scan_folder(item)
+                all_folders.append(folder_info)
+                total_files += folder_info.count
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors du scan des dossiers: {str(e)}"
+        )
+    
+    # Trier avec "En attente" en premier, puis alphabétique
+    def sort_key(folder: FolderItem) -> tuple:
+        if folder.name == "En attente":
+            return (0, folder.name)  # En premier
+        return (1, folder.name)  # Puis alphabétique
+    
+    all_folders.sort(key=sort_key)
+    
+    # Limiter à 7 dossiers max selon les specs
+    if len(all_folders) > 7:
+        all_folders = all_folders[:7]
+    
+    return OCRFolderStructureResponse(
+        folders=all_folders,
+        total_files=total_files
     )
 
 
