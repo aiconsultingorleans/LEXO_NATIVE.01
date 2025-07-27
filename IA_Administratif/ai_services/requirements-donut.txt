@@ -1,0 +1,25 @@
+# Requirements DONUT Pipeline - Version simplifiée pour tests
+# Basé sur validation Étape 1 - Installation minimale pour démarrage rapide
+
+# Core ML/AI Libraries (essentiels)
+torch>=2.1.0                    # PyTorch optimisé MPS
+transformers>=4.36.0            # HuggingFace Transformers
+sentencepiece>=0.2.0            # SentencePiece (requis pour CamemBERT)
+
+# Document Processing (essentiels)
+Pillow>=10.0.0                  # Image processing
+
+# FastAPI Service (essentiels)
+fastapi>=0.104.0                # FastAPI framework
+uvicorn>=0.24.0                 # ASGI server simplifié
+pydantic>=2.5.0                 # Data validation
+
+# Utilities (essentiels)
+numpy>=1.24.0                   # Numerical computing
+requests>=2.31.0                # HTTP requests
+
+# Logging
+loguru>=0.7.2                   # Advanced logging
+
+# Dépendances manquantes
+protobuf>=3.20.0                 # Protocol Buffers (requis pour DONUT)

@@ -1,76 +1,339 @@
-# 🤖 CLAUDE.md - Guide Technique LEXO_NATIVE.01 [Architecture Native]
+# 🤖 CLAUDE.md - Guide Technique LEXO_NATIVE.01
 
 ## 📌 Contexte Projet
 
-**LEXO_NATIVE.01** est une application SaaS locale de gestion administrative intelligente qui automatise complètement le traitement documentaire pour les professions libérales.
+**LEXO_NATIVE.01** : Application SaaS locale de gestion administrative intelligente qui automatise le traitement documentaire pour professions libérales.
 
-**Environnement :** macOS (Mac mini M4 - 32 Go RAM)  
+**Environnement Dev :** MacBook Pro M4 Pro Max (128GB RAM) | **Cible :** Mac Mini M4 (32GB RAM)  
 **Architecture :** 100% native macOS avec pipeline IA optimisé Apple Silicon  
-**État :** MVP opérationnel migré vers architecture native - Performance 2x améliorée
+**État :** MVP opérationnel - Pipeline documentaire fonctionnel (89.7% précision)
 
 ---
 
-## 🏗️ Architecture Native macOS Opérationnelle
+## 🏗️ Architecture Native macOS
 
-### Structure Principale
+### Structure Projet
 ```
-~/Documents/LEXO_v1/
-├── IA_Administratif/            # 🏗️ PROJET PRINCIPAL
-│   ├── backend/                 # FastAPI natif (port 8000) ✅
-│   │   └── venv/               # Environnement Python natif
-│   ├── frontend/                # Next.js natif (port 3000) ✅  
-│   ├── ai_services/             # Mistral MLX natif (port 8004) ✅
-│   │   └── venv/               # Environnement MLX natif
-│   ├── data/                    # Données + ChromaDB standalone ✅
-│   └── ml_models/              # Modèles locaux ✅
-├── OCR/                         # 📁 Dossier surveillé
-├── Migration_Native.md          # 📖 Guide migration complète
-├── start_native.sh              # 🚀 Démarrage natif optimisé
-└── stop_native.sh               # 🛑 Arrêt propre natif
+~/Documents/LEXO_v1/IA_Administratif/
+├── backend/                    # FastAPI (port 8000)
+│   ├── api/                   # Endpoints API
+│   ├── ocr/                   # Pipeline OCR hybride
+│   ├── rag/                   # Mistral MLX + ChromaDB
+│   ├── core/                  # Config, DB, Auth
+│   ├── test_models_selection.py  # Benchmark DONUT
+│   └── main.py               # Point d'entrée
+├── frontend/                   # Next.js (port 3000)
+│   └── src/
+│       ├── app/              # Pages Next.js
+│       └── components/       # Composants React
+├── ai_services/               # Mistral MLX (port 8004)
+│   ├── document_analyzer.py  # Service principal
+│   └── venv/                 # Environnement MLX
+├── ml_models/                 # Modèles locaux
+├── data/                     # ChromaDB + Cache
+└── OCR/                      # Dossier surveillé
 ```
 
-### Services Natifs Actifs
-| Service | Port | État | Type | Fonction |
-|---------|------|------|------|----------|
-| **Backend FastAPI** | 8000 | ✅ | uvicorn natif | API, OCR, Classification |
-| **Frontend Next.js** | 3000 | ✅ | npm dev natif | Interface utilisateur |
-| **Mistral MLX** | 8004 | ✅ | Python natif | Analyse IA Apple Silicon |
-| **PostgreSQL** | 5432 | ✅ | Homebrew | Base données native |
-| **Redis** | 6379 | ✅ | Homebrew | Cache + queues natif |
-| **ChromaDB** | - | ✅ | Standalone | Base vectorielle locale |
+### Services Actifs
+| Service | Port | Type | Fonction |
+|---------|------|------|----------|
+| **Backend FastAPI** | 8000 | uvicorn | API, OCR, Classification |
+| **Frontend Next.js** | 3000 | npm dev | Interface utilisateur |
+| **Mistral MLX** | 8004 | Python | Analyse IA Apple Silicon |
+| **Donut + CamemBERT** | 8005 | Python | Pipeline alternatif (en dev) |
+| **PostgreSQL** | 5432 | Homebrew | Base données |
+| **Redis** | 6379 | Homebrew | Cache + queues |
+| **ChromaDB** | - | Standalone | Base vectorielle |
 
 ---
 
-## 🎯 État d'Avancement par Étapes
+## 🔧 Guidelines de Développement LEXO
 
-### ✅ COMPLÉTÉES (Score: 85%+)
-1. **Étape 1-2 :** Fondations Backend + Frontend ✅ *100%*
-2. **Étape 3 :** Pipeline OCR (TrOCR + Tesseract + Hybride) ✅ *82%*
-3. **Étape 4 :** Classification automatique (9 catégories) ✅ *100%*
-4. **Étape 5 :** RAG + ChromaDB + Mistral MLX ✅ *95%*
-5. **Étape 7 :** Dashboard Analytics avancé ✅ *95%*
+### 🎯 Philosophie générale
 
-### 🚧 EN COURS 
-- **Étape 6 :** Intégrations externes (Gmail, Calendar) *20%*
-- **Étape 8 :** Interface vocale *0%*
-- **Étape 9 :** Sécurité + Performance *40%*
+**KISS (Keep It Simple, Stupid)** - La simplicité est la sophistication ultime. Préférer toujours la solution la plus simple qui fonctionne.
 
-### 📋 PLANIFIÉES
-- **Étape 10-12 :** Tests, Déploiement, Post-launch
+### 📋 Règles fondamentales
+
+#### 1. **Pas de sur-ingénierie**
+- ❌ PAS de patterns complexes si non nécessaires (pas de factories abstraites pour créer un simple objet)
+- ❌ PAS d'architecture sur-dimensionnée (pas de microservices pour une app desktop)
+- ✅ Code direct et lisible plutôt que "clever"
+- ✅ YAGNI (You Aren't Gonna Need It) - Ne pas coder pour des besoins futurs hypothétiques
+
+#### 2. **Architecture minimaliste**
+```
+app/
+├── main/           # Code Swift/Objective-C pour macOS
+├── backend/        # API Python simple (FastAPI/Flask)
+├── frontend/       # Next.js si vraiment nécessaire
+└── shared/         # Types et utilitaires partagés
+```
+
+#### 3. **Dépendances minimales**
+- Utiliser les bibliothèques natives macOS quand possible
+- Pour Python : stdlib > petite lib bien maintenue > grosse framework
+- Pour Next.js : éviter les meta-frameworks et plugins non essentiels
+- Chaque dépendance doit être justifiée
+
+### 🐍 Python - Règles spécifiques
+
+#### Structure simple
+```python
+# ❌ ÉVITER
+class AbstractLLMProviderFactory:
+    def create_provider(self, config: Dict) -> AbstractLLMProvider:
+        # 50 lignes de code...
+
+# ✅ PRÉFÉRER
+def create_llm_client(api_key: str, model: str = "gpt-4"):
+    return OpenAI(api_key=api_key, model=model)
+```
+
+#### Gestion des LLM
+- Utiliser directement les SDK officiels (OpenAI, Anthropic, etc.)
+- Pas de wrapper abstrait sauf si 2+ providers
+- Gestion d'erreur simple avec try/except
+- Logs clairs et utiles
+
+#### API Backend
+```python
+# FastAPI minimal
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Query(BaseModel):
+    text: str
+    model: str = "gpt-4"
+
+@app.post("/process")
+async def process_document(query: Query):
+    try:
+        # Code direct, pas de couches d'abstraction
+        result = llm_client.complete(query.text)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+### 🖥️ macOS Native - Règles spécifiques
+
+#### Swift/SwiftUI
+- Utiliser SwiftUI sauf besoin spécifique AppKit
+- Pas de MVVM complexe si MV suffit
+- Utiliser les APIs natives (NSDocument, etc.)
+- Éviter les bibliothèques tierces pour l'UI
+
+#### Communication avec le backend
+```swift
+// ❌ ÉVITER - Sur-abstraction
+protocol NetworkManagerProtocol { }
+class NetworkManager: NetworkManagerProtocol { }
+class APIClient { }
+class LLMService { }
+
+// ✅ PRÉFÉRER - Direct et simple
+class APIClient {
+    func processDocument(_ text: String) async throws -> String {
+        // URLSession direct
+    }
+}
+```
+
+#### Intégration Python
+- Utiliser un subprocess Python ou
+- API REST locale (http://localhost:8000)
+- Pas de bridge complexe Python-Swift
+
+### ⚛️ Next.js (si nécessaire) - Règles spécifiques
+
+#### Quand l'utiliser
+- ❓ Se demander d'abord : "Ai-je vraiment besoin de Next.js ?"
+- Une WebView SwiftUI simple peut suffire
+- Si oui : App Router simple, pas de magie
+
+#### Structure minimale
+```
+frontend/
+├── app/
+│   ├── page.tsx        # Page unique si possible
+│   └── api/            # Seulement si nécessaire
+├── components/         # Composants simples
+└── lib/               # Utilitaires
+```
+
+#### Composants
+```tsx
+// ❌ ÉVITER
+const DocumentProcessor: FC<DocumentProcessorProps> = ({ 
+  config, 
+  callbacks, 
+  providers 
+}) => {
+  // 200 lignes de hooks custom...
+}
+
+// ✅ PRÉFÉRER
+function DocumentView({ document, onProcess }) {
+  const [result, setResult] = useState(null);
+  
+  async function handleProcess() {
+    const res = await fetch('/api/process', {
+      method: 'POST',
+      body: JSON.stringify({ text: document })
+    });
+    setResult(await res.json());
+  }
+  
+  return (
+    <div>
+      {/* UI simple et directe */}
+    </div>
+  );
+}
+```
+
+### 🔧 Patterns à utiliser
+
+#### 1. **Configuration simple**
+```python
+# config.py
+import os
+from dataclasses import dataclass
+
+@dataclass
+class Config:
+    api_key: str = os.getenv("OPENAI_API_KEY", "")
+    model: str = "gpt-4"
+    max_tokens: int = 2000
+
+config = Config()
+```
+
+#### 2. **Gestion d'erreur pragmatique**
+```python
+def process_with_llm(text: str) -> str:
+    try:
+        return llm_client.complete(text)
+    except RateLimitError:
+        time.sleep(1)
+        return process_with_llm(text)  # Retry simple
+    except Exception as e:
+        logger.error(f"LLM error: {e}")
+        return "Erreur de traitement"
+```
+
+#### 3. **Tests simples**
+```python
+# test_simple.py
+def test_document_processing():
+    result = process_document("test")
+    assert result is not None
+    assert len(result) > 0
+```
+
+### 🚫 Anti-patterns à éviter
+
+1. **Dependency Injection complexe** pour une app desktop
+2. **Event Sourcing / CQRS** - Overkill
+3. **GraphQL** quand REST suffit
+4. **Kubernetes/Docker** pour dev local
+5. **Redux/MobX** quand useState suffit
+6. **TypeScript strict partout** - Seulement où c'est utile
+7. **Tests unitaires de tout** - Tester ce qui a de la valeur
+
+### 📝 Checklist avant d'ajouter de la complexité
+
+- [ ] Est-ce que la solution simple a été essayée ?
+- [ ] Est-ce que cette abstraction sera utilisée plus d'une fois ?
+- [ ] Est-ce que ça rend le code plus lisible ?
+- [ ] Est-ce que ça facilite vraiment la maintenance ?
+- [ ] Est-ce que c'est nécessaire MAINTENANT ?
+
+### 🎪 Exemples de simplification
+
+#### Gestion d'état
+```python
+# ❌ ÉVITER
+class StateManager:
+    def __init__(self):
+        self._observers = []
+        self._state = {}
+    
+    def subscribe(self, observer):
+        # ...
+
+# ✅ PRÉFÉRER
+app_state = {
+    "current_document": None,
+    "processing": False
+}
+```
+
+#### Appels LLM
+```python
+# ❌ ÉVITER
+class LLMChain:
+    def __init__(self, prompt_template, parser, memory):
+        # ...
+
+# ✅ PRÉFÉRER
+def ask_llm(question: str, context: str = "") -> str:
+    prompt = f"{context}\n\nQuestion: {question}"
+    return openai_client.complete(prompt)
+```
+
+### 🏁 Résumé
+
+1. **Écrire du code boring** - Facile à lire, facile à débugger
+2. **Commencer simple** - Complexifier seulement si nécessaire
+3. **Préférer la composition** à l'héritage
+4. **Une fonction = une responsabilité**
+5. **Si c'est difficile à expliquer, c'est trop complexe**
+
+### 💡 Mantra final
+
+> "Le meilleur code est celui qu'on n'a pas écrit. Le deuxième meilleur est celui qu'un junior peut comprendre en 5 minutes."
+
+**Note pour Claude Code** : Ces guidelines sont prioritaires. En cas de doute, choisir la simplicité. Ne pas suggérer de patterns complexes sauf demande explicite. Proposer toujours la solution la plus directe en premier.
 
 ---
 
-## ⚡ Pipeline Documentaire Unifié
+## 🛡️ Approche Non-Destructive Garantie
 
-### Flux Opérationnel
-```mermaid
-graph LR
-    A[📄 Upload] --> B[🔍 OCR Hybride]
-    B --> C[🤖 Mistral MLX]
-    C --> D[🏷️ Classification]
-    D --> E[📁 Classement Auto]
-    E --> F[💾 ChromaDB + Cache]
+### Principe Fondamental
+- **AUCUNE suppression de code** sans validation explicite utilisateur
+- **Conservation totale** des pipelines fonctionnels (Mistral MLX reste principal)
+- **Développement en parallèle** sans impact sur l'existant
+- **Rollback instantané** toujours possible
+
+### Workflow Sécurisé
+- **Branches isolées** par feature (`feat/donut_alternative_pipeline`)
+- **Services parallèles** sur ports distincts (8004 Mistral, 8005 DONUT)
+- **Tests non-destructifs** sans remplacement du pipeline principal
+- **Validation utilisateur** obligatoire avant toute suppression
+- **Conservation API** existante intacte
+
+### Règles de Développement
+1. **Ajout uniquement** : Nouvelles fonctionnalités en plus de l'existant
+2. **Coexistence** : Anciens et nouveaux systèmes fonctionnent ensemble
+3. **Toggle utilisateur** : Choix entre pipelines depuis l'interface
+4. **Fallback automatique** : Retour vers Mistral en cas de problème DONUT
+5. **Tests isolés** : Validation sans affecter le production
+6. **Documentation** : Chaque ajout documenté pour traçabilité
+
+---
+
+## ⚡ Pipeline Documentaire
+
+### Flux Principal (Non-Destructif)
 ```
+📄 Upload → 🔍 OCR Hybride → 🤖 [Mistral MLX (principal) | DONUT+CamemBERT (alternatif)] → 🏷️ Classification → 📁 Classement Auto
+```
+
+**Toggle utilisateur** : Choix du pipeline depuis le dashboard, Mistral MLX reste par défaut
 
 ### API Endpoints Clés
 ```bash
@@ -78,7 +341,6 @@ graph LR
 POST /api/v1/documents/upload-and-process    # Upload + OCR + IA + Classification
 
 # Composants individuels  
-POST /api/v1/documents/upload               # Upload seul
 POST /api/v1/ocr/process                    # OCR hybride
 POST /api/v1/intelligence/analyze          # Analyse Mistral
 POST /api/v1/classification/classify       # Classification
@@ -90,1048 +352,214 @@ POST /api/v1/rag/chat                       # Chat avec contexte
 
 ---
 
-## 🚀 Démarrage Native Optimisé (30 secondes)
+## 🚀 Démarrage Native
 
 ### Commandes Essentielles
 ```bash
-# 🚀 DÉMARRAGE COMPLET NATIF (recommandé)
-cd ~/Documents/LEXO_v1/IA_Administratif
-./start_native.sh                 # Démarre toute l'infrastructure native
-
-# 🍺 Services Homebrew (auto-démarrage)
-brew services start postgresql@15 redis  # Si pas déjà actifs
-
-# 🤖 Services individuels (optionnel)
-cd ~/Documents/LEXO_v1/IA_Administratif
-./start_backend_native.sh        # Backend FastAPI seul
-./start_frontend_native.sh       # Frontend Next.js seul
-
-# 🛑 ARRÊT PROPRE NATIF  
-cd ~/Documents/LEXO_v1/IA_Administratif
-./stop_native.sh                  # Arrête tous les processus LEXO
-
-# 🔄 ALTERNATIVES RACINE PROJET
-cd ~/Documents/LEXO_v1
-./start_all.sh                    # Démarrage global alternatif
-./stop_all.sh                     # Arrêt global alternatif
-./check_health.sh                 # Vérification état services
-```
-
-### Performance Démarrage Native
-- **Services système** : Instantané (Homebrew)
-- **API prête** : ~10 secondes (vs 30s Docker)
-- **Interface web** : ~5 secondes (vs immédiat après API)
-- **Mistral chargé** : ~30 secondes (vs 60s Docker)
-- **Pipeline complet** : **30-40 secondes total** (vs 90s Docker)
-
----
-
-## 🎨 Stack Technologique Validée
-
-### Backend Native Opérationnel
-```python
-# FastAPI 0.115+ avec uvicorn natif (Apple Silicon optimisé)
-# SQLAlchemy 2.0 + PostgreSQL 15 Homebrew
-# Redis 7 Homebrew (cache + queues)
-# Alembic (migrations) + environnement virtuel natif
-
-# OCR Pipeline Native
-# - TrOCR (HuggingFace) optimisé ARM64 ✅
-# - Tesseract 5 Homebrew (fallback) ✅  
-# - LayoutLMv3 (structure) ARM64 ✅
-# - OpenCV natif Apple Silicon ✅
-
-# IA Native Apple Silicon
-# - Mistral 7B MLX (optimisation M4) ✅
-# - ChromaDB standalone (pas de conteneur) ✅
-# - Sentence-Transformers ARM64 optimisé ✅
-```
-
-### Frontend Natif Moderne
-```typescript
-// Next.js 15 + React 19 (npm dev natif)
-// TypeScript strict avec hot reload instantané
-// Tailwind CSS 4 optimisé Apple Silicon
-// Zustand (state) - performance native
-// React Hook Form + Zod validation
-
-// Composants spécialisés natifs
-// - DocumentUpload (hot reload <1s) ✅
-// - DashboardWidget (HMR instantané) ✅  
-// - KPIWidget (debug IDE natif) ✅
-// - VirtualizedDocumentList (performance 2x) ✅
-```
-
----
-
-## 📊 Fonctionnalités Opérationnelles
-
-### 1. Upload + Traitement Intelligent
-- **Drag & Drop** : PDF, images (PNG, JPG, TIFF) ✅
-- **Pipeline unifié** : Upload → OCR → IA → Classification ✅
-- **Feedback temps réel** : Progression + résultats enrichis ✅
-- **Performance** : <10 secondes par document ✅
-
-### 2. Classification Automatique (9 catégories)
-```typescript
-Categories = {
-  factures, rib, contrats, attestations, 
-  courriers, rapports, cartes_transport,
-  documents_personnels, non_classes
-}
-// Score moyen: 89.7% de confiance ✅
-```
-
-### 3. Dashboard Analytics
-- **KPIs temps réel** : Documents traités, précision OCR, sécurité ✅
-- **Graphiques** : Bar, Line, Pie charts avec Recharts ✅
-- **Timeline** : Activité récente avec événements colorés ✅
-- **Filtres avancés** : Date, catégorie, statut ✅
-
-### 4. RAG + Chat Intelligent  
-- **Recherche sémantique** : ChromaDB + embeddings multilingues ✅
-- **Chat contexte** : Mistral MLX avec sources citées ✅
-- **Performance** : <100ms retrieval, <2s génération ✅
-
----
-
-## 🔧 Conventions de Code
-
-### Backend Python
-```python
-# Structure endpoints FastAPI
-@router.post("/endpoint")
-async def function_name(
-    param: Type,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
-) -> ResponseModel:
-    """Description claire."""
-    pass
-
-# Conventions
-# - Classes: PascalCase
-# - Functions: snake_case  
-# - Constants: UPPER_SNAKE_CASE
-# - Private: _leading_underscore
-```
-
-### Frontend TypeScript
-```typescript
-// Composants React
-export const ComponentName: FC<Props> = ({ param }) => {
-  const [state, setState] = useState();
-  
-  return (
-    <div className="tailwind-classes">
-      {/* Content */}
-    </div>
-  );
-};
-
-# Conventions
-# - Components: PascalCase
-# - Hooks: usePrefix
-# - Utils: camelCase
-# - Types: PascalCase + suffix
-```
-
----
-
-## 🧪 Tests Validés
-
-### Scripts de Test Opérationnels
-```bash
-cd IA_Administratif/backend
-
-# Tests complets validés ✅
-python test_ocr_etape3.py        # OCR pipeline (82% succès)
-python test_rag_etape5.py        # RAG système (95% succès)  
-python test_complete_integration.py  # Pipeline intégré
-
-# Tests unitaires
-pytest tests/                    # Backend
-cd ../frontend && npm run test   # Frontend
-```
-
-### Validation Documents Réels
-- **Carte transport** : Classée "cartes_transport" (89.7% confiance) ✅
-- **Factures EDF** : Entités extraites + résumé IA ✅
-- **Documents scannés** : OCR hybride fonctionnel ✅
-
----
-
-## 📁 Navigation Rapide
-
-### Chemins Critiques
-```bash
-# Backend API
-IA_Administratif/backend/api/documents.py      # Upload unifié
-IA_Administratif/backend/ocr/hybrid_ocr.py     # OCR principal
-IA_Administratif/backend/rag/mistral_wrapper.py # Interface Mistral
-
-# Frontend Interface  
-IA_Administratif/frontend/src/app/dashboard/page.tsx       # Dashboard principal
-IA_Administratif/frontend/src/components/documents/       # Upload + liste
-IA_Administratif/frontend/src/components/dashboard/       # Analytics
-
-# Services IA
-IA_Administratif/ai_services/document_analyzer.py         # Mistral MLX
-
-# Documentation & Suivi
-JOURNAL_NATIVE.md                             # 📋 Journal développement quotidien
-Migration_Native.md                           # Guide migration complète
-IA_Administratif/backend/core/config.py       # Configuration native
-```
-
-### Scripts Natifs Utiles
-```bash
-# 🚀 Gestion projet native (niveau IA_Administratif)
-cd ~/Documents/LEXO_v1/IA_Administratif
-./start_native.sh                 # Démarrage complet natif optimisé (30s)
-./stop_native.sh                  # Arrêt propre natif avec sauvegarde
-./diagnostic_native.sh            # Diagnostic complet système natif ✨ NOUVEAU
-./start_backend_native.sh         # Backend FastAPI seul
-./start_frontend_native.sh        # Frontend Next.js seul
-
-# 🔄 Gestion projet global (niveau racine)
-cd ~/Documents/LEXO_v1
-./start_all.sh                    # Démarrage alternatif racine
-./stop_all.sh                     # Arrêt alternatif racine  
-./check_health.sh                 # Vérification services ✨ NOUVEAU
-
-# 🧪 Validation et diagnostic natifs
-cd ~/Documents/LEXO_v1/IA_Administratif/backend && source venv/bin/activate
-python test_complete_integration.py   # Test pipeline natif
-curl http://localhost:8000/api/v1/health  # Health check natif
-curl http://localhost:8000/api/v1/batch/status  # État progression batch
-```
-
----
-
-## 🔄 Développement Hot Reload Natif - Workflow Optimisé
-
-### Hot Reload Automatique (Plus de Redémarrage Manuel !)
-- **Composants React** : Hot Module Replacement instantané (<500ms)
-- **Modifications TypeScript** : Rechargement automatique avec vérification types
-- **Changements API Backend** : Uvicorn --reload automatique (<1s)
-- **Styles CSS/Tailwind** : Mise à jour instantanée sans refresh page
-- **Configuration** : Redémarrage automatique si nécessaire
-
-### Workflow Développement Natif Simplifié
-
-```bash
-# 🚀 DÉMARRAGE UNE FOIS
-./start_native.sh
-
-# ✅ DÉVELOPPEMENT CONTINU - Pas d'action manuelle
-# - Sauvegarde fichier → Hot reload automatique
-# - Backend : uvicorn --reload (0.5s)
-# - Frontend : Next.js HMR (instantané)
-# - État préservé dans navigateur
-```
-
-### Cas Rares Nécessitant Redémarrage
-
-```bash
-# Backend (rare)
-cd IA_Administratif/backend
-source venv/bin/activate
-# Modification requirements.txt → pip install puis Ctrl+C, redémarrage uvicorn
-
-# Frontend (très rare)  
-cd IA_Administratif/frontend
-# Modification package.json → npm install puis Ctrl+C, npm run dev
-
-# Redémarrage complet si problème
-./stop_native.sh && ./start_native.sh
-```
-
-### Diagnostic Développement Natif
-
-```bash
-# Vérifier processus natifs actifs
-ps aux | grep -E "(uvicorn|next|python.*document_analyzer)" | grep -v grep
-
-# Diagnostic complet automatisé
-cd ~/Documents/LEXO_v1/IA_Administratif
-./diagnostic_native.sh
-
-# Logs temps réel pendant développement
-tail -f logs/backend_native.log &
-tail -f logs/frontend_native.log &
-tail -f logs/mistral_native.log &
-```
-
-### ⚡ AVANTAGES DÉVELOPPEMENT NATIF
-
-1. **Hot Reload 10x Plus Rapide** : Modifications visibles instantanément
-2. **Debug IDE Direct** : Breakpoints Python/TypeScript natifs
-3. **Logs Centralisés** : Un seul endroit, plus de docker logs
-4. **Tests 5x Plus Rapides** : Accès direct base de données
-5. **Stabilité Maximale** : Plus de crashes Docker daemon
-
-### Workflow Optimal Développement
-
-```bash
-# 🚀 Démarrage quotidien (30 secondes)
-cd ~/Documents/LEXO_v1/IA_Administratif
-./start_native.sh
-
-# 💻 Développement toute la journée
-# - Modifications continues sans redémarrage
-# - Hot reload automatique partout
-# - Debug direct IDE
-# - Tests unitaires instantanés
-
-# 🛑 Arrêt propre en fin de journée
-cd ~/Documents/LEXO_v1/IA_Administratif
-./stop_native.sh
-```
-
-**🎯 Principe fondamental** : Architecture native 100% macOS - Performance maximale Apple Silicon M4
-
----
-
-## 🔄 Politique Redémarrage Automatique des Serveurs - Développement Intelligent
-
-### 🎯 Règle Fondamentale Claude Code
-
-**Après toute modification de code, Claude détermine automatiquement si un redémarrage de serveur est nécessaire et l'exécute sans intervention manuelle.**
-
-### 📋 Table de Référence - Types de Modifications
-
-| Type de Fichier | Redémarrage Requis | Service | Action Claude |
-|------------------|-------------------|---------|---------------|
-| **Frontend Next.js** | | | |
-| `*.tsx`, `*.ts`, `*.jsx`, `*.js` | ❌ **Non** | - | HMR automatique instantané |
-| `*.css`, `*.scss`, `tailwind.config.js` | ❌ **Non** | - | Hot reload styles automatique |
-| `package.json` (dépendances) | ✅ **Oui** | Next.js | `cd frontend && npm install && npm run dev` |
-| `next.config.js`, `.env*` | ✅ **Oui** | Next.js | Redémarrage npm run dev |
-| **Backend FastAPI** | | | |
-| `*.py` (code application) | ❌ **Non** | - | Uvicorn --reload automatique |
-| `requirements.txt` | ✅ **Oui** | Backend | `pip install -r requirements.txt + restart uvicorn` |
-| `alembic/`, `.env` | ✅ **Oui** | Backend | Redémarrage backend complet |
-| **Services IA** | | | |
-| `ai_services/*.py` | ❌ **Non** | - | Python reload automatique |
-| Changement modèle MLX | ✅ **Oui** | Mistral MLX | Redémarrage service IA |
-| **Configuration Système** | | | |
-| `docker-compose.yml` | ❌ **N/A** | - | Architecture native uniquement |
-| Scripts `start_*.sh` | ✅ **Oui** | Tous | Redémarrage complet |
-
-### 🤖 Workflow Automatique Claude
-
-#### Après Chaque Modification
-```bash
-# 1. Analyse automatique des fichiers modifiés
-if [modifications nécessitent redémarrage]; then
-    echo "🔄 Redémarrage automatique détecté nécessaire"
-    
-    # 2. Exécution commandes appropriées
-    case $SERVICE in
-        "frontend") cd IA_Administratif/frontend && npm run dev ;;
-        "backend") cd IA_Administratif/backend && source venv/bin/activate && uvicorn ... ;;
-        "mistral") cd IA_Administratif/ai_services && python document_analyzer.py ;;
-        "complet") cd IA_Administratif && ./start_native.sh ;;
-    esac
-    
-    # 3. Vérification post-redémarrage
-    curl -s http://localhost:3000 >/dev/null && echo "✅ Frontend OK"
-    curl -s http://localhost:8000/api/v1/health >/dev/null && echo "✅ Backend OK"
-fi
-```
-
-### 🚀 Commandes de Redémarrage par Service
-
-#### **Frontend Next.js** (Port 3000)
-```bash
-# Redémarrage standard
-cd ~/Documents/LEXO_v1/IA_Administratif/frontend
-# Arrêt : Ctrl+C du processus npm run dev
-npm run dev
-
-# Redémarrage avec nettoyage cache (si problèmes)
-rm -rf .next/cache
-npm run dev
-
-# Temps redémarrage : ~5 secondes
-```
-
-#### **Backend FastAPI** (Port 8000)
-```bash
-# Redémarrage standard
-cd ~/Documents/LEXO_v1/IA_Administratif/backend
-source venv/bin/activate
-# Arrêt : Ctrl+C du processus uvicorn
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# Avec installation dépendances
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# Temps redémarrage : ~10 secondes
-```
-
-#### **Services IA Mistral MLX** (Port 8004)
-```bash
-# Redémarrage standard  
-cd ~/Documents/LEXO_v1/IA_Administratif/ai_services
-source venv/bin/activate
-# Arrêt : Ctrl+C du processus python
-python document_analyzer.py
-
-# Temps redémarrage : ~30 secondes (chargement modèles)
-```
-
-#### **Redémarrage Complet** (Tous services)
-```bash
-# Méthode recommandée pour changements majeurs
-cd ~/Documents/LEXO_v1/IA_Administratif
-./stop_native.sh
-./start_native.sh
-
-# Temps redémarrage complet : ~40 secondes
-```
-
-### 🔍 Détection Automatique Nécessité Redémarrage
-
-#### Règles de Détection Claude
-```bash
-# 1. Frontend Next.js
-if [[ $modified_files =~ package\.json|next\.config\.js|\.env ]] || [[ $new_dependencies == true ]]; then
-    restart_frontend=true
-fi
-
-# 2. Backend FastAPI  
-if [[ $modified_files =~ requirements\.txt|alembic/|config\.py|\.env ]] || [[ $new_dependencies == true ]]; then
-    restart_backend=true
-fi
-
-# 3. Services IA
-if [[ $modified_files =~ ml_models/|mistral.*config ]] || [[ $model_change == true ]]; then
-    restart_ai_services=true
-fi
-
-# 4. Configuration système
-if [[ $modified_files =~ start_.*\.sh|stop_.*\.sh ]] || [[ $system_config_change == true ]]; then
-    restart_all=true
-fi
-```
-
-### ⚡ Optimisations Performance Redémarrage
-
-#### **Next.js Turbopack** (Expérimental)
-```bash
-# Démarrage ultra-rapide (si activé)
-npm run dev -- --turbo
-# Redémarrage : ~2 secondes vs ~5 secondes
-```
-
-#### **Cache Préservation**
-- **Frontend** : Conservation `.next/cache` si possible
-- **Backend** : Préservation `__pycache__` entre redémarrages  
-- **IA** : Cache modèles MLX en mémoire si redémarrage partiel
-
-### 🔧 Diagnostic Post-Redémarrage
-
-#### Vérifications Automatiques Claude
-```bash
-# 1. Health checks endpoints
-curl -s http://localhost:3000 >/dev/null || echo "❌ Frontend inaccessible"
-curl -s http://localhost:8000/api/v1/health >/dev/null || echo "❌ Backend inaccessible"  
-curl -s http://localhost:8004/health >/dev/null || echo "❌ Services IA inaccessibles"
-
-# 2. Processus actifs
-ps aux | grep -E "(npm.*dev|uvicorn|python.*analyzer)" | grep -v grep
-
-# 3. Ports ouverts
-netstat -an | grep -E ":(3000|8000|8004).*LISTEN"
-
-# 4. Log des erreurs
-tail -n 10 logs/frontend_native.log logs/backend_native.log logs/mistral_native.log
-```
-
-### 📝 Log Redémarrages Automatiques
-
-#### Format Journal Automatique
-```markdown
-#### 🔄 [26 Juillet 2025 - 14:45] Redémarrage Automatique
-- **Déclencheur :** Modification package.json frontend
-- **Service redémarré :** Next.js (port 3000)
-- **Commande :** cd frontend && npm install && npm run dev
-- **Durée :** 8 secondes
-- **Résultat :** ✅ Service redémarré avec succès
-- **Health check :** ✅ http://localhost:3000 accessible
-```
-
-### 🎯 Cas Particuliers
-
-#### **Modifications Simultanées Multi-Services**
-```bash
-# Ordre de redémarrage optimisé :
-# 1. Services système (PostgreSQL, Redis) - si nécessaire
-# 2. Backend FastAPI - base de données dépendantes  
-# 3. Services IA Mistral - dépendant backend
-# 4. Frontend Next.js - interface utilisateur
-```
-
-#### **Développement sans Redémarrage**
-- **Modifications composants React** : HMR instantané
-- **Modifications CSS/Tailwind** : Hot reload styles
-- **Modifications code Python API** : Uvicorn --reload automatique
-- **Modifications services IA** : Import reload Python
-
-#### **Redémarrage Forcé Manuel**
-```bash
-# Si détection automatique échoue
-cd ~/Documents/LEXO_v1/IA_Administratif
-./stop_native.sh && ./start_native.sh
-
-# Ou service spécifique
-pkill -f "npm.*dev" && cd frontend && npm run dev
-```
-
-**🔧 Principe** : Claude optimise l'expérience développeur en redémarrant automatiquement uniquement quand nécessaire, préservant la performance du hot reload natif.
-
----
-
-## 🛡️ Auto-correction Native et Diagnostic - Stabilité Maximale
-
-### Problèmes automatiquement corrigés par start_native.sh
-
-Le script de démarrage natif détecte et corrige automatiquement ces problèmes :
-
-#### ✅ **Services Homebrew**
-```bash
-# Vérification et démarrage automatique PostgreSQL + Redis
-if ! brew services list | grep -q "postgresql@15.*started"; then
-    log "Démarrage PostgreSQL..."
-    brew services start postgresql@15
-fi
-```
-
-#### ✅ **Environnements Virtuels**
-```bash
-# Auto-création environnements si manquants
-if [ ! -d "IA_Administratif/backend/venv" ]; then
-    log "Création environnement virtuel backend..."
-    cd IA_Administratif/backend && python3 -m venv venv
-fi
-```
-
-#### ✅ **Dépendances Native**
-```bash
-# Vérification et installation automatique dépendances
-cd IA_Administratif/backend && source venv/bin/activate
-python -c "import psutil" 2>/dev/null || pip install psutil==6.1.0
-```
-
-### Script de diagnostic natif autonome
-
-```bash
-# 🔍 Diagnostic complet du système natif
-cd ~/Documents/LEXO_v1/IA_Administratif
-./diagnostic_native.sh
-
-# Vérifie automatiquement :
-# ✅ État des services Homebrew (PostgreSQL, Redis)
-# ✅ Processus natifs actifs (uvicorn, next, python)
-# ✅ Accessibilité des endpoints (8000, 3000, 8004)
-# ✅ Environnements virtuels et dépendances
-# ✅ Ports et connectivité native
-# ✅ Performance Apple Silicon (ARM64)
-```
-
-### Protection native contre les interruptions
-
-Le script `stop_native.sh` vérifie les traitements en cours :
-
-```bash
-# Vérification des tâches batch avant arrêt natif
-if curl -s http://localhost:8000/api/v1/batch/status | grep -q '"active_tasks": [1-9]'; then
-    warning "Des traitements batch natifs sont en cours!"
-    echo "Voulez-vous vraiment arrêter ? [y/N]"
-    # Attend confirmation utilisateur
-fi
-```
-
-### Sauvegarde automatique native
-
-Lors de l'arrêt, sauvegarde automatique dans `logs/backups/YYYYMMDD/` :
-- **Statistiques processus natifs** : `native_stats_HHMMSS.json`
-- **État batch en cours** : `batch_status_HHMMSS.json`
-- **PIDs processus** : Sauvegarde pour récupération
-
-### Commandes de réparation rapide native
-
-```bash
-# Problèmes généraux natifs
-cd ~/Documents/LEXO_v1/IA_Administratif
-./stop_native.sh && ./start_native.sh
-
-# Diagnostic détaillé natif
-cd ~/Documents/LEXO_v1/IA_Administratif
-./diagnostic_native.sh
-
-# Corrections manuelles spécifiques
-cd IA_Administratif/backend && source venv/bin/activate
-pip install -r requirements.txt
-python scripts/load_fixtures_auto.py
-
-# Services Homebrew
-brew services restart postgresql@15 redis
-```
-
-**🎯 Objectif** : Stabilité maximale architecture native - Plus de dépendances Docker fragiles !
-
----
-
-## 🔍 Optimisations Performance Apple Silicon
-
-### Cache Intelligent Natif
-```python
-# Cache Mistral optimisé ARM64 (85% amélioration vs 70% Docker)
-utils/mistral_cache.py: TTL 1h, hash-based keys, Metal GPU
-
-# Cache OCR natif Homebrew Redis
-ocr/ocr_cache.py: Redis natif + FileSystem local
-
-# Cache modèles ML Apple Silicon
-ml_models/: ARM64 optimisé uniquement (HF_OFFLINE=1, Metal backend)
-```
-
-### Lazy Loading Natif Optimisé
-- **OCR** : Initialisé au premier document (évite 15s vs 30s Docker)
-- **Mistral MLX** : Chargé GPU Metal en arrière-plan (30s vs 60s)
-- **Composants React** : HMR conditionnel instantané
-
----
-
-## 🚧 Points d'Amélioration
-
-### Performance
-- [ ] TrOCR réactivation (boucle infinie résolue)
-- [ ] Batch processing multi-documents
-- [ ] Cache intelligent embeddings
-
-### UX  
-- [ ] Mode sombre
-- [ ] Prévisualisation documents
-- [ ] Notifications push
-- [ ] Shortcuts clavier
-
-### Monitoring
-- [ ] Métriques détaillées pipeline
-- [ ] Alertes automatiques
-- [ ] Logs structurés
-
----
-
-## 🎊 Points Forts Actuels
-
-1. **🎯 Pipeline Unifié** : Upload → OCR → IA → Classification fonctionnel
-2. **⚡ Performance** : <10s traitement, 89.7% précision classification
-3. **🛡️ Local-First** : 100% local, aucune donnée externe
-4. **📊 Analytics** : Dashboard temps réel opérationnel
-5. **🤖 IA Intégrée** : Mistral MLX + RAG + Classification automatique
-6. **🎨 UX Moderne** : Interface responsive + feedback temps réel
-
----
-
-## 💡 Utilisation Optimale avec Claude Code
-
-### Pour OCR et traitement
-- Utiliser endpoint unifié `/upload-and-process` (recommandé)
-- Tests avec `test_ocr_etape3.py` pour validation
-- Cache automatique activé (performance)
-
-### Pour développement interface
-- Composants dans `IA_Administratif/frontend/src/components/`
-- State management avec Zustand
-- Mobile-first avec Tailwind
-
-### Pour débogage
-- Logs dans `IA_Administratif/logs/`
-- Health checks `/api/v1/health/*`
-- Monitoring `/api/v1/monitoring/stats`
-
----
-
-## 🚀 Workflow Git Automatisé avec Bonnes Pratiques
-
-### 🎯 Stratégie de Versionning Moderne
-
-Le projet LEXO_NATIVE.01 utilise maintenant un **workflow Git hybride** combinant :
-- **Branches de fonctionnalités** avec préfixes conventionnels (feat/, fix/, docs/)  
-- **Système de versions incrémentales** LEXO_NATIVE.0x pour les releases
-- **Commandes automatisées** pour simplifier le versionning
-
-### 📋 Commandes Automatisées
-
-#### **Commande "je valide"**
-**Déclencheur :** `"je valide"`
-
-**Comportement automatique :**
-1. **Analyse intelligente** des modifications pour déterminer le type de commit
-2. **Génération automatique** du nom de branche avec bon préfix
-3. **Création de branche** feature depuis la branche courante
-4. **Commit conventionnel** avec message standardisé
-5. **Mise à jour automatique** du JOURNAL_NATIVE.md avec résumé des tâches (format: [DD Mois YYYY - HH:MM])
-6. **Push vers GitHub** avec tracking automatique
-
-**Exemples de branches générées :**
-```bash
-# Modifications dashboard → feat/dashboard_optimisation
-# Corrections bugs → fix/pipeline_errors  
-# Nouvelle documentation → docs/git_workflow
-# Optimisations performance → perf/cache_implementation
-# Refactoring code → refactor/ocr_architecture
-```
-
-**Format de commit :**
-```bash
-feat(dashboard): optimisation interface utilisateur
-
-- Amélioration performance rendu
-- Ajout indicateurs temps réel
-- Correction responsive mobile
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-#### **Commande "final"**  
-**Déclencheur :** `"final"`
-
-**Comportement automatique :**
-1. **Identification** de la dernière branche créée par "je valide"
-2. **Mise à jour** de la branche main depuis origin
-3. **Merge** de la branche feature vers main
-4. **Push** de main vers GitHub
-5. **Nettoyage** des branches locales temporaires
-
-**Workflow complet :**
-```bash
-git checkout main
-git pull origin main
-git merge feature/nom-branche --no-ff
-git push origin main
-git branch -d feature/nom-branche
-```
-
-### 🔍 Analyse Automatique des Modifications
-
-#### **Types détectés automatiquement :**
-```typescript
-// Logique d'analyse des fichiers modifiés
-const analyzeChanges = (files: string[]) => {
-  // Documentation (.md, .txt, README)
-  if (files.some(f => f.match(/\.(md|txt|readme)/i))) return 'docs';
-  
-  // Frontend React/Next.js
-  if (files.some(f => f.match(/\.(tsx?|jsx?|css|scss)/))) return 'feat';
-  
-  // Backend Python/API
-  if (files.some(f => f.match(/\.(py|sql|yaml|yml)/))) return 'feat';
-  
-  // Configuration/Build
-  if (files.some(f => f.match(/(package\.json|docker|config)/i))) return 'chore';
-  
-  // Tests
-  if (files.some(f => f.match(/test|spec/i))) return 'test';
-  
-  // Par défaut
-  return 'feat';
-};
-```
-
-#### **Génération du nom de branche :**
-```typescript
-// Noms générés basés sur les modifications
-const generateBranchName = (type: string, files: string[]) => {
-  const context = extractContext(files);
-  const sanitized = context.toLowerCase()
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  
-  return `${type}/${sanitized}`;
-};
-```
-
-### 🏗️ Intégration avec Architecture Existante
-
-#### **Respect des conventions LEXO :**
-- **Préservation** des branches LEXO_NATIVE.0x pour les releases majeures
-- **Utilisation** des branches feature pour le développement incrémental
-- **Maintien** des métadonnées de génération Claude
-- **Cohérence** avec Git-Guide.md du projet
-
-#### **Workflow hybride :**
-```mermaid
-graph LR
-    A[main] --> B[LEXO_NATIVE.01]
-    B --> C["je valide"]
-    C --> D[feat/nouvelle_fonction]
-    D --> E["final"]
-    E --> F[main updated]
-    F --> G[LEXO_NATIVE.02]
-```
-
-### 💡 Avantages du Nouveau Workflow
-
-#### **Pour le développement :**
-- ✅ **Commits conventionnels** automatiques
-- ✅ **Branches descriptives** générées intelligemment  
-- ✅ **Historique propre** avec messages standardisés
-- ✅ **Intégration GitHub** transparente
-- ✅ **Zéro configuration** manuelle
-
-#### **Pour la maintenance :**
-- ✅ **Traçabilité** complète des modifications
-- ✅ **Rollback** facile avec branches feature
-- ✅ **Collaboration** simplifiée
-- ✅ **Documentation** automatique des changements
-- ✅ **Conformité** aux standards Git
-
-### 💻 Exemple Pratique d'Utilisation
-
-#### **Scénario : Amélioration du Dashboard**
-```bash
-# État initial : modifications dans frontend/dashboard/
-# Fichiers : page.tsx, KPIWidget.tsx, styles.css
-
-# L'utilisateur tape simplement :
-"je valide"
-
-# Claude analyse automatiquement et génère :
-# Type : feat (fichiers React/TypeScript)
-# Contexte : dashboard + kpi + styles
-# Branche : feat/dashboard_kpi_styles
-
-# Actions automatiques :
-git checkout -b feat/dashboard_kpi_styles
-git add frontend/dashboard/page.tsx frontend/dashboard/KPIWidget.tsx frontend/dashboard/styles.css
-git commit -m "feat(dashboard): amélioration KPI et styles
-
-- Optimisation composant KPIWidget
-- Amélioration responsive design
-- Correction alignements CSS
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-# NOUVEAU : Mise à jour automatique du journal
-# Ajout entrée dans JOURNAL_NATIVE.md avec DATE + HEURE :
-#### 🤖 [26 Juillet 2025 - 14:32] Commit Automatique via "je valide"
-- **Branche créée :** feat/dashboard_kpi_styles
-- **Fichiers modifiés :** page.tsx, KPIWidget.tsx, styles.css
-- **Type modification :** feat (amélioration interface)
-- **Impact :** Optimisation dashboard + responsive design
-
-**Format obligatoire :** [DD Mois YYYY - HH:MM] pour traçabilité complète
-
-git push -u origin feat/dashboard_kpi_styles
-```
-
-#### **Scénario : Finalisation et Merge**
-```bash
-# Après validation et tests, l'utilisateur tape :
-"final"
-
-# Claude exécute automatiquement :
-git checkout main
-git pull origin main
-git merge feat/dashboard_kpi_styles --no-ff
-git push origin main
-git branch -d feat/dashboard_kpi_styles
-
-# Message de confirmation :
-"✅ Branche feat/dashboard_kpi_styles mergée vers main et nettoyée"
-```
-
-### 🔄 Cas d'Usage par Type de Modification
-
-#### **Documentation (docs/)**
-- **Fichiers :** *.md, *.txt, README, guides
-- **Exemples :** `docs/api_documentation`, `docs/user_guide_update`
-
-#### **Nouvelles fonctionnalités (feat/)**
-- **Fichiers :** *.py, *.tsx, *.js, nouveaux composants
-- **Exemples :** `feat/user_authentication`, `feat/ocr_optimization`
-
-#### **Corrections (fix/)**
-- **Fichiers :** Corrections de bugs identifiés
-- **Exemples :** `fix/login_redirect_bug`, `fix/ocr_memory_leak`
-
-#### **Performance (perf/)**
-- **Fichiers :** Optimisations spécifiques
-- **Exemples :** `perf/database_queries`, `perf/image_compression`
-
-#### **Refactoring (refactor/)**
-- **Fichiers :** Restructuration de code
-- **Exemples :** `refactor/api_endpoints`, `refactor/component_architecture`
-
-### Commande de Validation Rapide (Legacy)
-
-**Déclencheur :** `"je valide LEXO"` (pour compatibility)
-
-**Action automatique :** Création d'une nouvelle branche LEXO_NATIVE.0x + commit + push vers GitHub
-
-### Logique de Versioning Automatique
-
-```bash
-# Détection automatique du numéro de version suivant
-git branch -r | grep "origin/LEXO_NATIVE\." | sed 's/.*LEXO_NATIVE\.//' | sort -n | tail -1
-# Exemple : Si dernière version = LEXO_NATIVE.01 → Nouvelle branche = LEXO_NATIVE.02
-```
-
-### Processus Automatisé
-
-```bash
-# 1. Détection version suivante
-LATEST_VERSION=$(git branch -r | grep "origin/LEXO_NATIVE\." | sed 's/.*LEXO_NATIVE\.//' | sort -n | tail -1)
-NEW_VERSION=$(printf "%02d" $((LATEST_VERSION + 1)))
-NEW_BRANCH="LEXO_NATIVE.${NEW_VERSION}"
-
-# 2. Création branche et commit
-git checkout -b ${NEW_BRANCH}
-git add -A
-git commit -m "feat: ${NEW_BRANCH} - Améliorations et nouvelles fonctionnalités
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-# 3. Génération README résumé
-# Création automatique du README.md avec résumé des changements
-
-# 4. Push vers GitHub
-git push -u origin ${NEW_BRANCH}
-```
-
-### Template README Automatique
-
-```markdown
-# LEXO_NATIVE.0x - Résumé des Modifications
-
-## 📊 Métadonnées
-- **Version :** LEXO_NATIVE.0x
-- **Date :** [Date automatique]
-- **Branche :** LEXO_NATIVE.0x
-- **Repo :** https://github.com/aiconsultingorleans/LEXO_NATIVE.01
-
-## 🎯 Résumé des Changements
-[Résumé automatique généré par Claude des modifications effectuées]
-
-## 📁 Fichiers Modifiés
-[Liste automatique des fichiers modifiés avec description]
-
-## 🧪 Tests Validés
-[Tests exécutés et validés]
-
-## 🚀 Impact Business
-[Impact des modifications sur les fonctionnalités]
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-```
-
-### Utilisation
-
-```bash
-# L'utilisateur tape simplement :
-"je valide"
-
-# Claude exécute automatiquement :
-# ✅ Analyse intelligente des modifications
-# ✅ Création branche feat/fix/docs avec nom descriptif
-# ✅ Commit conventionnel avec message standardisé
-# ✅ Mise à jour automatique JOURNAL_NATIVE.md
-# ✅ Push vers GitHub avec tracking
-# ✅ Confirmation avec URL branche
-```
-
-### Repo GitHub Natif Cible
-**URL :** https://github.com/aiconsultingorleans/LEXO_NATIVE.01  
-**Format branches :** feat/, fix/, docs/, perf/ (développement) + LEXO_NATIVE.0x (releases)  
-**Dernière version actuelle :** Architecture native opérationnelle
-
----
-
-## 📁 Architecture Scripts & Outils - Guide Complet
-
-### 🗂️ Hiérarchie Scripts du Projet
-
-```
-~/Documents/LEXO_v1/
-├── 🚀 Scripts Niveau Racine (alternatives globales)
-│   ├── start_all.sh             # Démarrage alternatif complet
-│   ├── stop_all.sh              # Arrêt alternatif complet  
-│   └── check_health.sh          # Vérification état services
-│
-└── IA_Administratif/
-    ├── 🎯 Scripts Natifs Principaux (recommandés)
-    │   ├── start_native.sh       # 🚀 Démarrage natif optimisé
-    │   ├── stop_native.sh        # 🛑 Arrêt propre natif
-    │   └── diagnostic_native.sh  # 🔍 Diagnostic système complet
-    │
-    ├── 🔧 Scripts Composants Individuels
-    │   ├── start_backend_native.sh    # Backend FastAPI seul
-    │   ├── start_frontend_native.sh   # Frontend Next.js seul
-    │   ├── start_document_analyzer.sh # Service Mistral MLX seul
-    │   └── stop_document_analyzer.sh  # Arrêt service Mistral
-    │
-    └── 🧪 Scripts Utilitaires
-        ├── check_cache.sh        # Vérification cache système
-        └── build_base_image.sh   # Build image Docker (legacy)
-```
-
-### 🚀 Guide d'Utilisation Rapide
-
-#### **Usage Quotidien (Recommandé)**
-```bash
-# Démarrage développement
+# Démarrage complet (30 secondes)
 cd ~/Documents/LEXO_v1/IA_Administratif
 ./start_native.sh
 
 # Arrêt propre
 ./stop_native.sh
 
-# Diagnostic en cas de problème
-./diagnostic_native.sh
-```
-
-#### **Alternatives Globales**
-```bash
-# Depuis la racine du projet
-cd ~/Documents/LEXO_v1
-./start_all.sh      # Alternative au start_native.sh
-./stop_all.sh       # Alternative au stop_native.sh
-./check_health.sh   # Vérification rapide services
-```
-
-#### **Démarrage Sélectif (Debug)**
-```bash
-cd ~/Documents/LEXO_v1/IA_Administratif
-
 # Services individuels
-./start_backend_native.sh    # Backend seul (port 8000)
-./start_frontend_native.sh   # Frontend seul (port 3000)
-./start_document_analyzer.sh # Mistral MLX seul (port 8004)
+./start_backend_native.sh     # Backend seul
+./start_frontend_native.sh    # Frontend seul
+
+# Diagnostic
+./diagnostic_native.sh        # État système complet
 ```
 
-### 🎯 Priorité d'Usage
-
-1. **🥇 Scripts Natifs** (`IA_Administratif/`) : Performance optimale
-2. **🥈 Scripts Racine** : Alternatives de secours
-3. **🥉 Scripts Individuels** : Debug et développement ciblé
+### Performance Démarrage
+- **Services système** : Instantané (Homebrew)
+- **API Backend** : ~10s (vs 30s Docker)
+- **Interface web** : ~5s 
+- **Mistral MLX** : ~30s (vs 60s Docker)
+- **Pipeline complet** : **30-40s total**
 
 ---
 
-**📈 État Projet :** MVP natif opérationnel - Pipeline documentaire 2x plus performant  
-**🎯 Prochaine étape :** Packaging app macOS + App Store + Interface mobile native  
-**🚀 Philosophie :** "Native First" - Performance maximale Apple Silicon pour l'utilisateur
+## 🎯 État Avancement
 
-*Dernière mise à jour : 26 juillet 2025 - Architecture scripts corrigée + barre progression dashboard*
+### ✅ COMPLÉTÉES
+- **Étapes 1-2** : Backend + Frontend (100%)
+- **Étape 3** : Pipeline OCR hybride (82%)
+- **Étape 4** : Classification 9 catégories (100%)
+- **Étape 5** : RAG + Mistral MLX (95%)
+- **Étape 7** : Dashboard Analytics (95%)
+
+### 🚧 EN COURS (Approche Non-Destructive)
+- **Pipeline DONUT** : Alternative complémentaire Mistral (Étape 1/7 complétée)
+- **Étape 6** : Intégrations externes (20%)
+- **Étape 9** : Sécurité + Performance (40%)
+
+**Note** : Tous développements conservent intégralement le pipeline Mistral MLX existant
+
+---
+
+## 🔧 Stack Technologique
+
+### Backend Native
+```python
+# FastAPI 0.115+ avec uvicorn Apple Silicon
+# SQLAlchemy 2.0 + PostgreSQL 15 Homebrew
+# Redis 7 (cache + queues)
+# Alembic migrations
+
+# OCR Pipeline
+# - TrOCR (HuggingFace) ARM64 optimisé
+# - Tesseract 5 Homebrew (fallback)
+# - LayoutLMv3 (structure)
+
+# IA Apple Silicon
+# - Mistral 7B MLX (optimisation M4)
+# - ChromaDB standalone
+# - Sentence-Transformers ARM64
+
+# Pipeline Alternatif DONUT (en développement)
+# - Donut OCR-free (naver-clova-ix/donut-base-finetuned-cord-v2)
+# - CamemBERT français (almanach/camembert-base)
+# - NER français (Jean-Baptiste/camembert-ner)
+```
+
+### Frontend Moderne
+```typescript
+// Next.js 15 + React 19
+// TypeScript strict + Tailwind CSS 4
+// Zustand (state) + React Hook Form
+// Composants optimisés hot reload
+```
+
+---
+
+## 📁 Navigation Rapide - Fichiers Clés
+
+### Configuration & API
+```bash
+backend/core/config.py         # Configuration principale
+backend/main.py               # Point d'entrée FastAPI
+backend/api/documents.py      # Upload unifié
+backend/api/health.py         # Health checks
+```
+
+### Pipeline Documentaire
+```bash
+backend/ocr/hybrid_ocr.py     # OCR principal
+backend/rag/mistral_wrapper.py # Interface Mistral MLX
+backend/services/document_classifier.py # Classification
+backend/test_models_selection.py # Benchmark DONUT
+backend/api/donut_endpoints.py    # API DONUT (planifié)
+ai_services/donut_camembert_analyzer.py # Service DONUT (planifié)
+```
+
+### Frontend Interface
+```bash
+frontend/src/app/dashboard/page.tsx       # Dashboard principal
+frontend/src/components/documents/        # Upload + liste
+frontend/src/components/dashboard/        # Analytics KPI
+frontend/src/services/api.ts              # Client API
+```
+
+### Services IA
+```bash
+ai_services/document_analyzer.py         # Service Mistral MLX
+ml_models/mistral_7b_mlx/                # Modèles locaux
+data/chromadb/                           # Base vectorielle
+```
+
+---
+
+## 📊 Fonctionnalités Opérationnelles
+
+### 1. Upload + Traitement Intelligent (Non-Destructif)
+- **Drag & Drop** : PDF, images (PNG, JPG, TIFF)
+- **Pipeline unifié** : Upload → OCR → [Mistral MLX (défaut) | DONUT (alternatif)] → Classification
+- **Toggle utilisateur** : Choix pipeline dans dashboard, Mistral conservé par défaut
+- **Performance** : <10 secondes par document
+- **Fallback automatique** : Retour vers Mistral en cas d'erreur DONUT
+
+### 2. Classification Automatique
+```typescript
+Categories = {
+  factures, rib, contrats, attestations, 
+  courriers, rapports, cartes_transport,
+  documents_personnels, non_classes
+}
+// Score moyen: 89.7% de confiance
+```
+
+### 3. Dashboard Analytics
+- **KPIs temps réel** : Documents traités, précision OCR
+- **Graphiques** : Bar, Line, Pie charts (Recharts)
+- **Timeline** : Activité récente
+- **Filtres** : Date, catégorie, statut
+
+### 4. RAG + Chat Intelligent  
+- **Recherche sémantique** : ChromaDB + embeddings
+- **Chat contexte** : Mistral MLX avec sources
+- **Performance** : <100ms retrieval, <2s génération
+
+---
+
+## 🧪 Tests Validés
+
+### Scripts Principaux
+```bash
+cd backend && source venv/bin/activate
+
+# Tests pipeline
+python test_ocr_etape3.py        # OCR (82% succès)
+python test_rag_etape5.py        # RAG (95% succès)  
+python test_models_selection.py # Benchmark DONUT
+
+# Tests spécifiques
+pytest tests/                   # Tests unitaires
+```
+
+### Validation Documents Réels
+- **Factures EDF** : Classification + extraction entités ✅
+- **RIB bancaires** : Détection + classement automatique ✅
+- **Attestations** : CPAM, CAF détectées ✅
+
+---
+
+## 🔄 Hot Reload Développement
+
+### Workflow Optimisé
+```bash
+# Démarrage une fois
+./start_native.sh
+
+# Développement continu - pas de redémarrage
+# - Composants React : HMR instantané (<500ms)
+# - API Python : uvicorn --reload automatique (<1s)
+# - Styles CSS : Hot reload instantané
+```
+
+### Cas Redémarrage Nécessaire
+- **Frontend** : Modification `package.json` → `npm install`
+- **Backend** : Modification `requirements.txt` → `pip install`
+- **Complet** : `./stop_native.sh && ./start_native.sh`
+
+---
+
+## 🛡️ Stabilité & Performance
+
+### Auto-correction Native
+- **Services Homebrew** : Démarrage automatique PostgreSQL/Redis
+- **Environnements virtuels** : Création automatique si manquants
+- **Dépendances** : Vérification et installation auto
+
+### Protection Données
+- **Sauvegarde auto** : Lors arrêt dans `logs/backups/YYYYMMDD/`
+- **Vérification batch** : Pas d'arrêt si traitements en cours
+- **Logs centralisés** : `logs/backend_native.log`, `logs/mistral_native.log`
+
+---
+
+**📈 État :** MVP natif opérationnel - Pipeline Mistral MLX fonctionnel (89.7% précision)  
+**🎯 Focus :** Pipeline DONUT alternatif en développement (Étape 1/7 complétée - Modèles validés)  
+**🛡️ Approche :** 100% Non-Destructive - Conservation totale de l'existant
+
+*Dernière mise à jour : 27 juillet 2025 - Guidelines + Approche Non-Destructive intégrées*

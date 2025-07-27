@@ -1,0 +1,245 @@
+{
+  "timestamp": "2025-07-27T10:15:32.721607",
+  "system_info": {
+    "platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "ram_total_gb": 128.0,
+    "ram_available_gb": 84.06,
+    "python_version": "3.13.5",
+    "torch_version": "2.7.1",
+    "transformers_version": "4.53.3"
+  },
+  "models_tested": [
+    {
+      "model_name": "donut-base",
+      "model_id": "naver-clova-ix/donut-base",
+      "description": "Modèle Donut de base pour fine-tuning",
+      "status": "success",
+      "load_time_seconds": 6.9,
+      "memory_usage": {
+        "before_gb": 43.02,
+        "after_gb": 45.48,
+        "difference_gb": 2.46
+      },
+      "model_size_mb": 770.0,
+      "error": null,
+      "parameter_count": 201852024,
+      "inference_test": {
+        "status": "success",
+        "inference_time_seconds": 2.734,
+        "output_tokens": 2
+      }
+    },
+    {
+      "model_name": "donut-base-finetuned-cord-v2",
+      "model_id": "naver-clova-ix/donut-base-finetuned-cord-v2",
+      "description": "Donut fine-tuné pour documents (CORD dataset)",
+      "status": "success",
+      "load_time_seconds": 6.13,
+      "memory_usage": {
+        "before_gb": 43.8,
+        "after_gb": 46.11,
+        "difference_gb": 2.31
+      },
+      "model_size_mb": 767.22,
+      "error": null,
+      "parameter_count": 201121912,
+      "inference_test": {
+        "status": "success",
+        "inference_time_seconds": 0.504,
+        "output_tokens": 2
+      }
+    },
+    {
+      "model_name": "camembert-base",
+      "model_id": "almanach/camembert-base",
+      "description": "CamemBERT base (110M paramètres) - équilibre performance/RAM",
+      "status": "success",
+      "load_time_seconds": 5.92,
+      "memory_usage": {
+        "before_gb": 44.17,
+        "after_gb": 45.58,
+        "difference_gb": 1.41
+      },
+      "model_size_mb": 422.02,
+      "error": null,
+      "parameter_count": 110628873,
+      "classification_test": {
+        "status": "success",
+        "inference_time_seconds": 0.751,
+        "test_text": "Facture EDF numéro 12345 du 15 janvier 2025 pour un montant de 89.50 euros",
+        "prediction_shape": [
+          1,
+          9
+        ],
+        "max_confidence": 0.1194
+      }
+    },
+    {
+      "model_name": "camembert-large",
+      "model_id": "almanach/camembert-large",
+      "description": "CamemBERT large - performance maximale",
+      "status": "success",
+      "load_time_seconds": 8.78,
+      "memory_usage": {
+        "before_gb": 44.23,
+        "after_gb": 46.57,
+        "difference_gb": 2.34
+      },
+      "model_size_mb": 1284.3,
+      "error": null,
+      "parameter_count": 336670729,
+      "classification_test": {
+        "status": "success",
+        "inference_time_seconds": 0.071,
+        "test_text": "Facture EDF numéro 12345 du 15 janvier 2025 pour un montant de 89.50 euros",
+        "prediction_shape": [
+          1,
+          9
+        ],
+        "max_confidence": 0.135
+      }
+    },
+    {
+      "model_name": "camembert-ner",
+      "model_id": "Jean-Baptiste/camembert-ner",
+      "description": "CamemBERT NER français (2M+ téléchargements, optimisé entités minuscules)",
+      "status": "success",
+      "load_time_seconds": 0.48,
+      "memory_usage": {
+        "before_gb": 43.29,
+        "after_gb": 44.77,
+        "difference_gb": 1.48
+      },
+      "model_size_mb": 419.75,
+      "error": null,
+      "parameter_count": 110035205,
+      "ner_test": {
+        "status": "success",
+        "total_inference_time_seconds": 0.198,
+        "texts_processed": 4,
+        "entities_found": 7,
+        "emitters_detected": [
+          "EDF",
+          "CPAM",
+          "RIB Crédit Agricole",
+          "Lexo SAS"
+        ],
+        "average_time_per_text": 0.05
+      }
+    },
+    {
+      "model_name": "camembert-ner-with-dates",
+      "model_id": "Jean-Baptiste/camembert-ner-with-dates",
+      "description": "CamemBERT NER avec reconnaissance de dates",
+      "status": "success",
+      "load_time_seconds": 0.47,
+      "memory_usage": {
+        "before_gb": 43.3,
+        "after_gb": 44.79,
+        "difference_gb": 1.49
+      },
+      "model_size_mb": 419.75,
+      "error": null,
+      "parameter_count": 110035974,
+      "ner_test": {
+        "status": "success",
+        "total_inference_time_seconds": 0.126,
+        "texts_processed": 4,
+        "entities_found": 8,
+        "emitters_detected": [
+          "EDF",
+          "CPAM",
+          "IB Crédit Agricole",
+          "URSSAF",
+          "Lexo SAS"
+        ],
+        "average_time_per_text": 0.032
+      }
+    }
+  ],
+  "recommendations": {
+    "donut_recommendation": {
+      "model": "naver-clova-ix/donut-base-finetuned-cord-v2",
+      "reason": "Meilleur temps de chargement (6.13s) et RAM optimale (2.31GB)",
+      "load_time": 6.13,
+      "memory_gb": 2.31
+    },
+    "camembert_recommendation": {
+      "model": "almanach/camembert-base",
+      "reason": "Équilibre optimal performance/RAM (110M paramètres, 1.41GB)",
+      "load_time": 5.92,
+      "memory_gb": 1.41
+    },
+    "ner_recommendation": {
+      "model": "Jean-Baptiste/camembert-ner",
+      "reason": "Modèle le plus populaire (2M+ téléchargements), optimisé entités minuscules",
+      "load_time": 0.48,
+      "memory_gb": 1.48
+    },
+    "memory_assessment": {
+      "total_models_memory_gb": 5.2,
+      "system_total_ram_gb": 128.0,
+      "estimated_usage_percent": 4.1,
+      "assessment": "optimal",
+      "recommendation": "✅ Configuration viable pour Mac M4 32GB"
+    },
+    "performance_summary": {},
+    "final_selection": {
+      "donut_model": "naver-clova-ix/donut-base-finetuned-cord-v2",
+      "camembert_model": "almanach/camembert-base",
+      "ner_model": "Jean-Baptiste/camembert-ner",
+      "ready_for_step2": true,
+      "estimated_total_memory_gb": 5.2,
+      "hot_swapping_viable": true
+    }
+  },
+  "memory_usage": {},
+  "hot_swapping": {
+    "status": "success",
+    "tests": [
+      {
+        "step": 1,
+        "model_type": "donut",
+        "model_id": "naver-clova-ix/donut-base",
+        "swap_time_seconds": 1.91,
+        "memory_change_gb": 0.29,
+        "current_memory_gb": 43.6,
+        "status": "success"
+      },
+      {
+        "step": 2,
+        "model_type": "camembert",
+        "model_id": "almanach/camembert-base",
+        "swap_time_seconds": 0.58,
+        "memory_change_gb": 0.0,
+        "current_memory_gb": 43.6,
+        "status": "success"
+      },
+      {
+        "step": 3,
+        "model_type": "ner",
+        "model_id": "Jean-Baptiste/camembert-ner",
+        "swap_time_seconds": 0.47,
+        "memory_change_gb": 1.49,
+        "current_memory_gb": 45.09,
+        "status": "success"
+      },
+      {
+        "step": 4,
+        "model_type": "donut",
+        "model_id": "naver-clova-ix/donut-base",
+        "swap_time_seconds": 2.44,
+        "memory_change_gb": -0.44,
+        "current_memory_gb": 44.65,
+        "status": "success"
+      }
+    ],
+    "average_swap_time": 1.35,
+    "memory_stability": true,
+    "error": null,
+    "min_swap_time": 0.47,
+    "max_swap_time": 2.44,
+    "total_swaps": 4
+  }
+}

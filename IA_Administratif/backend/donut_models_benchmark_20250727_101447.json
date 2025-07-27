@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-07-27T10:14:20.753183",
+  "system_info": {
+    "platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "ram_total_gb": 128.0,
+    "ram_available_gb": 84.35,
+    "python_version": "3.13.5",
+    "torch_version": "2.7.1",
+    "transformers_version": "4.53.3"
+  },
+  "models_tested": [
+    {
+      "model_name": "donut-base",
+      "model_id": "naver-clova-ix/donut-base",
+      "description": "Modèle Donut de base pour fine-tuning",
+      "status": "failed",
+      "load_time_seconds": 2.6812829971313477,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "Cannot instantiate this tokenizer from a slow version. If it's based on sentencepiece, make sure you have sentencepiece installed."
+    },
+    {
+      "model_name": "donut-base-finetuned-cord-v2",
+      "model_id": "naver-clova-ix/donut-base-finetuned-cord-v2",
+      "description": "Donut fine-tuné pour documents (CORD dataset)",
+      "status": "failed",
+      "load_time_seconds": 2.5868639945983887,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "Cannot instantiate this tokenizer from a slow version. If it's based on sentencepiece, make sure you have sentencepiece installed."
+    },
+    {
+      "model_name": "camembert-base",
+      "model_id": "almanach/camembert-base",
+      "description": "CamemBERT base (110M paramètres) - équilibre performance/RAM",
+      "status": "failed",
+      "load_time_seconds": 4.601478576660156e-05,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "\nCamembertTokenizer requires the SentencePiece library but it was not found in your environment. Check out the instructions on the\ninstallation page of its repo: https://github.com/google/sentencepiece#installation and follow the ones\nthat match your environment. Please note that you may need to restart your runtime after installation.\n"
+    },
+    {
+      "model_name": "camembert-large",
+      "model_id": "almanach/camembert-large",
+      "description": "CamemBERT large - performance maximale",
+      "status": "failed",
+      "load_time_seconds": 4.506111145019531e-05,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "\nCamembertTokenizer requires the SentencePiece library but it was not found in your environment. Check out the instructions on the\ninstallation page of its repo: https://github.com/google/sentencepiece#installation and follow the ones\nthat match your environment. Please note that you may need to restart your runtime after installation.\n"
+    },
+    {
+      "model_name": "camembert-ner",
+      "model_id": "Jean-Baptiste/camembert-ner",
+      "description": "CamemBERT NER français (2M+ téléchargements, optimisé entités minuscules)",
+      "status": "failed",
+      "load_time_seconds": 3.9540460109710693,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "Converting from SentencePiece and Tiktoken failed, if a converter for SentencePiece is available, provide a model path with a SentencePiece tokenizer.model file.Currently available slow->fast converters: ['AlbertTokenizer', 'BartTokenizer', 'BarthezTokenizer', 'BertTokenizer', 'BigBirdTokenizer', 'BlenderbotTokenizer', 'CamembertTokenizer', 'CLIPTokenizer', 'CodeGenTokenizer', 'ConvBertTokenizer', 'DebertaTokenizer', 'DebertaV2Tokenizer', 'DistilBertTokenizer', 'DPRReaderTokenizer', 'DPRQuestionEncoderTokenizer', 'DPRContextEncoderTokenizer', 'ElectraTokenizer', 'FNetTokenizer', 'FunnelTokenizer', 'GPT2Tokenizer', 'HerbertTokenizer', 'LayoutLMTokenizer', 'LayoutLMv2Tokenizer', 'LayoutLMv3Tokenizer', 'LayoutXLMTokenizer', 'LongformerTokenizer', 'LEDTokenizer', 'LxmertTokenizer', 'MarkupLMTokenizer', 'MBartTokenizer', 'MBart50Tokenizer', 'MPNetTokenizer', 'MobileBertTokenizer', 'MvpTokenizer', 'NllbTokenizer', 'OpenAIGPTTokenizer', 'PegasusTokenizer', 'Qwen2Tokenizer', 'RealmTokenizer', 'ReformerTokenizer', 'RemBertTokenizer', 'RetriBertTokenizer', 'RobertaTokenizer', 'RoFormerTokenizer', 'SeamlessM4TTokenizer', 'SqueezeBertTokenizer', 'T5Tokenizer', 'UdopTokenizer', 'WhisperTokenizer', 'XLMRobertaTokenizer', 'XLNetTokenizer', 'SplinterTokenizer', 'XGLMTokenizer', 'LlamaTokenizer', 'CodeLlamaTokenizer', 'GemmaTokenizer', 'Phi3Tokenizer']"
+    },
+    {
+      "model_name": "camembert-ner-with-dates",
+      "model_id": "Jean-Baptiste/camembert-ner-with-dates",
+      "description": "CamemBERT NER avec reconnaissance de dates",
+      "status": "failed",
+      "load_time_seconds": 3.63897705078125,
+      "memory_usage": {},
+      "model_size_mb": 0,
+      "error": "Converting from SentencePiece and Tiktoken failed, if a converter for SentencePiece is available, provide a model path with a SentencePiece tokenizer.model file.Currently available slow->fast converters: ['AlbertTokenizer', 'BartTokenizer', 'BarthezTokenizer', 'BertTokenizer', 'BigBirdTokenizer', 'BlenderbotTokenizer', 'CamembertTokenizer', 'CLIPTokenizer', 'CodeGenTokenizer', 'ConvBertTokenizer', 'DebertaTokenizer', 'DebertaV2Tokenizer', 'DistilBertTokenizer', 'DPRReaderTokenizer', 'DPRQuestionEncoderTokenizer', 'DPRContextEncoderTokenizer', 'ElectraTokenizer', 'FNetTokenizer', 'FunnelTokenizer', 'GPT2Tokenizer', 'HerbertTokenizer', 'LayoutLMTokenizer', 'LayoutLMv2Tokenizer', 'LayoutLMv3Tokenizer', 'LayoutXLMTokenizer', 'LongformerTokenizer', 'LEDTokenizer', 'LxmertTokenizer', 'MarkupLMTokenizer', 'MBartTokenizer', 'MBart50Tokenizer', 'MPNetTokenizer', 'MobileBertTokenizer', 'MvpTokenizer', 'NllbTokenizer', 'OpenAIGPTTokenizer', 'PegasusTokenizer', 'Qwen2Tokenizer', 'RealmTokenizer', 'ReformerTokenizer', 'RemBertTokenizer', 'RetriBertTokenizer', 'RobertaTokenizer', 'RoFormerTokenizer', 'SeamlessM4TTokenizer', 'SqueezeBertTokenizer', 'T5Tokenizer', 'UdopTokenizer', 'WhisperTokenizer', 'XLMRobertaTokenizer', 'XLNetTokenizer', 'SplinterTokenizer', 'XGLMTokenizer', 'LlamaTokenizer', 'CodeLlamaTokenizer', 'GemmaTokenizer', 'Phi3Tokenizer']"
+    }
+  ],
+  "recommendations": {
+    "donut_recommendation": null,
+    "camembert_recommendation": null,
+    "ner_recommendation": null,
+    "memory_assessment": {
+      "total_models_memory_gb": 0,
+      "system_total_ram_gb": 128.0,
+      "estimated_usage_percent": 0.0,
+      "assessment": "optimal",
+      "recommendation": "✅ Configuration viable pour Mac M4 32GB"
+    },
+    "performance_summary": {},
+    "final_selection": {}
+  },
+  "memory_usage": {},
+  "hot_swapping": {
+    "status": "pending",
+    "tests": [
+      {
+        "step": 1,
+        "model_type": "donut",
+        "model_id": "naver-clova-ix/donut-base",
+        "status": "failed",
+        "error": "Cannot instantiate this tokenizer from a slow version. If it's based on sentencepiece, make sure you have sentencepiece installed."
+      },
+      {
+        "step": 2,
+        "model_type": "camembert",
+        "model_id": "almanach/camembert-base",
+        "status": "failed",
+        "error": "\nCamembertTokenizer requires the SentencePiece library but it was not found in your environment. Check out the instructions on the\ninstallation page of its repo: https://github.com/google/sentencepiece#installation and follow the ones\nthat match your environment. Please note that you may need to restart your runtime after installation.\n"
+      },
+      {
+        "step": 3,
+        "model_type": "ner",
+        "model_id": "Jean-Baptiste/camembert-ner",
+        "status": "failed",
+        "error": "Converting from SentencePiece and Tiktoken failed, if a converter for SentencePiece is available, provide a model path with a SentencePiece tokenizer.model file.Currently available slow->fast converters: ['AlbertTokenizer', 'BartTokenizer', 'BarthezTokenizer', 'BertTokenizer', 'BigBirdTokenizer', 'BlenderbotTokenizer', 'CamembertTokenizer', 'CLIPTokenizer', 'CodeGenTokenizer', 'ConvBertTokenizer', 'DebertaTokenizer', 'DebertaV2Tokenizer', 'DistilBertTokenizer', 'DPRReaderTokenizer', 'DPRQuestionEncoderTokenizer', 'DPRContextEncoderTokenizer', 'ElectraTokenizer', 'FNetTokenizer', 'FunnelTokenizer', 'GPT2Tokenizer', 'HerbertTokenizer', 'LayoutLMTokenizer', 'LayoutLMv2Tokenizer', 'LayoutLMv3Tokenizer', 'LayoutXLMTokenizer', 'LongformerTokenizer', 'LEDTokenizer', 'LxmertTokenizer', 'MarkupLMTokenizer', 'MBartTokenizer', 'MBart50Tokenizer', 'MPNetTokenizer', 'MobileBertTokenizer', 'MvpTokenizer', 'NllbTokenizer', 'OpenAIGPTTokenizer', 'PegasusTokenizer', 'Qwen2Tokenizer', 'RealmTokenizer', 'ReformerTokenizer', 'RemBertTokenizer', 'RetriBertTokenizer', 'RobertaTokenizer', 'RoFormerTokenizer', 'SeamlessM4TTokenizer', 'SqueezeBertTokenizer', 'T5Tokenizer', 'UdopTokenizer', 'WhisperTokenizer', 'XLMRobertaTokenizer', 'XLNetTokenizer', 'SplinterTokenizer', 'XGLMTokenizer', 'LlamaTokenizer', 'CodeLlamaTokenizer', 'GemmaTokenizer', 'Phi3Tokenizer']"
+      },
+      {
+        "step": 4,
+        "model_type": "donut",
+        "model_id": "naver-clova-ix/donut-base",
+        "status": "failed",
+        "error": "Cannot instantiate this tokenizer from a slow version. If it's based on sentencepiece, make sure you have sentencepiece installed."
+      }
+    ],
+    "average_swap_time": 0,
+    "memory_stability": true,
+    "error": null
+  }
+}
