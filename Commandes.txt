@@ -1,6 +1,6 @@
 Merci de lire PLANNING.md, CLAUDE.md et TACHES.md pour parfaitement connaître le projet. Garde particulièrement en mémoire l'arborescence du projet. Vérifie quelles sont les tâches déjà effectuées dans TACHES.md et continue avec les tâches non encore effectuées
 
-Merci de lire CLAUDE.md et Migration_Native.md.
+Merci de lire CLAUDE.md et Classification.md.
 
 Lis aussi JOUR-Dashboard.md.
 Mets à jour le fichier JOUR-Dashboard.md pour refléter ces modifications (avec date et heure de la mise à jour)
@@ -9,7 +9,7 @@ avant de lancer les tests mets à jour TACHES.md pour refléter l'état exact du
 coche les étapes effectuées dans TACHES.md et ajoute un résumé détaillé dans JOURNAL.md avec ce qu'il vient d'être fait
 
 fait un commit dans mon repo github sur une nouvelle branche https://github.com/aiconsultingorleans/LEXO_v1 avec un readme propre à ce commit qui contient un résumé de ce que tu viens de faire
-
+fait un commit dans mon repo github sur la branche actuelle et mets à jour Classificatio.md
 Installer Serena : 
 uvx --from git+https://github.com/oraios/serena serena-mcp-server
 

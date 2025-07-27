@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-07-27T08:12:47.251423",
+  "filename": "Carte Rémi.pdf",
+  "total_entities": 5,
+  "extraction_time": 0.00091,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "30,00",
+      "confidence": 0.7999999999999999,
+      "context": "iberté senior valable du 06/03/2025 au 05/03/2026 30,00 €  ter fix centre prod n° ton : 001255912  2025 à 0",
+      "position": 928,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/03/2025",
+      "confidence": 0.9,
+      "context": "émi liberté senior valable du 06/03/2025 au 05/03/2026 30,00 €  ter fi",
+      "position": 903,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "05/03/2026",
+      "confidence": 0.9,
+      "context": "nior valable du 06/03/2025 au 05/03/2026 30,00 €  ter fix centre prod",
+      "position": 917,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "06/03/1965",
+      "confidence": 0.8,
+      "context": "e ee voyageurs ansel stephane 06/03/1965 ref : gu998990  carte rémi li",
+      "position": 839,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": [
+    {
+      "type": "reference",
+      "value": "gu998990",
+      "confidence": 0.7,
+      "context": "urs ansel stephane 06/03/1965 ref : gu998990  carte rémi liberté senior va",
+      "position": 850,
+      "validated": false
+    }
+  ]
+}
