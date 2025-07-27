@@ -16,7 +16,7 @@ from api.documents import router as documents_router
 from api.health import router as health_router
 from api.ocr_routes_simple import router as ocr_router
 from api.document_intelligence import router as intelligence_router
-from api.batch_processing import router as batch_router
+from api.batch import router as batch_router
 from api.rag_clear import router as rag_clear_router
 from api.classification import router as classification_router
 from api.monitoring import router as monitoring_router

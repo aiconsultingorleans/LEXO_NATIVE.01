@@ -5,6 +5,7 @@ Modèle utilisateur
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum as SQLEnum
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from core.database import Base
@@ -30,6 +31,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relations
+    batch_operations = relationship("BatchOperation", back_populates="user")
 
     @property
     def name(self):
