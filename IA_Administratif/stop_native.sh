@@ -32,6 +32,9 @@ mkdir -p "$BACKUP_DIR"
 # Sauvegarder état batch en cours
 curl -s http://localhost:8000/api/v1/batch/status > "$BACKUP_DIR/batch_status_$(date +%H%M%S).json" 2>/dev/null || true
 
+# Sauvegarder état service DONUT si actif
+curl -s http://localhost:8005/health > "$BACKUP_DIR/donut_status_$(date +%H%M%S).json" 2>/dev/null || true
+
 # Arrêt par PID files
 if [ -f "logs/backend_native.pid" ]; then
     BACKEND_PID=$(cat logs/backend_native.pid)
@@ -54,8 +57,15 @@ if [ -f "logs/mistral_native.pid" ]; then
     success "✅ Service Mistral MLX arrêté"
 fi
 
+if [ -f "logs/donut_native.pid" ]; then
+    DONUT_PID=$(cat logs/donut_native.pid)
+    kill $DONUT_PID 2>/dev/null || true
+    rm logs/donut_native.pid
+    success "✅ Service DONUT arrêté"
+fi
+
 # Arrêt par ports (backup)
-for PORT in 3000 8000 8004; do
+for PORT in 3000 8000 8004 8005; do
     if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
         lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
         log "Port $PORT libéré"
@@ -63,7 +73,7 @@ for PORT in 3000 8000 8004; do
 done
 
 # Sauvegarder statistiques processus natifs
-ps aux | grep -E "(uvicorn|next|python.*document_analyzer)" | grep -v grep > "$BACKUP_DIR/native_stats_$(date +%H%M%S).txt" 2>/dev/null || true
+ps aux | grep -E "(uvicorn|next|python.*document_analyzer|python.*donut_camembert_analyzer)" | grep -v grep > "$BACKUP_DIR/native_stats_$(date +%H%M%S).txt" 2>/dev/null || true
 
 # Services système (optionnel - garder pour développement)
 # brew services stop postgresql@15

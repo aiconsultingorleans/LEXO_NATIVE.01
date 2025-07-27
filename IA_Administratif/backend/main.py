@@ -20,6 +20,7 @@ from api.batch_processing import router as batch_router
 from api.rag_clear import router as rag_clear_router
 from api.classification import router as classification_router
 from api.monitoring import router as monitoring_router
+from api.donut_endpoints import router as donut_router  # Pipeline DONUT alternatif
 # from api.rag_routes import router as rag_router  # Temporairement désactivé
 from core.config import settings
 from core.database import init_db
@@ -101,6 +102,8 @@ async def log_requests(request: Request, call_next):
         increment_metric("mistral_operations") 
     elif "/classification/" in request.url.path:
         increment_metric("classification_operations")
+    elif "/documents/analyze-donut" in request.url.path or "/models/" in request.url.path:
+        increment_metric("donut_operations")
     
     response = await call_next(request)
     
@@ -140,6 +143,7 @@ app.include_router(intelligence_router, tags=["Intelligence"])
 app.include_router(batch_router, tags=["Batch Processing"])
 app.include_router(rag_clear_router, prefix="/api/v1/rag", tags=["RAG"])
 app.include_router(monitoring_router, tags=["Monitoring"])
+app.include_router(donut_router, tags=["DONUT Pipeline"])  # Pipeline DONUT alternatif
 # app.include_router(rag_router, tags=["RAG"])  # Temporairement désactivé
 
 

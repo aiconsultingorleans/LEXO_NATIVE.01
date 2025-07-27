@@ -115,9 +115,35 @@ else
     error "❌ Environnement MLX manquant"
 fi
 
+# 5. Démarrage Service DONUT (optionnel)
+log "🍩 Démarrage Service DONUT (alternatif)..."
+cd "$LEXO_DIR/ai_services"
+
+# Tuer processus existant
+lsof -ti:8005 | xargs kill -9 2>/dev/null || true
+
+if [ -f "venv_donut/bin/activate" ]; then
+    source venv_donut/bin/activate
+    nohup python donut_camembert_analyzer.py > "$LEXO_DIR/logs/donut_native.log" 2>&1 &
+    DONUT_PID=$!
+    echo $DONUT_PID > "$LEXO_DIR/logs/donut_native.pid"
+    
+    # Attendre chargement modèles DONUT (plus rapide que Mistral)
+    log "⏳ Chargement modèles DONUT + CamemBERT (15-20s)..."
+    sleep 15
+    
+    if curl -s http://localhost:8005/health | grep -q "healthy"; then
+        success "✅ Service DONUT (port 8005) - PID: $DONUT_PID"
+    else
+        error "❌ Service DONUT non prêt - Vérifier logs/donut_native.log"
+    fi
+else
+    log "⚠️  Environnement DONUT non trouvé - Service alternatif non démarré"
+fi
+
 cd "$LEXO_DIR"
 
-# 5. Statut final
+# 6. Statut final
 echo ""
 log "🎉 LEXO v1 Native - Démarrage terminé!"
 echo ""
@@ -128,6 +154,9 @@ echo "  ✅ API Docs:     http://localhost:8000/docs"
 echo "  ✅ PostgreSQL:   localhost:5432"
 echo "  ✅ Redis:        localhost:6379"
 echo "  ✅ Mistral MLX:  http://localhost:8004"
+if [ -f "logs/donut_native.pid" ]; then
+    echo "  ✅ DONUT Alt:    http://localhost:8005"
+fi
 echo ""
 echo "📁 Logs: logs/"
 echo "🛑 Arrêt: ./stop_native.sh"
