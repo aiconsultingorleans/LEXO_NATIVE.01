@@ -14,49 +14,116 @@
 
 ### 🗂️ Système de Classification Hiérarchique Automatique
 
-#### Architecture Cible
+#### Architecture Dynamique Évolutive
 ```
 /OCR/
-├── factures/
-│   ├── EDF/
-│   ├── Orange/
-│   ├── SFR/
-│   ├── Bouygues/
-│   ├── Free/
-│   ├── ENEDIS/
-│   └── [Autres émetteurs détectés]/
-├── attestations/
-│   ├── CPAM/
-│   ├── CAF/
-│   ├── Pole_Emploi/
-│   ├── URSSAF/
-│   ├── Mutuelle/
-│   └── [Autres organismes]/
-├── rib/
-│   ├── Credit_Agricole/
-│   ├── BNP_Paribas/
-│   ├── Societe_Generale/
-│   ├── Caisse_Epargne/
-│   ├── LCL/
-│   └── [Autres banques]/
-├── impots/
-│   ├── DGFiP/
-│   ├── Tresor_Public/
-│   └── [Autres services fiscaux]/
-├── contrats/
-│   ├── Assurance/
-│   ├── Immobilier/
-│   ├── Telephonie/
-│   └── [Autres types]/
-└── [Autres catégories détectées]/
+├── [CATÉGORIES DE BASE - 9 types initiaux]
+│   ├── factures/
+│   │   ├── EDF/ (créé automatiquement dès 2+ factures EDF détectées)
+│   │   ├── Orange/ (créé automatiquement dès 2+ factures Orange détectées)
+│   │   ├── SFR/
+│   │   ├── Bouygues/
+│   │   ├── Free/
+│   │   ├── ENEDIS/
+│   │   └── [Nouveaux_Émetteurs_Auto]/ (ex: Total, Veolia, Suez...)
+│   ├── attestations/
+│   │   ├── CPAM/
+│   │   ├── CAF/
+│   │   ├── Pole_Emploi/
+│   │   ├── URSSAF/
+│   │   ├── Mutuelle/
+│   │   └── [Nouveaux_Organismes_Auto]/ (ex: MSA, AGIRC-ARRCO...)
+│   ├── rib/ → RIB/[Banque_Auto]/ (création sous-dossier si 2+ RIB même banque)
+│   ├── impots/ → Impots/[Service_Fiscal_Auto]/
+│   ├── contrats/ → Contrats/[Type_Contrat_Auto]/ (Assurance_Auto, Habitation...)
+│   ├── courriers/ → Courriers/[Expéditeur_Auto]/
+│   ├── rapports/ → Rapports/[Type_Rapport_Auto]/
+│   ├── cartes_transport/ → Cartes_Transport/[Réseau_Auto]/
+│   └── documents_personnels/ → Documents_Personnels/[Type_Auto]/
+├── [NOUVELLES CATÉGORIES - Détection automatique]
+│   ├── carte_grise/ → Carte_Grise/[Préfecture_Auto]/
+│   ├── permis_conduire/ → Permis_Conduire/[Préfecture_Auto]/
+│   ├── diplomes/ → Diplomes/[Établissement_Auto]/
+│   ├── certificats_medicaux/ → Certificats_Medicaux/[Médecin_Auto]/
+│   ├── mutuelle_complementaire/ → Mutuelle_Complementaire/[Organisme_Auto]/
+│   ├── carte_vitale/ → Carte_Vitale/[CPAM_Auto]/
+│   ├── quittances_loyer/ → Quittances_Loyer/[Bailleur_Auto]/
+│   ├── fiches_paie/ → Fiches_Paie/[Employeur_Auto]/
+│   ├── avis_imposition/ → Avis_Imposition/[Année_Auto]/
+│   ├── relevés_bancaires/ → Relevés_Bancaires/[Banque_Auto]/
+│   └── [Types_Emergents_Auto]/ (machine learning évolutif)
 ```
 
-#### Fonctionnement
-1. **Classification automatique** : Donut + CamemBERT déterminent la catégorie
-2. **Extraction émetteur** : Reconnaissance automatique de l'organisme/société
-3. **Création dossiers** : Vérification existence `/OCR/[catégorie]/` (création si nécessaire)
-4. **Création sous-dossiers** : Vérification `/OCR/[catégorie]/[émetteur]/` (création si nécessaire)
-5. **Classement final** : Document déplacé vers l'arborescence appropriée
+#### 🧠 Algorithme de Classification Dynamique
+
+##### Étape 1 : Classification Principale
+```python
+# Logique classification ouverte
+if type_document in CATEGORIES_BASE:
+    category = type_document  # factures, attestations, rib...
+else:
+    # Détection nouveau type via patterns + ML
+    category = detect_new_category(document_content, document_structure)
+    create_category_if_new(category)
+```
+
+##### Étape 2 : Extraction Émetteur/Organisme
+```python
+# Reconnaissance entités nommées françaises
+emetteur = extract_french_entity(document_text, category_context)
+emetteur_normalized = normalize_name(emetteur)  # "E.D.F" → "EDF"
+```
+
+##### Étape 3 : Gestion Arborescence Intelligente
+```python
+# Règle création sous-dossiers
+path_base = f"/OCR/{category}/"
+if count_documents_same_emetteur(emetteur, category) >= 2:
+    # Seuil atteint : création sous-dossier dédié
+    final_path = f"{path_base}{emetteur_normalized}/"
+    create_folder_if_not_exists(final_path)
+else:
+    # Pas assez de documents : reste dans dossier principal
+    final_path = path_base
+```
+
+##### Étape 4 : Auto-apprentissage Continu
+```python
+# Machine learning évolutif
+patterns_detected = analyze_new_patterns(recent_documents)
+for pattern in patterns_detected:
+    if pattern.confidence > 0.85 and pattern.frequency > 5:
+        # Nouveau type documentaire émergent détecté
+        register_new_category(pattern.category_name)
+        create_category_structure(pattern)
+```
+
+#### 🔍 Exemples Concrets de Fonctionnement
+
+##### Cas 1 : Factures EDF
+1. **Document 1** : Facture EDF → `/OCR/factures/` (pas de sous-dossier)
+2. **Document 2** : Facture EDF → **Déclencheur** → Création `/OCR/factures/EDF/`
+3. **Documents 1-2** : Déplacés automatiquement vers `/OCR/factures/EDF/`
+4. **Documents suivants** : Rangés directement dans `/OCR/factures/EDF/`
+
+##### Cas 2 : Nouveau Type - Carte Grise
+1. **Document 1** : Carte grise détectée → Analyse structure/contenu
+2. **Classification ML** : "Carte_Grise" (nouveau type identifié)
+3. **Création automatique** : `/OCR/carte_grise/`
+4. **Extraction émetteur** : "Préfecture_Loire" → `/OCR/carte_grise/Prefecture_Loire/`
+
+##### Cas 3 : Émetteur Inédit
+1. **Document** : Facture "Veolia" (nouvel émetteur)
+2. **Classification** : "factures" (catégorie connue)
+3. **Émetteur nouveau** : "Veolia" détecté via NER
+4. **Attente seuil** : Stockage `/OCR/factures/` jusqu'à 2e document Veolia
+5. **Seuil atteint** : Création automatique `/OCR/factures/Veolia/`
+
+#### 📊 Métriques Auto-apprentissage
+- **Nouveaux types détectés** : Compteur temps réel
+- **Sous-dossiers créés** : Log avec seuil déclenchement
+- **Précision classification ouverte** : >90% vs classification fixe
+- **Émetteurs uniques identifiés** : Base évolutive enrichie
 
 ---
 
@@ -149,35 +216,69 @@
 
 ---
 
-### 🚧 **ÉTAPE 3** : Service Donut Core (2-3 jours) - **PROCHAINE**
-- [ ] **3.1** Implémentation classe `DonutDocumentProcessor`
+### 🚧 **ÉTAPE 3** : Service Donut Core + Classification Dynamique (2-3 jours) - **EN COURS**
+- [ ] **3.1** Implémentation classe `DonutDocumentProcessor` avec classification ouverte
 - [ ] **3.2** Extraction OCR-free avec Donut (images → texte structuré)
-- [ ] **3.3** Intégration CamemBERT pour classification française
-- [ ] **3.4** Module extraction émetteurs avec patterns français
-- [ ] **3.5** Tests unitaires sur documents types LEXO (factures, RIB, attestations)
-- [ ] **3.6** Validation précision vs pipeline Mistral MLX existant
+- [ ] **3.3** **Classification Dynamique CamemBERT** : Au-delà des 9 catégories de base
+- [ ] **3.4** **Module Détection Nouveaux Types** : Auto-apprentissage catégories émergentes
+- [ ] **3.5** **Extraction Émetteurs Évolutive** : Base auto-enrichie avec NER français
+- [ ] **3.6** **Gestionnaire Arborescence Intelligente** : Création dossiers/sous-dossiers automatique
+- [ ] **3.7** **Algorithme Seuil** : Création sous-dossiers dès 2+ documents même émetteur
+- [ ] **3.8** Tests unitaires sur documents variés (au-delà LEXO de base)
+- [ ] **3.9** Validation précision classification ouverte vs classification fixe Mistral
 
-#### 🧪 Tests de Validation
+#### 🧪 Tests de Validation Étendus
 - [ ] Extraction texte Donut précision >85% sur documents scannés
-- [ ] Classification CamemBERT >90% sur 9 catégories LEXO
-- [ ] Extraction émetteurs >80% précision (EDF, Orange, CPAM, etc.)
-- [ ] Performance <15 secondes par document
+- [ ] **Classification Dynamique** >90% sur catégories connues + nouvelles détectées
+- [ ] **Détection nouveaux types** : ≥5 catégories émergentes en tests
+- [ ] **Extraction émetteurs évolutive** >80% précision (émetteurs connus + nouveaux)
+- [ ] **Création arborescence** : 100% documents organisés hiérarchiquement
+- [ ] **Performance globale** <15 secondes par document (analyse + organisation)
+
+#### 📊 **Objectifs Innovation Étape 3**
+- **Classification ouverte** : Système évolutif vs catégories figées Mistral
+- **Auto-apprentissage** : Enrichissement continu base de connaissances
+- **Organisation intelligente** : Arborescence dynamique adaptée aux flux utilisateur
+- **Scalabilité** : Gestion croissance types documentaires sans intervention manuelle
+
+#### 🛠️ **Architecture Technique Étape 3**
+```python
+# Structure modules principaux
+ai_services/
+├── donut_camembert_analyzer.py         # Service FastAPI principal (existant)
+├── utils/
+│   ├── donut_processor.py              # 3.1-3.2 : Classe DonutDocumentProcessor
+│   ├── dynamic_classifier.py           # 3.3-3.4 : Classification + détection nouveaux types
+│   ├── entity_extractor.py             # 3.5 : Extraction émetteurs NER français
+│   ├── document_organizer.py           # 3.6 : Gestionnaire arborescence dynamique
+│   ├── threshold_manager.py            # 3.7 : Algorithme seuils sous-dossiers
+│   └── patterns_db.py                  # Base émetteurs français évolutive
+└── tests/
+    ├── test_dynamic_classification.py  # 3.8 : Tests documents variés
+    └── test_vs_mistral_comparison.py   # 3.9 : Benchmark vs pipeline fixe
+```
+
+#### 🎯 **Priorité Développement**
+1. **Core OCR** (3.1-3.2) : Base extraction Donut fonctionnelle
+2. **Classification Dynamique** (3.3-3.4) : Cœur innovation vs Mistral
+3. **Organisation Intelligente** (3.5-3.7) : Valeur ajoutée utilisateur
+4. **Validation** (3.8-3.9) : Preuve concept performances
 
 ---
 
-### ✅ **ÉTAPE 4** : Système Classification Hiérarchique (2 jours)
-- [ ] **4.1** Module `document_organizer.py` pour gestion dossiers
-- [ ] **4.2** Patterns reconnaissance émetteurs français (base de données)
-- [ ] **4.3** Logique création automatique arborescence OCR
-- [ ] **4.4** Gestion conflits noms de dossiers (caractères spéciaux, doublons)
-- [ ] **4.5** Tests création dossiers multiples simultanés
-- [ ] **4.6** Logs détaillés pour traçabilité organisation
+### ⚡ **ÉTAPE 4** : Intégrée dans Étape 3 - Système Classification Hiérarchique
+**Note** : Cette étape est maintenant **intégrée dans l'Étape 3** pour un développement cohérent du système de classification dynamique.
 
-#### 🧪 Tests de Validation
-- [ ] Création automatique dossiers `/OCR/factures/EDF/`
-- [ ] Gestion 20+ émetteurs simultanés sans conflit
-- [ ] Noms dossiers normalisés (pas d'espaces, accents gérés)
-- [ ] 100% documents organisés sans perte
+#### 🔄 **Tâches Fusionnées dans Étape 3.6-3.7**
+- **3.6** Gestionnaire Arborescence Intelligente (était 4.1-4.3)
+- **3.7** Algorithme Seuil pour sous-dossiers (était 4.4-4.6)
+
+#### ✅ **Spécifications Techniques Détaillées**
+- **Module `document_organizer.py`** : Gestion création dossiers hiérarchiques
+- **Base émetteurs française** : Patterns reconnaissance auto-enrichie  
+- **Normalisation noms** : Gestion caractères spéciaux, accents, doublons
+- **Concurrence** : Support création simultanée 20+ dossiers sans conflit
+- **Traçabilité** : Logs détaillés organisation pour debugging
 
 ---
 
