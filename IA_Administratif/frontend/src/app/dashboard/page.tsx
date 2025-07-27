@@ -11,6 +11,10 @@ import { Card } from '@/components/ui/Card';
 import { DashboardSkeleton } from '@/components/ui/Loading';
 import { BatchProgressDisplay } from '@/components/ui/ProgressBar';
 import { AnimatedProgressBar, ProgressBarStyles } from '@/components/ui/AnimatedProgressBar';
+import { ModelToggle } from '@/components/dashboard/ModelToggle';
+import { FolderStructure } from '@/components/dashboard/FolderStructure';
+import { PerformanceIndicators } from '@/components/dashboard/PerformanceIndicators';
+import { ComparativeResults } from '@/components/dashboard/ComparativeResults';
 import { FileText, Upload, Zap, Shield, RefreshCw, Database, X } from 'lucide-react';
 
 // Lazy loading des composants non critiques
@@ -843,6 +847,24 @@ function DashboardContent() {
             </div>
           </div>
         </div>
+
+        {/* Pipeline Selection */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <ModelToggle />
+          </div>
+          
+          {/* Folder Structure */}
+          <div className="lg:col-span-2">
+            <FolderStructure />
+          </div>
+        </div>
+
+        {/* Performance Analytics */}
+        <PerformanceIndicators />
+
+        {/* Comparative Results */}
+        <ComparativeResults maxResults={5} />
 
         {/* Document Upload Section */}
         {showUpload && (
