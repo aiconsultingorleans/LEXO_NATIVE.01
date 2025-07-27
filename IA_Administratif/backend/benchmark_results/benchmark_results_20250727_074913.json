@@ -1,0 +1,80 @@
+{
+  "timestamp": "20250727_074913",
+  "stats": {
+    "total_documents": 3,
+    "successful_classifications": 3,
+    "accuracy": 33.33333333333333,
+    "average_confidence": 0.9366666666666666,
+    "average_processing_time": 16.22849138577779,
+    "ocr_success_rate": 100.0,
+    "mistral_success_rate": 100.0,
+    "category_stats": {
+      "rib": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 100.0,
+        "avg_confidence": 0.98
+      },
+      "non_classes": {
+        "total": 2,
+        "correct": 0,
+        "accuracy": 0.0,
+        "avg_confidence": 0.915
+      }
+    },
+    "error_types": {},
+    "fusion_stats": {
+      "agreement_boost": 2,
+      "mistral_override": 1
+    },
+    "rules_vs_mistral_agreement": 66.66666666666666,
+    "mistral_override_rate": 33.33333333333333
+  },
+  "detailed_results": [
+    {
+      "filename": "tmpfnj8915n.pdf",
+      "expected_category": "rib",
+      "predicted_category": "rib",
+      "confidence": 0.98,
+      "processing_time": 16.006746292114258,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "rib",
+      "rules_confidence": 0.85,
+      "mistral_category": "rib",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "agreement_boost"
+    },
+    {
+      "filename": "tmp67ko34il.pdf",
+      "expected_category": "non_classes",
+      "predicted_category": "factures",
+      "confidence": 0.98,
+      "processing_time": 15.866950750350952,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "factures",
+      "rules_confidence": 0.85,
+      "mistral_category": "factures",
+      "mistral_confidence": 0.95,
+      "fusion_decision": "agreement_boost"
+    },
+    {
+      "filename": "tmpdt3w80y5.pdf",
+      "expected_category": "non_classes",
+      "predicted_category": "contrats",
+      "confidence": 0.85,
+      "processing_time": 16.811777114868164,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "courriers",
+      "rules_confidence": 0.85,
+      "mistral_category": "contrats",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    }
+  ]
+}

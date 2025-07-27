@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-07-27T08:01:25.942529",
+  "filename": "FACTURE_EDF_Test.pdf",
+  "total_entities": 4,
+  "extraction_time": 0.000432,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "85,50",
+      "confidence": 0.95,
+      "context": "ectricité de france facture n° 2025 montant ttc : 85,50 € échéance : 15/02/2025",
+      "position": 56,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/02/2025",
+      "confidence": 0.9,
+      "context": "tant ttc : 85,50 € échéance : 15/02/2025",
+      "position": 75,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "edf électricité de france facture",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "2025",
+      "confidence": 0.7,
+      "context": "edf électricité de france facture n° 2025 montant ttc : 85,50 € échéanc",
+      "position": 26,
+      "validated": false
+    }
+  ]
+}

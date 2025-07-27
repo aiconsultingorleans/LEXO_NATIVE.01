@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:53:15.400589",
+  "filename": "RIB_CA_PARIS.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000348,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 1820 6000 0123 4567 8901 234",
+      "confidence": 0.9,
+      "context": "ncaire crédit agricole iban : fr76 1820 6000 0123 4567 8901 234 bic : agrifrpp882",
+      "position": 50,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 1820 6000 0123 4567 8901",
+      "confidence": 0.6,
+      "context": "tité bancaire crédit agricole iban : fr76 1820 6000 0123 4567 8901 234 bic : agrifrpp882",
+      "position": 43,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "crédit agricole",
+      "confidence": 0.7,
+      "context": "relevé d'identité bancaire crédit agricole iban : fr76 1820 6000 0123 45",
+      "position": 27,
+      "validated": false
+    }
+  ],
+  "references": []
+}

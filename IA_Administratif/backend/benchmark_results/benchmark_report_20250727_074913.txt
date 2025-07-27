@@ -1,0 +1,44 @@
+================================================================================
+🎯 RAPPORT BENCHMARK CLASSIFICATION - FUSION RÈGLES/IA
+================================================================================
+📅 Date: 2025-07-27 07:49:13
+📊 Documents testés: 3
+
+📈 RÉSULTATS GLOBAUX
+----------------------------------------
+✅ Classifications réussies: 3/3 (100.0%)
+🎯 Précision globale: 33.3%
+📊 Confiance moyenne: 0.94
+⏱️ Temps moyen: 16.23s
+
+🔧 TAUX DE SUCCÈS COMPOSANTS
+----------------------------------------
+🔍 OCR Success Rate: 100.0%
+🤖 Mistral MLX Success Rate: 100.0%
+
+🔗 STATISTIQUES DE FUSION RÈGLES/IA
+----------------------------------------
+Agreement Boost: 2 documents
+Mistral Override: 1 documents
+Accord Règles/Mistral: 66.7%
+Taux Override Mistral: 33.3%
+
+📋 PRÉCISION PAR CATÉGORIE
+----------------------------------------
+NON_CLASSES: 0.0% (0/2) - Conf: 0.92
+RIB: 100.0% (1/1) - Conf: 0.98
+
+🎯 VALIDATION OBJECTIFS ÉTAPE 1
+----------------------------------------
+❌ Précision: 33.3% < 85.0% (OBJECTIF NON ATTEINT)
+❌ Performance: 16.2s > 8.0s (OBJECTIF NON ATTEINT)
+✅ Robustesse: 0 crashes = 0 (OBJECTIF ATTEINT)
+
+🔧 RECOMMANDATIONS POUR ÉTAPE 2
+----------------------------------------
+• Améliorer les prompts Mistral avec few-shot learning
+• Enrichir les règles de classification françaises
+• Optimiser la performance des requêtes Mistral
+• Implémenter du caching intelligent
+
+================================================================================

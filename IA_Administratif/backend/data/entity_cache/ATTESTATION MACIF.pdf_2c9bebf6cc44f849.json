@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-07-27T07:27:02.390545",
+  "filename": "ATTESTATION MACIF.pdf",
+  "total_entities": 2,
+  "extraction_time": 0.001481,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "31/08/2021",
+      "confidence": 0.8,
+      "context": "nnée 5472774 8 rue du paradis 31/08/21 a sn 5. n° d'immatriculation",
+      "position": 1204,
+      "validated": true
+    }
+  ],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "09 69 39 49 29",
+      "confidence": 0.7,
+      "context": "er il ma rus isrb™ de france: 09 69 39 49 29  selon les pointillés et à gl",
+      "position": 2221,
+      "validated": false
+    }
+  ],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": []
+}

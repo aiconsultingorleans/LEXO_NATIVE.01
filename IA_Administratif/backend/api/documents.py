@@ -663,7 +663,7 @@ async def upload_and_process_document(
                 except Exception as e:
                     logger.warning(f"Analyse Mistral échouée: {e}")
             
-            # 7. Classification hybride (règles + Mistral)
+            # 7. Classification unifiée avec architecture Mistral-centrée
             from services.document_classifier import get_document_classifier
             
             classifier = get_document_classifier()
@@ -676,27 +676,9 @@ async def upload_and_process_document(
             final_category = classification_result.category
             final_confidence = classification_result.confidence
             
-            # Améliorer avec Mistral si disponible
-            if mistral_category and mistral_analysis:
-                mistral_confidence = mistral_analysis.get('result', {}).get('confidence', 0)
-                mistral_to_our_categories = {
-                    'facture': 'factures',
-                    'rib': 'rib', 
-                    'contrat': 'contrats',
-                    'attestation': 'attestations',
-                    'courrier': 'courriers',
-                    'rapport': 'non_classes',
-                    'autre': 'non_classes'
-                }
-                
-                mistral_mapped = mistral_to_our_categories.get(mistral_category, 'non_classes')
-                
-                if mistral_confidence > 0.8 and mistral_mapped != final_category:
-                    logger.info(f"🔄 Classification Mistral prioritaire: {mistral_mapped}")
-                    final_category = mistral_mapped
-                    final_confidence = min(0.95, (final_confidence + mistral_confidence) / 2)
-                elif mistral_mapped == final_category:
-                    final_confidence = min(0.98, final_confidence * 1.2)
+            logger.info(f"🎯 Classification finale: {final_category} (conf: {final_confidence:.2f})")
+            logger.info(f"🤖 Source décision: {classification_result.decision_source}")
+            logger.info(f"🤖 Mistral prédiction: {classification_result.mistral_prediction} (conf: {classification_result.mistral_confidence:.2f})")
             
             # 8. Génération de résumé si manquant
             if not summary:

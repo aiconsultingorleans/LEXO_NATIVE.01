@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:45:37.673424",
+  "filename": "ATTESTATION_MACIF.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000371,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "01/01/2025",
+      "confidence": 0.9,
+      "context": "56789 en cours de validité du 01/01/2025 au 31/12/2025.",
+      "position": 339,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2025",
+      "confidence": 0.9,
+      "context": "de validité du 01/01/2025 au 31/12/2025.                          cet",
+      "position": 353,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": [
+    {
+      "type": "reference",
+      "value": "123456789",
+      "confidence": 0.7,
+      "context": "onsabilité civile             n° 123456789 en cours de validité du 01/01",
+      "position": 302,
+      "validated": false
+    }
+  ]
+}

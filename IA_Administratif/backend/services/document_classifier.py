@@ -11,6 +11,8 @@ from enum import Enum
 from pathlib import Path
 import json
 import time
+import requests
+import hashlib
 
 # Imports pour intégration Étape 3
 from .french_entity_extractor import get_french_entity_extractor, EntityExtractionResult
@@ -44,7 +46,7 @@ class ClassificationRule:
     
 @dataclass 
 class ClassificationResult:
-    """Résultat de classification avec détails enrichis Étape 3"""
+    """Résultat de classification avec détails enrichis Étape 3 + Mistral"""
     category: str
     confidence: float
     score: float
@@ -55,6 +57,11 @@ class ClassificationResult:
     extracted_entities: Optional[EntityExtractionResult] = None
     entity_boost: float = 0.0
     processing_times: Dict[str, float] = field(default_factory=dict)
+    # Champs Mistral
+    mistral_prediction: Optional[str] = None
+    mistral_confidence: float = 0.0
+    mistral_reasoning: str = ""
+    decision_source: str = "rules"  # "rules", "mistral", "fusion"
 
 
 class DocumentClassifier:
@@ -394,7 +401,7 @@ class DocumentClassifier:
                          ocr_text: str, 
                          entities: List[Any] = None) -> ClassificationResult:
         """
-        Classification enrichie avec extraction d'entités et pré-classification Étape 3
+        Classification MISTRAL-CENTRÉE avec fallback systématique vers IA
         
         Args:
             filename: Nom du fichier
@@ -413,115 +420,40 @@ class DocumentClassifier:
         filename_lower = filename.lower()
         text_lower = ocr_text.lower() if ocr_text else ""
         
-        # ÉTAPE 1: Pré-classification par nom de fichier
+        # ÉTAPE 1: Pré-classification par nom de fichier (légère)
         filename_start = time.time()
         filename_prediction = self.filename_classifier.classify_filename(filename)
         processing_times['filename_classification'] = time.time() - filename_start
         
-        # ÉTAPE 2: Extraction d'entités françaises
+        # ÉTAPE 2: Extraction d'entités françaises (enrichissement)
         entity_start = time.time()
         extracted_entities = self.entity_extractor.extract_entities(text_lower, filename)
         processing_times['entity_extraction'] = time.time() - entity_start
         
-        # ÉTAPE 3: Classification par règles enrichies avec entités
+        # ÉTAPE 3: Classification par règles simplifiées (patterns évidents uniquement)
         rules_start = time.time()
-        category_scores = {}
-        category_matches = {}
-        
-        for category, rules in self.classification_rules.items():
-            total_score = 0
-            matched_rules = []
-            
-            for rule in rules:
-                rule_score = self._evaluate_rule(rule, filename_lower, text_lower, entities)
-                if rule_score > 0:
-                    total_score += rule_score
-                    matched_rules.append(f"{category.value}:{','.join(rule.keywords[:2])}")
-            
-            # BONUS: Scoring basé sur les entités extraites
-            entity_bonus = self._calculate_entity_bonus(category, extracted_entities)
-            total_score += entity_bonus
-            
-            if entity_bonus > 0:
-                matched_rules.append(f"entity_bonus:{entity_bonus:.1f}")
-            
-            if total_score > 0:
-                category_scores[category] = total_score
-                category_matches[category] = matched_rules
-        
+        rules_prediction = self._classify_with_essential_rules(filename_lower, text_lower, extracted_entities)
         processing_times['rules_classification'] = time.time() - rules_start
         
-        # ÉTAPE 4: Fusion intelligente filename + règles + entités
+        # ÉTAPE 4: MISTRAL MLX - DÉCISION PRINCIPALE
+        mistral_start = time.time()
+        mistral_result = self._classify_with_mistral(filename, ocr_text, filename_prediction, extracted_entities)
+        processing_times['mistral_classification'] = time.time() - mistral_start
+        
+        # ÉTAPE 5: Fusion intelligente - MISTRAL PRIORITAIRE
         fusion_start = time.time()
-        
-        # Si aucune règle ne correspond, utiliser la prédiction filename
-        if not category_scores:
-            if filename_prediction.confidence > 0.5:
-                return ClassificationResult(
-                    category=filename_prediction.predicted_category,
-                    confidence=filename_prediction.confidence * 0.8,  # Réduction car pas de contenu
-                    score=filename_prediction.confidence * 5,
-                    reasoning=f"Classification par nom de fichier: {filename_prediction.reasoning}",
-                    filename_prediction=filename_prediction,
-                    extracted_entities=extracted_entities,
-                    processing_times=processing_times
-                )
-            else:
-                return ClassificationResult(
-                    category=DocumentCategory.NON_CLASSES.value,
-                    confidence=0.1,
-                    score=0,
-                    reasoning="Aucune règle et nom de fichier non reconnu",
-                    filename_prediction=filename_prediction,
-                    extracted_entities=extracted_entities,
-                    processing_times=processing_times
-                )
-        
-        # Trier par score décroissant
-        sorted_categories = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
-        best_category, best_score = sorted_categories[0]
-        
-        # Calculer la confiance de base
-        total_score = sum(category_scores.values())
-        confidence = best_score / total_score if total_score > 0 else 0
-        
-        # BONUS: Accord avec prédiction filename
-        if filename_prediction.predicted_category == best_category.value and filename_prediction.confidence > 0.6:
-            confidence = min(0.95, confidence * 1.3)
-            logger.info(f"Bonus accord filename/règles: {best_category.value}")
-        
-        # Bonus de confiance si écart significatif avec le 2ème
-        if len(sorted_categories) > 1:
-            second_score = sorted_categories[1][1]
-            if best_score > second_score * 1.5:  # 50% d'écart minimum
-                confidence = min(0.95, confidence * 1.2)
-        
-        # Calculer le boost total des entités
-        entity_bonus = sum(self._calculate_entity_bonus(cat, extracted_entities) for cat, _ in sorted_categories)
-        
+        final_result = self._fusion_mistral_centric(
+            mistral_result, 
+            rules_prediction, 
+            filename_prediction, 
+            extracted_entities,
+            processing_times
+        )
         processing_times['fusion_decision'] = time.time() - fusion_start
         processing_times['total'] = time.time() - start_time
         
-        # Générer le raisonnement enrichi
-        reasoning = self._generate_enhanced_reasoning(
-            best_category, 
-            category_matches.get(best_category, []),
-            filename_prediction,
-            extracted_entities,
-            entity_bonus
-        )
-        
-        return ClassificationResult(
-            category=best_category.value,
-            confidence=confidence,
-            score=best_score,
-            matched_rules=category_matches.get(best_category, []),
-            reasoning=reasoning,
-            filename_prediction=filename_prediction,
-            extracted_entities=extracted_entities,
-            entity_boost=entity_bonus,
-            processing_times=processing_times
-        )
+        final_result.processing_times = processing_times
+        return final_result
     
     def _evaluate_rule(self, 
                       rule: ClassificationRule, 
@@ -652,58 +584,317 @@ class DocumentClassifier:
         
         return min(bonus, 15.0)  # Plafonner le bonus total à 15 points
     
-    def _generate_enhanced_reasoning(self, 
-                                   category: DocumentCategory, 
-                                   matches: List[str],
-                                   filename_prediction: FilenameClassification,
-                                   entities: EntityExtractionResult,
-                                   entity_bonus: float) -> str:
-        """Génère un raisonnement enrichi avec entités et filename"""
-        reasoning_parts = []
+    def _classify_with_essential_rules(self, filename: str, text: str, entities: EntityExtractionResult) -> Optional[dict]:
+        """Classification avec règles simplifiées - patterns évidents uniquement"""
         
-        # Raisonnement de base
-        if not matches:
-            reasoning_parts.append(f"Classé comme {category.value} par défaut")
-        else:
-            reasoning_map = {
-                DocumentCategory.ATTESTATIONS: "Document officiel ou carte d'identité",
-                DocumentCategory.IMPOTS: "Document fiscal ou déclaration administrative", 
-                DocumentCategory.FACTURES: "Facture ou document de paiement",
-                DocumentCategory.RIB: "Informations bancaires",
-                DocumentCategory.CONTRATS: "Document contractuel",
-                DocumentCategory.SANTE: "Document médical ou de santé",
-                DocumentCategory.EMPLOI: "Document lié à l'emploi",
-                DocumentCategory.COURRIERS: "Correspondance administrative"
+        # Règles ultra-précises pour cas évidents
+        evident_patterns = {
+            "rib": {
+                "patterns": [r"iban\s*:?\s*FR\d{2}", r"relevé\s+identité\s+bancaire"],
+                "keywords": ["rib", "iban", "bic"],
+                "weight": 3.0
+            },
+            "factures": {
+                "patterns": [r"facture\s+n[°\s]*\d+", r"montant\s+ttc"],
+                "keywords": ["facture", "invoice", "ttc", "montant"],
+                "weight": 2.0
+            },
+            "attestations": {
+                "patterns": [r"attestation", r"certifie\s+que", r"carte\s+\w+"],
+                "keywords": ["attestation", "carte", "certifie", "macif", "maaf"],
+                "weight": 2.5
             }
-            base_reason = reasoning_map.get(category, f"Classé comme {category.value}")
-            reasoning_parts.append(f"{base_reason} ({len(matches)} règles)")
+        }
         
-        # Accord filename
-        if filename_prediction.predicted_category == category.value:
-            reasoning_parts.append(f"Confirmé par nom fichier (conf: {filename_prediction.confidence:.2f})")
-        elif filename_prediction.confidence > 0.6:
-            reasoning_parts.append(f"Nom fichier suggérait: {filename_prediction.predicted_category}")
+        best_match = None
+        best_score = 0
         
-        # Entités trouvées
-        entity_summary = []
+        for category, rules in evident_patterns.items():
+            score = 0
+            
+            # Check patterns
+            for pattern in rules["patterns"]:
+                if re.search(pattern, filename, re.IGNORECASE) or re.search(pattern, text, re.IGNORECASE):
+                    score += rules["weight"]
+            
+            # Check keywords
+            for keyword in rules["keywords"]:
+                if keyword in filename or keyword in text:
+                    score += rules["weight"] * 0.5
+            
+            if score > best_score:
+                best_score = score
+                best_match = {
+                    "category": category,
+                    "confidence": min(0.9, score / 5.0),
+                    "score": score,
+                    "source": "rules_essential"
+                }
+        
+        return best_match
+    
+    def _classify_with_mistral(self, filename: str, text: str, 
+                              filename_pred: FilenameClassification,
+                              entities: EntityExtractionResult) -> dict:
+        """Classification avec Mistral MLX - Décision principale"""
+        try:
+            # Préparation du contexte enrichi
+            context = self._build_mistral_context(filename, text, filename_pred, entities)
+            
+            # Cache intelligent
+            cache_key = self._generate_cache_key(text, filename)
+            cached_result = self._get_cached_mistral_result(cache_key)
+            if cached_result:
+                logger.info(f"Cache hit Mistral pour {filename}")
+                return cached_result
+            
+            # Appel Mistral avec retry
+            response = self._call_mistral_with_retry(context)
+            
+            if response and response.get("success"):
+                mistral_result = {
+                    "category": response.get("category", "non_classes"),
+                    "confidence": float(response.get("confidence", 0.0)),
+                    "reasoning": response.get("reasoning", ""),
+                    "source": "mistral",
+                    "success": True
+                }
+                
+                # Cache du résultat
+                self._cache_mistral_result(cache_key, mistral_result)
+                
+                logger.info(f"Mistral classification: {mistral_result['category']} (conf: {mistral_result['confidence']:.2f})")
+                return mistral_result
+            else:
+                logger.warning(f"Mistral échec pour {filename}: {response}")
+                return {"category": "non_classes", "confidence": 0.0, "source": "mistral", "success": False}
+                
+        except Exception as e:
+            logger.error(f"Erreur Mistral pour {filename}: {str(e)}")
+            return {"category": "non_classes", "confidence": 0.0, "source": "mistral", "success": False}
+    
+    def _build_mistral_context(self, filename: str, text: str, 
+                              filename_pred: FilenameClassification,
+                              entities: EntityExtractionResult) -> str:
+        """Construit le contexte enrichi pour Mistral"""
+        
+        # Entités importantes détectées
+        entity_hints = []
+        if entities.ibans:
+            entity_hints.append(f"IBAN détecté: {len(entities.ibans)} comptes")
         if entities.sirets:
-            entity_summary.append(f"{len(entities.sirets)} SIRET")
-        if entities.tva_numbers:
-            entity_summary.append(f"{len(entities.tva_numbers)} TVA")
+            entity_hints.append(f"SIRET détecté: {len(entities.sirets)} entreprises")
+        if entities.organismes:
+            entity_hints.append(f"Organismes: {', '.join([o.value for o in entities.organismes[:3]])}")
+        if entities.montants:
+            entity_hints.append(f"Montants: {len(entities.montants)} trouvés")
+        
+        entity_context = " | ".join(entity_hints) if entity_hints else "Aucune entité spécifique"
+        
+        # Suggestion filename si pertinente
+        filename_hint = ""
+        if filename_pred.confidence > 0.6:
+            filename_hint = f"\n- Nom fichier suggère: {filename_pred.predicted_category} (conf: {filename_pred.confidence:.2f})"
+        
+        context = f"""CLASSIFICATION FRANÇAISE DE DOCUMENT
+
+Fichier: {filename}
+Entités détectées: {entity_context}{filename_hint}
+
+Contenu du document:
+{text[:2000]}
+
+Catégories possibles: attestations, factures, rib, contrats, impots, sante, emploi, courriers, non_classes
+
+Réponds UNIQUEMENT en JSON strict:
+{{
+  "category": "categorie_exacte",
+  "confidence": 0.85,
+  "reasoning": "Explication courte de la décision"
+}}"""
+        
+        return context
+    
+    def _call_mistral_with_retry(self, context: str, max_retries: int = 2) -> Optional[dict]:
+        """Appel Mistral avec retry et timeouts"""
+        for attempt in range(max_retries + 1):
+            try:
+                response = requests.post(
+                    "http://localhost:8004/analyze",
+                    json={"text": context, "filename": "", "analysis_type": "classification"},
+                    timeout=30,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Parse la réponse Mistral MLX
+                    if result.get("success") and "result" in result:
+                        mistral_data = result["result"]
+                        return {
+                            "category": mistral_data.get("document_type", "non_classes"),
+                            "confidence": float(mistral_data.get("confidence", 0.0)),
+                            "reasoning": mistral_data.get("summary", "Classification Mistral MLX"),
+                            "processing_time": mistral_data.get("processing_time", 0),
+                            "success": True
+                        }
+                
+                logger.warning(f"Mistral retry {attempt + 1}/{max_retries + 1}: Status {response.status_code}")
+                
+            except requests.Timeout:
+                logger.warning(f"Mistral timeout retry {attempt + 1}/{max_retries + 1}")
+            except Exception as e:
+                logger.warning(f"Mistral error retry {attempt + 1}/{max_retries + 1}: {str(e)}")
+            
+            if attempt < max_retries:
+                time.sleep(1)  # Pause entre retries
+        
+        return None
+    
+    def _parse_mistral_response(self, response_text: str) -> Optional[dict]:
+        """Parse robuste de la réponse Mistral"""
+        if not response_text:
+            return None
+        
+        # Méthode 1: JSON direct
+        try:
+            if response_text.strip().startswith('{'):
+                return json.loads(response_text.strip())
+        except:
+            pass
+        
+        # Méthode 2: Extraction entre accolades
+        try:
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start >= 0 and end > start:
+                json_str = response_text[start:end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        # Méthode 3: Regex fallback
+        try:
+            category_match = re.search(r'"category"\s*:\s*"([^"]+)"', response_text)
+            confidence_match = re.search(r'"confidence"\s*:\s*([\d\.]+)', response_text)
+            
+            if category_match:
+                return {
+                    "category": category_match.group(1),
+                    "confidence": float(confidence_match.group(1)) if confidence_match else 0.7,
+                    "reasoning": "Parse regex fallback"
+                }
+        except:
+            pass
+        
+        return None
+    
+    def _fusion_mistral_centric(self, mistral_result: dict, rules_result: Optional[dict],
+                               filename_pred: FilenameClassification, entities: EntityExtractionResult,
+                               processing_times: dict) -> ClassificationResult:
+        """Fusion MISTRAL-CENTRÉE - Mistral décide, autres sources enrichissent"""
+        
+        decision_source = "mistral"
+        
+        # MISTRAL PRIORITAIRE si confiance > 0.6
+        if mistral_result.get("success") and mistral_result.get("confidence", 0) > 0.6:
+            category = mistral_result["category"]
+            confidence = mistral_result["confidence"]
+            base_reasoning = f"Mistral: {mistral_result.get('reasoning', '')}"
+            
+            # BONUS: Accord avec autres sources
+            if rules_result and rules_result["category"] == category:
+                confidence = min(0.95, confidence * 1.2)
+                base_reasoning += f" | Confirmé par règles (score: {rules_result['score']:.1f})"
+                decision_source = "mistral+rules"
+            
+            if filename_pred.predicted_category == category and filename_pred.confidence > 0.6:
+                confidence = min(0.95, confidence * 1.1)
+                base_reasoning += f" | Confirmé par filename (conf: {filename_pred.confidence:.2f})"
+                decision_source = "mistral+filename" if decision_source == "mistral" else "mistral+fusion"
+                
+        # FALLBACK: Règles si Mistral échoue ET règles confiantes
+        elif rules_result and rules_result["confidence"] > 0.7:
+            category = rules_result["category"]
+            confidence = rules_result["confidence"] * 0.8  # Réduction car pas de Mistral
+            base_reasoning = f"Règles essentielles: {category} (score: {rules_result['score']:.1f}) | Mistral indisponible"
+            decision_source = "rules_fallback"
+            
+        # FALLBACK FINAL: Filename si confiant
+        elif filename_pred.confidence > 0.7:
+            category = filename_pred.predicted_category
+            confidence = filename_pred.confidence * 0.7  # Double réduction
+            base_reasoning = f"Nom fichier uniquement: {filename_pred.reasoning} | Mistral et règles échoués"
+            decision_source = "filename_fallback"
+            
+        # DERNIER RECOURS: non_classes
+        else:
+            category = "non_classes"
+            confidence = 0.1
+            base_reasoning = "Aucune source fiable - Classification impossible"
+            decision_source = "fallback_final"
+        
+        # Calcul bonus entités
+        entity_bonus = 0.0
+        if category != "non_classes":
+            category_enum = next((cat for cat in DocumentCategory if cat.value == category), None)
+            if category_enum:
+                entity_bonus = self._calculate_entity_bonus(category_enum, entities)
+                if entity_bonus > 1.0:
+                    base_reasoning += f" | Bonus entités: +{entity_bonus:.1f}"
+        
+        # Construction du résultat final
+        reasoning = self._build_enhanced_reasoning(base_reasoning, entities, filename_pred)
+        
+        return ClassificationResult(
+            category=category,
+            confidence=confidence,
+            score=mistral_result.get("confidence", 0) * 10,  # Score pour compatibilité
+            reasoning=reasoning,
+            filename_prediction=filename_pred,
+            extracted_entities=entities,
+            entity_boost=entity_bonus,
+            mistral_prediction=mistral_result.get("category"),
+            mistral_confidence=mistral_result.get("confidence", 0.0),
+            mistral_reasoning=mistral_result.get("reasoning", ""),
+            decision_source=decision_source,
+            processing_times=processing_times
+        )
+    
+    def _build_enhanced_reasoning(self, base_reasoning: str, entities: EntityExtractionResult,
+                                filename_pred: FilenameClassification) -> str:
+        """Construit le raisonnement enrichi final"""
+        parts = [base_reasoning]
+        
+        # Résumé entités importantes
+        entity_summary = []
         if entities.ibans:
             entity_summary.append(f"{len(entities.ibans)} IBAN")
-        if entities.montants:
-            entity_summary.append(f"{len(entities.montants)} montants")
+        if entities.sirets:
+            entity_summary.append(f"{len(entities.sirets)} SIRET")
         if entities.organismes:
             entity_summary.append(f"{len(entities.organismes)} organismes")
         
         if entity_summary:
-            reasoning_parts.append(f"Entités: {', '.join(entity_summary)}")
+            parts.append(f"Entités: {', '.join(entity_summary)}")
         
-        if entity_bonus > 1.0:
-            reasoning_parts.append(f"Bonus entités: +{entity_bonus:.1f}")
-        
-        return " | ".join(reasoning_parts)
+        return " | ".join(parts)
+    
+    def _generate_cache_key(self, text: str, filename: str) -> str:
+        """Génère une clé de cache pour Mistral"""
+        content = f"{filename[:50]}{text[:500]}"
+        return hashlib.md5(content.encode()).hexdigest()[:16]
+    
+    def _get_cached_mistral_result(self, cache_key: str) -> Optional[dict]:
+        """Récupère un résultat Mistral depuis le cache (implémentation simple)"""
+        # TODO: Implémenter avec Redis ou fichier cache
+        return None
+    
+    def _cache_mistral_result(self, cache_key: str, result: dict) -> None:
+        """Met en cache un résultat Mistral (implémentation simple)"""
+        # TODO: Implémenter avec Redis ou fichier cache
+        pass
     
     def _generate_reasoning(self, category: DocumentCategory, matches: List[str]) -> str:
         """Génère une explication du raisonnement de classification"""

@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:45:41.701621",
+  "filename": "RIB_CA.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000401,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 1820 6000 0123 4567 8901 234",
+      "confidence": 0.9,
+      "context": "ean dupont             iban : fr76 1820 6000 0123 4567 8901 234             bic : agrifrpp882",
+      "position": 187,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 1820 6000 0123 4567 8901",
+      "confidence": 0.6,
+      "context": "ire : jean dupont             iban : fr76 1820 6000 0123 4567 8901 234             bic : agrifrpp",
+      "position": 180,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "crédit agricole",
+      "confidence": 0.7,
+      "context": "aire                          crédit agricole d'île-de-france             a",
+      "position": 52,
+      "validated": false
+    }
+  ],
+  "references": []
+}

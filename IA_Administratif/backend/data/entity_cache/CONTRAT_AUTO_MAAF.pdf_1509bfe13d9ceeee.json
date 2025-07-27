@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-07-27T07:53:31.027138",
+  "filename": "CONTRAT_AUTO_MAAF.pdf",
+  "total_entities": 1,
+  "extraction_time": 0.000168,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": [
+    {
+      "type": "reference",
+      "value": "auto123456",
+      "confidence": 0.7,
+      "context": "ontrat d'assurance automobile police n° auto123456 véhicule renault clio souscri",
+      "position": 47,
+      "validated": false
+    }
+  ]
+}

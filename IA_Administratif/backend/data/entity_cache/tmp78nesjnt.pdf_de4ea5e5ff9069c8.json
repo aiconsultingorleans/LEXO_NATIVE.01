@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-07-27T08:02:39.300847",
+  "filename": "tmp78nesjnt.pdf",
+  "total_entities": 5,
+  "extraction_time": 0.000515,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 1751 5900 0004 1890 1623 390",
+      "confidence": 0.9,
+      "context": "epargne ile de france  iban : fr76 1751 5900 0004 1890 1623 390 agence de puteaux  53, bld ri",
+      "position": 391,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 1751 5900 0004 1890 1623",
+      "confidence": 0.6,
+      "context": "isse d'epargne ile de france  iban : fr76 1751 5900 0004 1890 1623 390 agence de puteaux  53, bld",
+      "position": 384,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "13/02/2019",
+      "confidence": 0.9,
+      "context": "ux 94100 saint maur  orléans, 13 février 2019  facture  objet:  application",
+      "position": 128,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "total",
+      "confidence": 0.7,
+      "context": "rmats saisie « public » 400€  total 400 €  en votre aimable règle",
+      "position": 260,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "020219",
+      "confidence": 0.7,
+      "context": "pplication ipad v2 n° fact. : n° 020219 n° client : 001  reprise form",
+      "position": 193,
+      "validated": false
+    }
+  ]
+}

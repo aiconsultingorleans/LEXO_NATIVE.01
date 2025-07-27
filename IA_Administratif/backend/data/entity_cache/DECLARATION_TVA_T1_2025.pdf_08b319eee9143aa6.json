@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-07-27T07:53:23.769415",
+  "filename": "DECLARATION_TVA_T1_2025.pdf",
+  "total_entities": 6,
+  "extraction_time": 0.000193,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "12345678901234",
+      "confidence": 0.6,
+      "context": "liques déclaration de tva ca3 siret : 12345678901234 tva collectée : 2456,78 € tva",
+      "position": 65,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "456,78",
+      "confidence": 0.7999999999999999,
+      "context": "e tva ca3 siret : 12345678901234 tva collectée : 2456,78 € tva à payer : 1222,22 €",
+      "position": 105,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "222,22",
+      "confidence": 0.7999999999999999,
+      "context": "78901234 tva collectée : 2456,78 € tva à payer : 1222,22 €",
+      "position": 129,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "2456,78",
+      "confidence": 0.7,
+      "context": "de tva ca3 siret : 12345678901234 tva collectée : 2456,78 € tva à payer : 1222,22 €",
+      "position": 104,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "1222,22",
+      "confidence": 0.7,
+      "context": "678901234 tva collectée : 2456,78 € tva à payer : 1222,22 €",
+      "position": 128,
+      "validated": true
+    }
+  ],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "direction générale des finances publiques",
+      "confidence": 0.7,
+      "context": "direction générale des finances publiques déclaration de tva ca3 siret",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

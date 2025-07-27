@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T08:01:42.360686",
+  "filename": "RIB_BNP_Test.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000185,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 3000 3000 1100 0000 1234 567",
+      "confidence": 0.9,
+      "context": "é bancaire bnp paribas iban : fr76 3000 3000 1100 0000 1234 567",
+      "position": 46,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 3000 3000 1100 0000 1234",
+      "confidence": 0.6,
+      "context": "identité bancaire bnp paribas iban : fr76 3000 3000 1100 0000 1234 567",
+      "position": 39,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "bnp paribas",
+      "confidence": 0.7,
+      "context": "relevé d'identité bancaire bnp paribas iban : fr76 3000 3000 1100 00",
+      "position": 27,
+      "validated": false
+    }
+  ],
+  "references": []
+}

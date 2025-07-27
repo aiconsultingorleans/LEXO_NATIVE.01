@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-07-27T07:53:06.983767",
+  "filename": "FACTURE_EDF_Jan2025.pdf",
+  "total_entities": 4,
+  "extraction_time": 0.000935,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "81,36",
+      "confidence": 0.95,
+      "context": "23 consommation électricité 450 kwh montant ttc : 81,36 € à payer avant le 15/02/2025",
+      "position": 95,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/02/2025",
+      "confidence": 0.8,
+      "context": "tc : 81,36 € à payer avant le 15/02/2025",
+      "position": 120,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "edf électricité de france facture",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "2025010123",
+      "confidence": 0.7,
+      "context": "edf électricité de france facture n° 2025010123 consommation électricité 450",
+      "position": 26,
+      "validated": false
+    }
+  ]
+}

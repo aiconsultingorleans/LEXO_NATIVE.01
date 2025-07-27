@@ -1,0 +1,43 @@
+{
+  "timestamp": "20250727_080253",
+  "stats": {
+    "total_documents": 1,
+    "successful_classifications": 1,
+    "accuracy": 0.0,
+    "average_confidence": 0.98,
+    "average_processing_time": 14.569393157958984,
+    "ocr_success_rate": 100.0,
+    "mistral_success_rate": 100.0,
+    "category_stats": {
+      "non_classes": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0,
+        "avg_confidence": 0.98
+      }
+    },
+    "error_types": {},
+    "fusion_stats": {
+      "agreement_boost": 1
+    },
+    "rules_vs_mistral_agreement": 100.0,
+    "mistral_override_rate": 0.0
+  },
+  "detailed_results": [
+    {
+      "filename": "tmp78nesjnt.pdf",
+      "expected_category": "non_classes",
+      "predicted_category": "factures",
+      "confidence": 0.98,
+      "processing_time": 14.569393157958984,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "factures",
+      "rules_confidence": 0.85,
+      "mistral_category": "factures",
+      "mistral_confidence": 0.95,
+      "fusion_decision": "agreement_boost"
+    }
+  ]
+}

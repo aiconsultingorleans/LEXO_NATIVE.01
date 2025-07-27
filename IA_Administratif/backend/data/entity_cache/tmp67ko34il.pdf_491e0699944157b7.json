@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-07-27T07:48:40.618380",
+  "filename": "tmp67ko34il.pdf",
+  "total_entities": 5,
+  "extraction_time": 0.000624,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 1751 5900 0004 1890 1623 390",
+      "confidence": 0.9,
+      "context": "epargne ile de france  iban : fr76 1751 5900 0004 1890 1623 390 agence de puteaux  53, bld ri",
+      "position": 397,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 1751 5900 0004 1890 1623",
+      "confidence": 0.6,
+      "context": "isse d'epargne ile de france  iban : fr76 1751 5900 0004 1890 1623 390 agence de puteaux  53, bld",
+      "position": 390,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "19/12/2018",
+      "confidence": 0.9,
+      "context": "ux 94100 saint maur  orléans, 19 décembre 2018  facture  objet:  application",
+      "position": 128,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "total",
+      "confidence": 0.7,
+      "context": "veloppement module osc 600 €  total 600 €  en votre aimable règle",
+      "position": 266,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "0021218",
+      "confidence": 0.7,
+      "context": "lpad v2 / unity 3d n° fact. : n° 0021218  n° client : 001  développeme",
+      "position": 205,
+      "validated": false
+    }
+  ]
+}

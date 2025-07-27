@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-07-27T07:45:39.686157",
+  "filename": "Facture_EDF_202501.pdf",
+  "total_entities": 8,
+  "extraction_time": 0.000461,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "67,80",
+      "confidence": 0.95,
+      "context": "é : 450 kwh                          montant ht : 67,80 €             tva 20% : 13,56 €             montant",
+      "position": 238,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "13,56",
+      "confidence": 0.95,
+      "context": "montant ht : 67,80 €             tva 20% : 13,56 €             montant ttc : 81,36 €",
+      "position": 268,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "81,36",
+      "confidence": 0.95,
+      "context": "tva 20% : 13,56 €             montant ttc : 81,36 €                          à payer avant le 15/02/2",
+      "position": 302,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "01/12/2024",
+      "confidence": 0.8,
+      "context": "période de facturation : 01/12/2024 au 31/12/2024             con",
+      "position": 128,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2024",
+      "confidence": 0.8,
+      "context": "e facturation : 01/12/2024 au 31/12/2024             consommation élec",
+      "position": 142,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "15/02/2025",
+      "confidence": 0.8,
+      "context": "à payer avant le 15/02/2025",
+      "position": 352,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "edf - électricité de france",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "2025010123456",
+      "confidence": 0.7,
+      "context": "ance                          facture n° 2025010123456                          péri",
+      "position": 53,
+      "validated": false
+    }
+  ]
+}
