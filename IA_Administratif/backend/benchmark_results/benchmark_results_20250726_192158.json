@@ -1,0 +1,43 @@
+{
+  "timestamp": "20250726_192158",
+  "stats": {
+    "total_documents": 2,
+    "successful_classifications": 2,
+    "accuracy": 0.0,
+    "average_confidence": 0.37,
+    "average_processing_time": 21.1941739320755,
+    "ocr_success_rate": 100.0,
+    "mistral_success_rate": 100.0,
+    "category_stats": {
+      "contrats": {
+        "total": 2,
+        "correct": 0,
+        "accuracy": 0.0,
+        "avg_confidence": 0.37
+      }
+    },
+    "error_types": {}
+  },
+  "detailed_results": [
+    {
+      "filename": "tmp320d5ncz.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "factures",
+      "confidence": 0.64,
+      "processing_time": 40.504091024398804,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmpix82gad_.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "non_classes",
+      "confidence": 0.1,
+      "processing_time": 1.8842568397521973,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    }
+  ]
+}

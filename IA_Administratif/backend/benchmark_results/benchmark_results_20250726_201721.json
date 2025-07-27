@@ -1,0 +1,89 @@
+{
+  "timestamp": "20250726_201721",
+  "stats": {
+    "total_documents": 6,
+    "successful_classifications": 6,
+    "accuracy": 33.33333333333333,
+    "average_confidence": 0.518095238095238,
+    "average_processing_time": 9.995761831601461,
+    "ocr_success_rate": 100.0,
+    "mistral_success_rate": 100.0,
+    "category_stats": {
+      "contrats": {
+        "total": 5,
+        "correct": 2,
+        "accuracy": 40.0,
+        "avg_confidence": 0.6017142857142858
+      },
+      "rib": {
+        "total": 1,
+        "correct": 0,
+        "accuracy": 0.0,
+        "avg_confidence": 0.1
+      }
+    },
+    "error_types": {}
+  },
+  "detailed_results": [
+    {
+      "filename": "tmp03_sccjt.pdf",
+      "expected_category": "rib",
+      "predicted_category": "non_classes",
+      "confidence": 0.1,
+      "processing_time": 13.936598777770996,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmp320d5ncz.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "factures",
+      "confidence": 0.64,
+      "processing_time": 6.820211887359619,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmpx_n53lxx.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "factures",
+      "confidence": 0.64,
+      "processing_time": 6.8196940422058105,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmpbh48xww6.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "contrats",
+      "confidence": 0.8142857142857143,
+      "processing_time": 13.504572868347168,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmpxfzwjfq_.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "contrats",
+      "confidence": 0.8142857142857143,
+      "processing_time": 6.476451635360718,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    },
+    {
+      "filename": "tmpix82gad_.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "non_classes",
+      "confidence": 0.1,
+      "processing_time": 12.417041778564453,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": ""
+    }
+  ]
+}

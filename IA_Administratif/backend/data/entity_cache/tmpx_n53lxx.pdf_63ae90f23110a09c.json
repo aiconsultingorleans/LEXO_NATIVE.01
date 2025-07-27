@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-07-27T07:02:40.195635",
+  "filename": "tmpx_n53lxx.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000763,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "0611200541",
+      "confidence": 0.7,
+      "context": "(45) 45000 orleans (45) tel: 0611200541 code chert : 4110777771 référ",
+      "position": 374,
+      "validated": false
+    }
+  ],
+  "emails": [
+    {
+      "type": "email",
+      "value": "no-pessac@cec.com",
+      "confidence": 0.7,
+      "context": "0 pessac (33) - france  orem: no-pessac@cec.com internet: ww. cac. ff tva frs",
+      "position": 57,
+      "validated": false
+    }
+  ],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "total",
+      "confidence": 0.7,
+      "context": "ésignation q.té prixht remise total  z1fvimx3o3fn | macbook pro 1",
+      "position": 450,
+      "validated": false
+    }
+  ],
+  "references": []
+}

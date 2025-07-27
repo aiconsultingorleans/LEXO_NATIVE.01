@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-07-26T21:10:28.129319",
+  "filename": "Carte senior Remi .PNG",
+  "total_entities": 5,
+  "extraction_time": 0.000643,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "30,00",
+      "confidence": 0.7999999999999999,
+      "context": "berte senior  valable du 06/03/2025 au 05/03/2026 30,00 €  pour bien voyager carte rémi liberté  —  \\ n = t",
+      "position": 127,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/03/2025",
+      "confidence": 0.9,
+      "context": "mi liberte senior  valable du 06/03/2025 au 05/03/2026 30,00 €  pour b",
+      "position": 102,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "05/03/2026",
+      "confidence": 0.9,
+      "context": "ior  valable du 06/03/2025 au 05/03/2026 30,00 €  pour bien voyager ca",
+      "position": 116,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "06/03/1965",
+      "confidence": 0.8,
+      "context": "e  voyageurs  ansel stephane  06/03/1965 ref : gu998990  carte remi li",
+      "position": 37,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": [
+    {
+      "type": "reference",
+      "value": "gu998990",
+      "confidence": 0.7,
+      "context": "s  ansel stephane  06/03/1965 ref : gu998990  carte remi liberte senior  v",
+      "position": 48,
+      "validated": false
+    }
+  ]
+}

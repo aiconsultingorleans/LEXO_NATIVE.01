@@ -1,0 +1,95 @@
+{
+  "timestamp": "2025-07-27T07:21:05.746790",
+  "filename": "test_perf.pdf",
+  "total_entities": 9,
+  "extraction_time": 0.000197,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "123 456 789 01234",
+      "confidence": 0.6,
+      "context": "URSSAF Île-de-France     SIRET: 123 456 789 01234     TVA: FR12345678901     Dé",
+      "position": 25,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [
+    {
+      "type": "tva",
+      "value": "FR12345678901",
+      "confidence": 0.9,
+      "context": "SIRET: 123 456 789 01234     TVA: FR12345678901     Déclaration trimestrielle",
+      "position": 54,
+      "validated": true
+    }
+  ],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "2 345,67",
+      "confidence": 0.7999999999999999,
+      "context": "trielle 01/10/2024 au 31/12/2024     Cotisations: 2 345,67 €     Contact: 01 23 45 67 89     Email: contact@ur",
+      "position": 145,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "345,67",
+      "confidence": 0.7999999999999999,
+      "context": "ielle 01/10/2024 au 31/12/2024     Cotisations: 2 345,67 €     Contact: 01 23 45 67 89     Email: contact@ur",
+      "position": 147,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "01/10/2024",
+      "confidence": 0.8,
+      "context": "Déclaration trimestrielle 01/10/2024 au 31/12/2024     Cotisations",
+      "position": 103,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2024",
+      "confidence": 0.8,
+      "context": "n trimestrielle 01/10/2024 au 31/12/2024     Cotisations: 2 345,67 €",
+      "position": 117,
+      "validated": true
+    }
+  ],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "01 23 45 67 89",
+      "confidence": 0.7,
+      "context": "ions: 2 345,67 €     Contact: 01 23 45 67 89     Email: contact@urssaf.fr",
+      "position": 169,
+      "validated": false
+    }
+  ],
+  "emails": [
+    {
+      "type": "email",
+      "value": "contact@urssaf.fr",
+      "confidence": 0.7,
+      "context": "ct: 01 23 45 67 89     Email: contact@urssaf.fr",
+      "position": 195,
+      "validated": false
+    }
+  ],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "URSSAF Île-de-France\n    SIRET",
+      "confidence": 0.7,
+      "context": "URSSAF Île-de-France     SIRET: 123 456 789 01234     TVA: F",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

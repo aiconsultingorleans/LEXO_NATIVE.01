@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:18:20.921993",
+  "filename": "RIB Bancaire",
+  "total_entities": 3,
+  "extraction_time": 0.000149,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "FR76 1234 5678 9012 3456 7890 123",
+      "confidence": 0.9,
+      "context": "e-de-France             IBAN: FR76 1234 5678 9012 3456 7890 123             BIC: AGRIFRPP123",
+      "position": 87,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "FR76 1234 5678 9012 3456 7890",
+      "confidence": 0.6,
+      "context": "ole Île-de-France             IBAN: FR76 1234 5678 9012 3456 7890 123             BIC: AGRIFRPP1",
+      "position": 81,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "Crédit Agricole",
+      "confidence": 0.7,
+      "context": "IDENTITÉ BANCAIRE             Crédit Agricole Île-de-France             IBA",
+      "position": 39,
+      "validated": false
+    }
+  ],
+  "references": []
+}

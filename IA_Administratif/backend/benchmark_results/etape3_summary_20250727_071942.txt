@@ -1,0 +1,8 @@
+VALIDATION ÉTAPE 3 - 2025-07-27 07:19:42
+==================================================
+
+Filename accuracy: 80.0%
+Entity extraction time: 0.1ms
+Documents processed: 3
+Average doc time: 0.0s
+Objectives met: Yes

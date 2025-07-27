@@ -1,0 +1,76 @@
+{
+  "timestamp": "2025-07-27T07:03:55.175710",
+  "filename": "declaration_urssaf_q4_2024.pdf",
+  "total_entities": 7,
+  "extraction_time": 0.000185,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "123 456 789 01234",
+      "confidence": 0.6,
+      "context": "aration trimestrielle         siret: 123 456 789 01234                  période: 01/",
+      "position": 63,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "2 345,67",
+      "confidence": 0.7999999999999999,
+      "context": "1/10/2024 au 31/12/2024         cotisations dues: 2 345,67 €         échéance: 15/01/2025",
+      "position": 165,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "345,67",
+      "confidence": 0.7999999999999999,
+      "context": "10/2024 au 31/12/2024         cotisations dues: 2 345,67 €         échéance: 15/01/2025",
+      "position": 167,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/01/2025",
+      "confidence": 0.9,
+      "context": "2 345,67 €         échéance: 15/01/2025",
+      "position": 194,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "01/10/2024",
+      "confidence": 0.8,
+      "context": "234                  période: 01/10/2024 au 31/12/2024         cotisat",
+      "position": 114,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2024",
+      "confidence": 0.8,
+      "context": "période: 01/10/2024 au 31/12/2024         cotisations dues: 2 3",
+      "position": 128,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "urssaf île-de-france\n        déclaration trimestrielle\n        siret",
+      "confidence": 0.7,
+      "context": "urssaf île-de-france         déclaration trimestrielle         siret: 123 456 789 01234",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

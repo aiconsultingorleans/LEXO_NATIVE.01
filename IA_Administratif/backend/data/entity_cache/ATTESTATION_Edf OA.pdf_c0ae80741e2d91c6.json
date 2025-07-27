@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-26T21:08:32.257873",
+  "filename": "ATTESTATION_Edf OA.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.001451,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/10/2021",
+      "confidence": 0.9,
+      "context": "a l'article 6 de l'arrete du 6 octobre 2021 fixant les conditions d'achat",
+      "position": 178,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "10/10/2024",
+      "confidence": 0.8,
+      "context": "e!) fait à oméans …. . le ... 10/10/2024.  producteur  1 si mandataire",
+      "position": 2609,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "ponible sur le site : https://edf-oa.fr 2 lorsque d'autres inst",
+      "position": 2719,
+      "validated": false
+    }
+  ],
+  "references": []
+}

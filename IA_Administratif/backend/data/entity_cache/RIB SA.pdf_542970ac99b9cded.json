@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-07-27T07:20:30.907296",
+  "filename": "RIB SA.pdf",
+  "total_entities": 1,
+  "extraction_time": 0.0013,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "FR7614505000010431356049273",
+      "confidence": 0.9,
+      "context": "unnecessary delays. IBAN BIC FR7614505000010431356049273 CEPAFRPP450  Code Banque Code",
+      "position": 789,
+      "validated": true
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": []
+}

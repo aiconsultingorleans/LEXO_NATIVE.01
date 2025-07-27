@@ -51,6 +51,12 @@ class BenchmarkResult:
     rules_applied: List[str] = field(default_factory=list)
     error_message: str = ""
     raw_text: str = ""
+    # Nouvelles métriques de fusion
+    rules_category: str = ""
+    rules_confidence: float = 0.0
+    mistral_category: str = ""
+    mistral_confidence: float = 0.0
+    fusion_decision: str = ""  # "rules_only", "mistral_override", "agreement_boost"
 
 @dataclass
 class BenchmarkStats:
@@ -64,6 +70,10 @@ class BenchmarkStats:
     average_processing_time: float = 0.0
     category_stats: Dict[str, Dict[str, int]] = field(default_factory=dict)
     error_types: Dict[str, int] = field(default_factory=dict)
+    # Nouvelles statistiques de fusion
+    fusion_stats: Dict[str, int] = field(default_factory=dict)
+    rules_vs_mistral_agreement: float = 0.0
+    mistral_override_rate: float = 0.0
 
 
 class ClassificationBenchmark:
@@ -90,6 +100,33 @@ class ClassificationBenchmark:
             'non_classes': 'non_classes',
             'en_attente': 'non_classes'
         }
+        
+        # Mapping Mistral vers nos catégories (identique à production)
+        self.mistral_to_our_categories = {
+            'factures': 'factures',
+            'facture': 'factures',
+            'rib': 'rib', 
+            'contrats': 'contrats',
+            'contrat': 'contrats',
+            'attestations': 'attestations',
+            'attestation': 'attestations',
+            'courriers': 'courriers',
+            'courrier': 'courriers',
+            'impots': 'impots',
+            'impôts': 'impots',
+            'sante': 'sante',
+            'santé': 'sante',
+            'emploi': 'emploi',
+            'rapport': 'courriers',  # Les rapports sont classés comme courriers
+            'autre': 'non_classes',
+            'non_classes': 'non_classes'
+        }
+    
+    def map_mistral_to_categories(self, mistral_type: str) -> str:
+        """Mapper types Mistral vers nos 9 catégories (identique production)"""
+        if not mistral_type:
+            return 'non_classes'
+        return self.mistral_to_our_categories.get(mistral_type.lower(), 'non_classes')
     
     async def initialize_services(self):
         """Initialise les services nécessaires"""
@@ -162,7 +199,7 @@ class ClassificationBenchmark:
         return documents[:50]  # Limiter à 50 pour les tests initiaux
     
     async def test_document_classification(self, file_path: str, filename: str, expected_category: str) -> BenchmarkResult:
-        """Teste la classification d'un document"""
+        """Teste la classification d'un document avec fusion règles/Mistral (identique production)"""
         start_time = time.time()
         result = BenchmarkResult(filename=filename, expected_category=expected_category)
         
@@ -182,6 +219,8 @@ class ClassificationBenchmark:
                 return result
             
             # Étape 2: Classification par règles
+            rules_category = None
+            rules_confidence = 0.0
             try:
                 classification = self.classifier.classify_document(
                     filename=filename,
@@ -189,18 +228,20 @@ class ClassificationBenchmark:
                     entities=[]
                 )
                 
-                result.predicted_category = classification.category
-                result.confidence = classification.confidence
+                rules_category = classification.category
+                rules_confidence = classification.confidence
                 result.rules_applied = classification.matched_rules
                 
-                logger.info(f"  Règles: {classification.category} (conf: {classification.confidence:.2f})")
+                logger.info(f"  Règles: {rules_category} (conf: {rules_confidence:.2f})")
                 
             except Exception as e:
                 logger.error(f"❌ Classification règles échouée pour {filename}: {e}")
                 result.error_message = f"Règles: {str(e)}"
                 return result
             
-            # Étape 3: Analyse Mistral MLX (pour comparaison)
+            # Étape 3: Analyse Mistral MLX
+            mistral_category = None
+            mistral_confidence = 0.0
             try:
                 mistral_response = requests.post(
                     f"{MISTRAL_SERVICE_URL}/analyze",
@@ -216,7 +257,10 @@ class ClassificationBenchmark:
                     if mistral_data.get('success'):
                         result.mistral_success = True
                         mistral_result = mistral_data['result']
-                        logger.info(f"  Mistral: {mistral_result.get('document_type', 'N/A')} (conf: {mistral_result.get('confidence', 0):.2f})")
+                        mistral_raw_type = mistral_result.get('document_type', '')
+                        mistral_category = self.map_mistral_to_categories(mistral_raw_type)
+                        mistral_confidence = mistral_result.get('confidence', 0)
+                        logger.info(f"  Mistral: {mistral_raw_type} -> {mistral_category} (conf: {mistral_confidence:.2f})")
                     else:
                         logger.warning(f"⚠️ Mistral échec: {mistral_data.get('error', 'Unknown')}")
                 else:
@@ -224,6 +268,41 @@ class ClassificationBenchmark:
                     
             except Exception as e:
                 logger.warning(f"⚠️ Mistral inaccessible pour {filename}: {e}")
+            
+            # Étape 4: FUSION INTELLIGENTE (identique production)
+            final_category = rules_category
+            final_confidence = rules_confidence
+            fusion_decision = "rules_only"
+            
+            # Capturer les métriques de fusion
+            result.rules_category = rules_category
+            result.rules_confidence = rules_confidence
+            result.mistral_category = mistral_category or ""
+            result.mistral_confidence = mistral_confidence
+            
+            if mistral_category and mistral_confidence > 0:
+                # Logique de fusion identique à production (documents.py lignes 299-306)
+                if mistral_confidence > 0.8 and mistral_category != final_category:
+                    logger.info(f"🔄 Fusion: {final_category} → {mistral_category} (Mistral prioritaire: {mistral_confidence:.2f})")
+                    final_category = mistral_category
+                    final_confidence = min(0.95, (final_confidence + mistral_confidence) / 2)
+                    fusion_decision = "mistral_override"
+                elif mistral_category == final_category:
+                    # Boost confiance si accord
+                    final_confidence = min(0.98, final_confidence * 1.2)
+                    logger.info(f"✅ Fusion: Accord règles/Mistral sur {final_category} (boost conf: {final_confidence:.2f})")
+                    fusion_decision = "agreement_boost"
+                else:
+                    logger.info(f"🤝 Fusion: Règles prioritaires {final_category} vs Mistral {mistral_category} (conf faible: {mistral_confidence:.2f})")
+                    fusion_decision = "rules_priority"
+            else:
+                logger.info(f"📋 Fusion: Règles seules {final_category} (Mistral indisponible)")
+                fusion_decision = "rules_only"
+            
+            # Résultat final
+            result.predicted_category = final_category
+            result.confidence = final_confidence
+            result.fusion_decision = fusion_decision
             
             # Calculer l'exactitude
             result.processing_time = time.time() - start_time
@@ -286,6 +365,28 @@ class ClassificationBenchmark:
                 error_counter[error_type] += 1
         stats.error_types = dict(error_counter)
         
+        # Statistiques de fusion
+        fusion_counter = Counter()
+        agreement_count = 0
+        mistral_override_count = 0
+        total_with_mistral = 0
+        
+        for result in successful_results:
+            if hasattr(result, 'fusion_decision') and result.fusion_decision:
+                fusion_counter[result.fusion_decision] += 1
+                
+                if result.mistral_category:  # Mistral était disponible
+                    total_with_mistral += 1
+                    if result.rules_category == result.mistral_category:
+                        agreement_count += 1
+                    if result.fusion_decision == "mistral_override":
+                        mistral_override_count += 1
+        
+        stats.fusion_stats = dict(fusion_counter)
+        if total_with_mistral > 0:
+            stats.rules_vs_mistral_agreement = agreement_count / total_with_mistral * 100
+            stats.mistral_override_rate = mistral_override_count / total_with_mistral * 100
+        
         return stats
     
     def generate_report(self, stats: BenchmarkStats) -> str:
@@ -293,7 +394,7 @@ class ClassificationBenchmark:
         report = []
         
         report.append("=" * 80)
-        report.append("🎯 RAPPORT BENCHMARK CLASSIFICATION - ÉTAPE 1")
+        report.append("🎯 RAPPORT BENCHMARK CLASSIFICATION - FUSION RÈGLES/IA")
         report.append("=" * 80)
         report.append(f"📅 Date: {time.strftime('%Y-%m-%d %H:%M:%S')}")
         report.append(f"📊 Documents testés: {stats.total_documents}")
@@ -314,6 +415,18 @@ class ClassificationBenchmark:
         report.append(f"🔍 OCR Success Rate: {stats.ocr_success_rate:.1f}%")
         report.append(f"🤖 Mistral MLX Success Rate: {stats.mistral_success_rate:.1f}%")
         report.append("")
+        
+        # Statistiques de fusion
+        if stats.fusion_stats:
+            report.append("🔗 STATISTIQUES DE FUSION RÈGLES/IA")
+            report.append("-" * 40)
+            for decision_type, count in stats.fusion_stats.items():
+                report.append(f"{decision_type.replace('_', ' ').title()}: {count} documents")
+            if stats.rules_vs_mistral_agreement > 0:
+                report.append(f"Accord Règles/Mistral: {stats.rules_vs_mistral_agreement:.1f}%")
+            if stats.mistral_override_rate > 0:
+                report.append(f"Taux Override Mistral: {stats.mistral_override_rate:.1f}%")
+            report.append("")
         
         # Précision par catégorie
         if stats.category_stats:
@@ -439,7 +552,10 @@ class ClassificationBenchmark:
                 'ocr_success_rate': stats.ocr_success_rate,
                 'mistral_success_rate': stats.mistral_success_rate,
                 'category_stats': stats.category_stats,
-                'error_types': stats.error_types
+                'error_types': stats.error_types,
+                'fusion_stats': stats.fusion_stats,
+                'rules_vs_mistral_agreement': stats.rules_vs_mistral_agreement,
+                'mistral_override_rate': stats.mistral_override_rate
             },
             'detailed_results': [
                 {
@@ -450,7 +566,12 @@ class ClassificationBenchmark:
                     'processing_time': r.processing_time,
                     'ocr_success': r.ocr_success,
                     'mistral_success': r.mistral_success,
-                    'error_message': r.error_message
+                    'error_message': r.error_message,
+                    'rules_category': getattr(r, 'rules_category', ''),
+                    'rules_confidence': getattr(r, 'rules_confidence', 0.0),
+                    'mistral_category': getattr(r, 'mistral_category', ''),
+                    'mistral_confidence': getattr(r, 'mistral_confidence', 0.0),
+                    'fusion_decision': getattr(r, 'fusion_decision', '')
                 }
                 for r in self.results
             ]

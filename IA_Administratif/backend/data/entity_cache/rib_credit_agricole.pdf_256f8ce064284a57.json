@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:03:55.174792",
+  "filename": "rib_credit_agricole.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000166,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [
+    {
+      "type": "iban",
+      "value": "fr76 1234 5678 9012 3456 7890 123",
+      "confidence": 0.9,
+      "context": "e île-de-france         iban: fr76 1234 5678 9012 3456 7890 123         bic: agrifrpp123",
+      "position": 79,
+      "validated": true
+    },
+    {
+      "type": "iban",
+      "value": "fr76 1234 5678 9012 3456 7890",
+      "confidence": 0.6,
+      "context": "gricole île-de-france         iban: fr76 1234 5678 9012 3456 7890 123         bic: agrifrpp123",
+      "position": 73,
+      "validated": false
+    }
+  ],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "crédit agricole",
+      "confidence": 0.7,
+      "context": "é d'identité bancaire         crédit agricole île-de-france         iban: f",
+      "position": 35,
+      "validated": false
+    }
+  ],
+  "references": []
+}

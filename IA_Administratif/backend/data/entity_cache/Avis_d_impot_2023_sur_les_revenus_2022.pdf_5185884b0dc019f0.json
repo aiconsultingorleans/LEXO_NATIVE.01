@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:20:37.561206",
+  "filename": "Avis_d_impot_2023_sur_les_revenus_2022.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.000739,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "01/01/2023",
+      "confidence": 0.8,
+      "context": "eans  adresse d'imposition au 01/01/2023 : 0 8 rue du paradis  45000 o",
+      "position": 520,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "10/07/2023",
+      "confidence": 0.8,
+      "context": "payer date d'établissement : 10/07/2023  identifiant service : 45055",
+      "position": 681,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "direction générale des finances publiques",
+      "confidence": 0.7,
+      "context": "e il direction générale des finances publiques  république impôt sur les rev",
+      "position": 5,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

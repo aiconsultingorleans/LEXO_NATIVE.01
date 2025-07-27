@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-07-27T07:20:42.681497",
+  "filename": "Justificatif EDF.pdf",
+  "total_entities": 6,
+  "extraction_time": 0.000757,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "09520839348831",
+      "confidence": 0.6,
+      "context": "Point de livraison (PDL) : N° 09520839348831 + Puissance : 06 KVA  e  G +",
+      "position": 882,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "21/02/2024",
+      "confidence": 0.9,
+      "context": "ce que de droit.  A Paris, le 21 février 2024.  Guillaume Votre conseiller",
+      "position": 1316,
+      "validated": true
+    }
+  ],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "09 70 83 33 33",
+      "confidence": 0.7,
+      "context": "Mon Compte sur Serveur Vocal 09 70 83 33 33  (Service gratuit + prix appe",
+      "position": 387,
+      "validated": false
+    }
+  ],
+  "emails": [
+    {
+      "type": "email",
+      "value": "serviceclient@edf.fr",
+      "confidence": 0.7,
+      "context": "ation mobile : EDF&MOI mail : serviceclient@edf.fr  fq Par téléphone Du lundi au",
+      "position": 242,
+      "validated": false
+    }
+  ],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "EDF",
+      "confidence": 0.7,
+      "context": "EDF-SA au capital de 2 000 466 84",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "references": [
+    {
+      "type": "reference",
+      "value": "09520839348831",
+      "confidence": 0.7,
+      "context": "+ Point de livraison (PDL) : N° 09520839348831 + Puissance : 06 KVA  e  G +",
+      "position": 879,
+      "validated": false
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-07-27T07:03:16.940210",
+  "filename": "tmpbds26oki.pdf",
+  "total_entities": 1,
+  "extraction_time": 0.001311,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/10/2021",
+      "confidence": 0.9,
+      "context": "a l'article 6 de l'arrete du 6 octobre 2021 fixant les conditions d'achat",
+      "position": 178,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": []
+}

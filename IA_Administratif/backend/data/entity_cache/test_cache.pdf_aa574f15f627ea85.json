@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-07-27T07:03:55.178135",
+  "filename": "test_cache.pdf",
+  "total_entities": 1,
+  "extraction_time": 6.1e-05,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "12345678901234",
+      "confidence": 0.6,
+      "context": "Test cache avec SIRET: 12345678901234",
+      "position": 16,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [],
+  "references": []
+}

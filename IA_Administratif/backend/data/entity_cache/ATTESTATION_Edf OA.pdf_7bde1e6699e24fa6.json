@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-27T07:19:42.825870",
+  "filename": "ATTESTATION_Edf OA.pdf",
+  "total_entities": 3,
+  "extraction_time": 0.001304,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/10/2021",
+      "confidence": 0.9,
+      "context": "a l'article 6 de l'arrete du 6 octobre 2021 fixant les conditions d'achat",
+      "position": 178,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "10/10/2024",
+      "confidence": 0.8,
+      "context": "ataire!) fait à oréans le ....10/10/2024................  producteur",
+      "position": 2674,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "ponible sur le site : https://edf-oa.fr 2 lorsque d'autres inst",
+      "position": 2799,
+      "validated": false
+    }
+  ],
+  "references": []
+}

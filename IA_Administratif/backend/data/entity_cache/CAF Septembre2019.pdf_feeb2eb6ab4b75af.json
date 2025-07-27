@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-07-27T07:20:46.869700",
+  "filename": "CAF Septembre2019.pdf",
+  "total_entities": 5,
+  "extraction_time": 0.000391,
+  "sirets": [],
+  "tva_numbers": [],
+  "ibans": [],
+  "montants": [],
+  "dates": [
+    {
+      "type": "date",
+      "value": "06/01/1978",
+      "confidence": 0.9,
+      "context": "larations. la loi n° 78-17 du 6 janvier 1978 modifiée, relative à l'inform",
+      "position": 445,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "03/09/2019",
+      "confidence": 0.8,
+      "context": "allocations  familiales  le 03/09/2019 a 10:27:31, vous venez de fai",
+      "position": 73,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "caf du loiret et votre numéro est",
+      "confidence": 0.7,
+      "context": "vous étes allocataire de la caf du loiret et votre numéro est 1344157.  la loi punit quiconq",
+      "position": 172,
+      "validated": false
+    },
+    {
+      "type": "organisme",
+      "value": "caf vérifie l",
+      "confidence": 0.7,
+      "context": "icle 441.1 du code pénal). la caf vérifie l'exactitude des déclarations.",
+      "position": 383,
+      "validated": false
+    },
+    {
+      "type": "organisme",
+      "value": "caf\ndate demande",
+      "confidence": 0.7,
+      "context": "000  emplacement réservé à la caf date demande : 03/09/2019 10:27:31 - ansel",
+      "position": 745,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

@@ -1,0 +1,94 @@
+{
+  "timestamp": "2025-07-27T07:18:20.921579",
+  "filename": "Document URSSAF",
+  "total_entities": 9,
+  "extraction_time": 0.00178,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "123 456 789 01234",
+      "confidence": 0.6,
+      "context": "SAF Île-de-France             SIRET: 123 456 789 01234             TVA: FR1234567890",
+      "position": 33,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [
+    {
+      "type": "tva",
+      "value": "FR12345678901",
+      "confidence": 0.9,
+      "context": "123 456 789 01234             TVA: FR12345678901             Déclaration trime",
+      "position": 70,
+      "validated": true
+    }
+  ],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "2 345,67",
+      "confidence": 0.7999999999999999,
+      "context": "/2024 au 31/12/2024             Cotisations dues: 2 345,67 €             Échéance: 15/01/2025             Cont",
+      "position": 203,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "345,67",
+      "confidence": 0.7999999999999999,
+      "context": "024 au 31/12/2024             Cotisations dues: 2 345,67 €             Échéance: 15/01/2025             Cont",
+      "position": 205,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/01/2025",
+      "confidence": 0.9,
+      "context": "45,67 €             Échéance: 15/01/2025             Contact: 01 23 45",
+      "position": 236,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "01/10/2024",
+      "confidence": 0.8,
+      "context": "strielle             Période: 01/10/2024 au 31/12/2024             Cot",
+      "position": 148,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2024",
+      "confidence": 0.8,
+      "context": "Période: 01/10/2024 au 31/12/2024             Cotisations dues:",
+      "position": 162,
+      "validated": true
+    }
+  ],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "01 23 45 67 89",
+      "confidence": 0.7,
+      "context": "/01/2025             Contact: 01 23 45 67 89",
+      "position": 268,
+      "validated": false
+    }
+  ],
+  "emails": [],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "URSSAF Île-de-France\n            SIRET",
+      "confidence": 0.7,
+      "context": "URSSAF Île-de-France             SIRET: 123 456 789 01234",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

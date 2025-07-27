@@ -1,0 +1,103 @@
+{
+  "timestamp": "2025-07-26T21:05:02.778880",
+  "filename": "declaration_urssaf_q4_2024.pdf",
+  "total_entities": 10,
+  "extraction_time": 0.003019,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "123 456 789 01234",
+      "confidence": 0.6,
+      "context": "nce déclaration trimestrielle siret: 123 456 789 01234 tva intracommunautaire: fr123",
+      "position": 47,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [
+    {
+      "type": "tva",
+      "value": "fr12345678901",
+      "confidence": 0.9,
+      "context": "01234 tva intracommunautaire: fr12345678901  période: 01/10/2024 au 31/12",
+      "position": 96,
+      "validated": true
+    }
+  ],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "2 345,67",
+      "confidence": 0.7999999999999999,
+      "context": "riode: 01/10/2024 au 31/12/2024 cotisations dues: 2 345,67 € échéance: 15/01/2025  contact: 01 23 45 67 89 ema",
+      "position": 163,
+      "validated": true
+    },
+    {
+      "type": "montant",
+      "value": "345,67",
+      "confidence": 0.7999999999999999,
+      "context": "ode: 01/10/2024 au 31/12/2024 cotisations dues: 2 345,67 € échéance: 15/01/2025  contact: 01 23 45 67 89 ema",
+      "position": 165,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/01/2025",
+      "confidence": 0.9,
+      "context": "ns dues: 2 345,67 € échéance: 15/01/2025  contact: 01 23 45 67 89 emai",
+      "position": 184,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "01/10/2024",
+      "confidence": 0.8,
+      "context": "aire: fr12345678901  période: 01/10/2024 au 31/12/2024 cotisations due",
+      "position": 120,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/12/2024",
+      "confidence": 0.8,
+      "context": "78901  période: 01/10/2024 au 31/12/2024 cotisations dues: 2 345,67 €",
+      "position": 134,
+      "validated": true
+    }
+  ],
+  "telephones": [
+    {
+      "type": "telephone",
+      "value": "01 23 45 67 89",
+      "confidence": 0.7,
+      "context": "chéance: 15/01/2025  contact: 01 23 45 67 89 email: contact@urssaf.fr",
+      "position": 205,
+      "validated": false
+    }
+  ],
+  "emails": [
+    {
+      "type": "email",
+      "value": "contact@urssaf.fr",
+      "confidence": 0.7,
+      "context": "ontact: 01 23 45 67 89 email: contact@urssaf.fr",
+      "position": 227,
+      "validated": false
+    }
+  ],
+  "organismes": [
+    {
+      "type": "organisme",
+      "value": "urssaf île-de-france\ndéclaration trimestrielle\nsiret",
+      "confidence": 0.7,
+      "context": "urssaf île-de-france déclaration trimestrielle siret: 123 456 789 01234 tva intrac",
+      "position": 0,
+      "validated": false
+    }
+  ],
+  "entreprises": [],
+  "references": []
+}

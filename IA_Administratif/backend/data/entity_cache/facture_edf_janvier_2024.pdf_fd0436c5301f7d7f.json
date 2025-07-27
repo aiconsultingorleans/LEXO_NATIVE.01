@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-07-27T07:03:55.171535",
+  "filename": "facture_edf_janvier_2024.pdf",
+  "total_entities": 7,
+  "extraction_time": 0.001258,
+  "sirets": [
+    {
+      "type": "siret",
+      "value": "552 081 317 00001",
+      "confidence": 0.6,
+      "context": "f         n° 2024-001         siret: 552 081 317 00001         tva: fr03552081317",
+      "position": 40,
+      "validated": false
+    }
+  ],
+  "tva_numbers": [
+    {
+      "type": "tva",
+      "value": "fr03552081317",
+      "confidence": 0.9,
+      "context": "et: 552 081 317 00001         tva: fr03552081317                  période: 01/",
+      "position": 73,
+      "validated": true
+    }
+  ],
+  "ibans": [],
+  "montants": [
+    {
+      "type": "montant",
+      "value": "89,45",
+      "confidence": 0.95,
+      "context": "de: 01/01/2024 au 31/01/2024         montant ttc: 89,45 €         échéance: 15/02/2024",
+      "position": 164,
+      "validated": true
+    }
+  ],
+  "dates": [
+    {
+      "type": "date",
+      "value": "15/02/2024",
+      "confidence": 0.9,
+      "context": "tc: 89,45 €         échéance: 15/02/2024",
+      "position": 190,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "01/01/2024",
+      "confidence": 0.8,
+      "context": "317                  période: 01/01/2024 au 31/01/2024         montant",
+      "position": 118,
+      "validated": true
+    },
+    {
+      "type": "date",
+      "value": "31/01/2024",
+      "confidence": 0.8,
+      "context": "période: 01/01/2024 au 31/01/2024         montant ttc: 89,45 €",
+      "position": 132,
+      "validated": true
+    }
+  ],
+  "telephones": [],
+  "emails": [],
+  "organismes": [],
+  "entreprises": [
+    {
+      "type": "entreprise",
+      "value": "edf",
+      "confidence": 0.7,
+      "context": "facture edf         n° 2024-001         s",
+      "position": 8,
+      "validated": false
+    }
+  ],
+  "references": []
+}

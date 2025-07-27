@@ -1,0 +1,125 @@
+{
+  "timestamp": "20250726_204321",
+  "stats": {
+    "total_documents": 6,
+    "successful_classifications": 6,
+    "accuracy": 50.0,
+    "average_confidence": 0.700908431941378,
+    "average_processing_time": 6.635493119557698,
+    "ocr_success_rate": 100.0,
+    "mistral_success_rate": 100.0,
+    "category_stats": {
+      "rib": {
+        "total": 1,
+        "correct": 1,
+        "accuracy": 100.0,
+        "avg_confidence": 0.7699009900990098
+      },
+      "contrats": {
+        "total": 5,
+        "correct": 2,
+        "accuracy": 40.0,
+        "avg_confidence": 0.6871099203098516
+      }
+    },
+    "error_types": {},
+    "fusion_stats": {
+      "agreement_boost": 1,
+      "mistral_override": 5
+    },
+    "rules_vs_mistral_agreement": 16.666666666666664,
+    "mistral_override_rate": 83.33333333333334
+  },
+  "detailed_results": [
+    {
+      "filename": "tmp03_sccjt.pdf",
+      "expected_category": "rib",
+      "predicted_category": "rib",
+      "confidence": 0.7699009900990098,
+      "processing_time": 6.435178279876709,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "rib",
+      "rules_confidence": 0.6415841584158415,
+      "mistral_category": "rib",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "agreement_boost"
+    },
+    {
+      "filename": "tmp320d5ncz.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "courriers",
+      "confidence": 0.7908536585365854,
+      "processing_time": 6.832270860671997,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "factures",
+      "rules_confidence": 0.7317073170731708,
+      "mistral_category": "courriers",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    },
+    {
+      "filename": "tmpx_n53lxx.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "courriers",
+      "confidence": 0.7908536585365854,
+      "processing_time": 6.828106880187988,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "factures",
+      "rules_confidence": 0.7317073170731708,
+      "mistral_category": "courriers",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    },
+    {
+      "filename": "tmpbh48xww6.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "contrats",
+      "confidence": 0.5693661971830986,
+      "processing_time": 6.562946796417236,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "emploi",
+      "rules_confidence": 0.2887323943661972,
+      "mistral_category": "contrats",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    },
+    {
+      "filename": "tmpxfzwjfq_.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "contrats",
+      "confidence": 0.5693661971830986,
+      "processing_time": 6.590688943862915,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "emploi",
+      "rules_confidence": 0.2887323943661972,
+      "mistral_category": "contrats",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    },
+    {
+      "filename": "tmpix82gad_.pdf",
+      "expected_category": "contrats",
+      "predicted_category": "courriers",
+      "confidence": 0.71510989010989,
+      "processing_time": 6.563766956329346,
+      "ocr_success": true,
+      "mistral_success": true,
+      "error_message": "",
+      "rules_category": "attestations",
+      "rules_confidence": 0.5802197802197802,
+      "mistral_category": "courriers",
+      "mistral_confidence": 0.85,
+      "fusion_decision": "mistral_override"
+    }
+  ]
+}
