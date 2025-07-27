@@ -41,14 +41,16 @@ MISTRAL_MAX_RETRIES = 2
 
 
 class DocumentType(Enum):
-    """Types de documents supportés"""
-    FACTURE = "facture"
+    """Types de documents supportés - harmonisé avec DocumentCategory"""
+    ATTESTATIONS = "attestations"
+    FACTURES = "factures" 
+    IMPOTS = "impots"
     RIB = "rib"
-    CONTRAT = "contrat"
-    ATTESTATION = "attestation"
-    COURRIER = "courrier"
-    RAPPORT = "rapport"
-    AUTRE = "autre"
+    CONTRATS = "contrats"
+    COURRIERS = "courriers"
+    SANTE = "sante"
+    EMPLOI = "emploi"
+    NON_CLASSES = "non_classes"
 
 
 class AnalysisType(Enum):
@@ -109,30 +111,88 @@ class DocumentAnalyzer:
         
         # Prompts spécialisés
         self.prompts = {
-            "classification": """Tu es un expert en analyse documentaire. Analyse le document suivant et détermine son type principal parmi : facture, RIB, contrat, attestation, courrier, rapport, autre.
+            "classification": """Tu es un expert en classification de documents administratifs français. Analyse le document et détermine sa catégorie parmi : factures, rib, contrats, attestations, courriers, impots, sante, emploi, non_classes.
+
+EXEMPLES DE CLASSIFICATION :
+
+📄 RIB/BANCAIRE: "IBAN FR76 1234 5678 9012 3456 7890 123, BIC AGRIFRPP123, Crédit Agricole, Titulaire: Martin Dupont"
+→ {{"type": "rib", "confidence": 0.95, "reasoning": "IBAN français + BIC + nom banque détectés"}}
+
+📄 FACTURE: "Facture n°2024-001, EDF, Montant TTC: 89,45€, échéance 15/02/2024, abonnement électricité"  
+→ {{"type": "factures", "confidence": 0.92, "reasoning": "Facture EDF avec montant et échéance"}}
+
+📄 URSSAF/IMPOTS: "Déclaration trimestrielle, cotisations sociales, URSSAF Île-de-France, SIRET 123 456 789 01234"
+→ {{"type": "impots", "confidence": 0.90, "reasoning": "Document URSSAF déclaratif avec SIRET"}}
+
+📄 ATTESTATION: "Attestation de droits, CPAM Paris, carte vitale, assurance maladie, validité jusqu'au 31/12/2024"
+→ {{"type": "attestations", "confidence": 0.88, "reasoning": "Attestation CPAM avec validité"}}
+
+📄 SANTE: "Remboursement consultation, Dr Martin, 25€, sécurité sociale, mutuelle complémentaire"
+→ {{"type": "sante", "confidence": 0.85, "reasoning": "Document médical remboursement"}}
+
+📄 EMPLOI: "Bulletin de paie, salaire brut 2500€, net à payer 1950€, cotisations sociales"
+→ {{"type": "emploi", "confidence": 0.93, "reasoning": "Fiche de paie avec salaires"}}
+
+📄 CONTRAT: "Contrat d'assurance habitation, police n°123456, Maif, garanties vol et incendie"
+→ {{"type": "contrats", "confidence": 0.87, "reasoning": "Contrat assurance avec police"}}
+
+MOTS-CLÉS FRANÇAIS SPÉCIALISÉS :
+- RIB: IBAN FR, BIC, Crédit Agricole, BNP, Société Générale, LCL, Caisse d'Épargne
+- URSSAF/IMPOTS: URSSAF, DGFIP, cotisation, déclaration, trimestre, SIRET, TVA
+- CPAM/SANTE: CPAM, carte vitale, remboursement, mutuelle, consultation, pharmacie
+- EDF/FACTURES: EDF, Engie, Orange, SFR, Bouygues, Free, facture, TTC, échéance
+- EMPLOI: bulletin paie, salaire, net à payer, Pôle Emploi, contrat travail
 
 Document à analyser :
 {text}
 
-Réponds en JSON avec cette structure exacte :
-{{"type": "type_du_document", "confidence": 0.95, "reasoning": "explication_courte"}}""",
+Réponds en JSON strict avec cette structure exacte :
+{{"type": "categorie", "confidence": 0.XX, "reasoning": "explication_courte"}}""",
 
-            "key_extraction": """Tu es un expert en extraction d'informations. Extrais les informations clés de ce document administratif français.
+            "key_extraction": """Tu es un expert en extraction d'informations de documents administratifs français. Extrais les données structurées selon les standards français.
+
+FORMATS FRANÇAIS À DÉTECTER :
+
+📅 DATES FRANÇAISES :
+- DD/MM/YYYY (25/12/2024)
+- DD-MM-YYYY (25-12-2024)  
+- DD/MM/YY (25/12/24)
+- "25 décembre 2024"
+
+💰 MONTANTS FRANÇAIS :
+- 1 234,56 € (espaces milliers, virgule décimale)
+- 1.234,56 € (points milliers, virgule décimale)
+- 89,45€ (collé au montant)
+- "mille deux cent euros"
+
+🏢 IDENTIFIANTS FRANÇAIS :
+- SIRET: 14 chiffres (123 456 789 01234)
+- SIREN: 9 chiffres (123 456 789)
+- TVA FR: FR + 11 chiffres (FR12345678901)
+- IBAN FR: FR76 + 23 chiffres/lettres
+- BIC: 8-11 caractères (AGRIFRPP123)
+
+🏛️ ORGANISMES FRANÇAIS :
+- URSSAF, CPAM, CAF, DGFIP, Pôle Emploi
+- EDF, Engie, Orange, SFR, Bouygues, Free
+- Crédit Agricole, BNP, Société Générale, LCL
+
+Document à analyser :
+{text}
+
+EXEMPLE DE SORTIE :
+{{"dates": ["25/12/2024", "31/01/2025"], "montants": ["1 234,56 €", "89,45€"], "personnes": ["Martin Dupont"], "entreprises": ["EDF", "CPAM Paris"], "references": ["SIRET 123 456 789 01234", "Facture n°2024-001", "IBAN FR76..."], "autres": {{"telephone": "01 23 45 67 89", "email": "contact@exemple.fr"}}}}
+
+Réponds UNIQUEMENT par le JSON strict, sans texte supplémentaire.""",
+
+            "summarization": """Tu dois répondre EXCLUSIVEMENT en français.
 
 Document :
 {text}
 
-Extrais et structure les informations importantes (dates, montants, noms, adresses, numéros de référence, etc.) en JSON strict avec cette structure exacte :
-{{"dates": [], "montants": [], "personnes": [], "entreprises": [], "references": [], "autres": {{}}}}
+Écris un résumé en français seulement. 2 phrases maximum. Commence directement par le contenu, sans "Résumé :" ou autre préambule.
 
-Réponds UNIQUEMENT par le JSON, sans texte supplémentaire.""",
-
-            "summarization": """Tu es un expert en synthèse documentaire. Créé un résumé concis et professionnel de ce document.
-
-Document :
-{text}
-
-Résumé en 2-3 phrases maximum, en français professionnel, sans reprendre le prompt :""",
+Réponse en français :""",
 
             "compliance": """Tu es un expert en conformité documentaire. Évalue la conformité et la complétude de ce document administratif français.
 
@@ -177,7 +237,7 @@ Analyse en JSON :
         
         try:
             result = DocumentAnalysisResult(
-                document_type=DocumentType.AUTRE,
+                document_type=DocumentType.NON_CLASSES,
                 confidence=0.0,
                 summary="",
                 key_information={},
@@ -188,7 +248,7 @@ Analyse en JSON :
             # Classification du document
             if AnalysisType.CLASSIFICATION in analysis_types:
                 classification = await self._classify_document(text)
-                result.document_type = classification.get("type", DocumentType.AUTRE)
+                result.document_type = classification.get("type", DocumentType.NON_CLASSES)
                 result.confidence = classification.get("confidence", 0.0)
             
             # Extraction d'informations clés
@@ -239,50 +299,170 @@ Analyse en JSON :
         return result['value']
     
     def _robust_json_parse(self, response: str, expected_keys: List[str] = None) -> Dict[str, Any]:
-        """Parse JSON robuste avec gestion d'erreurs améliorée"""
+        """Parse JSON robuste avec gestion d'erreurs améliorée et validation stricte"""
         self.logger.debug(f"Parsing JSON: {response[:200]}...")
         
-        # Nettoyer la réponse
+        # Nettoyer la réponse - plus agressif
         clean_response = response.strip()
         
-        # Méthode 1: Chercher le JSON dans la réponse
+        # Supprimer les préfixes/suffixes courants
+        prefixes_to_remove = [
+            "Voici le JSON :", "JSON :", "Résultat :", "Réponse :",
+            "```json", "```", "Here is the JSON:", "Output:"
+        ]
+        
+        for prefix in prefixes_to_remove:
+            if clean_response.startswith(prefix):
+                clean_response = clean_response[len(prefix):].strip()
+            if clean_response.endswith("```"):
+                clean_response = clean_response[:-3].strip()
+        
+        # Méthode 1: Parsing JSON direct 
+        try:
+            parsed = json.loads(clean_response)
+            if isinstance(parsed, dict):
+                # Validation des clés attendues si spécifiées
+                if expected_keys:
+                    if any(key in parsed for key in expected_keys):
+                        self.logger.debug("✅ JSON parsé avec succès (direct)")
+                        return parsed
+                else:
+                    self.logger.debug("✅ JSON parsé avec succès (direct)")
+                    return parsed
+        except json.JSONDecodeError:
+            pass
+        
+        # Méthode 2: Extraction par regex améliorée
         json_patterns = [
-            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # JSON simple
-            r'\{.*?\}',  # JSON basique
+            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # JSON imbriqué
+            r'\{.*?\}',  # JSON simple
+            r'(\{[^}]+\})',  # JSON minimal
         ]
         
         for pattern in json_patterns:
             matches = re.findall(pattern, clean_response, re.DOTALL)
             for match in matches:
                 try:
-                    parsed = json.loads(match)
+                    # Nettoyer le match
+                    clean_match = match.strip()
+                    parsed = json.loads(clean_match)
                     if isinstance(parsed, dict):
                         # Vérifier les clés attendues si spécifiées
                         if expected_keys:
                             if any(key in parsed for key in expected_keys):
+                                self.logger.debug("✅ JSON parsé avec succès (regex)")
                                 return parsed
                         else:
+                            self.logger.debug("✅ JSON parsé avec succès (regex)")
                             return parsed
                 except json.JSONDecodeError:
                     continue
         
-        # Méthode 2: Extraction par regex si JSON introuvable
+        # Méthode 3: Extraction par regex clé-valeur pour classification
         self.logger.warning(f"JSON non trouvé, tentative extraction regex: {clean_response[:100]}")
         
-        # Fallback pour classification
-        if 'type' in clean_response.lower():
-            type_match = re.search(r'["\']?type["\']?\s*:\s*["\']?([^,}"\'\n]+)', clean_response, re.IGNORECASE)
-            conf_match = re.search(r'["\']?confidence["\']?\s*:\s*([0-9.]+)', clean_response)
+        if expected_keys and 'type' in expected_keys:
+            # Patterns plus robustes pour type et confidence
+            type_patterns = [
+                r'["\']?type["\']?\s*:\s*["\']([^,}"\'\n]+)["\']?',
+                r'type["\']?\s*[=:]\s*["\']?([^,}"\'\n]+)["\']?',
+                r'"type"\s*:\s*"([^"]+)"',
+                r"'type'\s*:\s*'([^']+)'"
+            ]
+            
+            conf_patterns = [
+                r'["\']?confidence["\']?\s*:\s*([0-9.]+)',
+                r'confidence["\']?\s*[=:]\s*([0-9.]+)',
+                r'"confidence"\s*:\s*([0-9.]+)',
+                r"'confidence'\s*:\s*([0-9.]+)"
+            ]
+            
+            reason_patterns = [
+                r'["\']?reasoning["\']?\s*:\s*["\']([^"\']+)["\']?',
+                r'"reasoning"\s*:\s*"([^"]+)"',
+                r"'reasoning'\s*:\s*'([^']+)'"
+            ]
+            
+            type_match = None
+            for pattern in type_patterns:
+                type_match = re.search(pattern, clean_response, re.IGNORECASE)
+                if type_match:
+                    break
             
             if type_match:
-                return {
+                conf_match = None
+                for pattern in conf_patterns:
+                    conf_match = re.search(pattern, clean_response)
+                    if conf_match:
+                        break
+                
+                reason_match = None
+                for pattern in reason_patterns:
+                    reason_match = re.search(pattern, clean_response, re.IGNORECASE)
+                    if reason_match:
+                        break
+                
+                result = {
                     'type': type_match.group(1).strip().strip('"\''),
                     'confidence': float(conf_match.group(1)) if conf_match else 0.5,
-                    'reasoning': 'Extraction par regex'
+                    'reasoning': reason_match.group(1).strip() if reason_match else 'Extraction par regex'
                 }
+                self.logger.debug("✅ JSON extrait par regex de classification")
+                return result
+        
+        # Méthode 4: Extraction par regex pour key_extraction
+        if expected_keys and any(key in expected_keys for key in ['dates', 'montants', 'personnes']):
+            # Fallback pour key extraction avec patterns français
+            result = {
+                "dates": [],
+                "montants": [],
+                "personnes": [],
+                "entreprises": [],
+                "references": [],
+                "autres": {"extraction_type": "fallback_regex_francais"}
+            }
+            
+            # Extraction dates françaises
+            date_patterns = [
+                r'\b\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}\b',  # DD/MM/YYYY
+                r'\b\d{1,2}\s+[a-zéèêôà]+\s+\d{4}\b',       # DD mois YYYY
+                r'\b(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}\b'
+            ]
+            for pattern in date_patterns:
+                matches = re.findall(pattern, clean_response, re.IGNORECASE)
+                result["dates"].extend(matches[:3])  # Limiter à 3
+            
+            # Extraction montants français
+            montant_patterns = [
+                r'\b\d{1,3}(?:[\s\.]\d{3})*,\d{2}\s*€\b',      # 1 234,56 €
+                r'\b\d+,\d{2}\s*euros?\b',                      # 89,45 euros
+                r'\btotal\s*:?\s*\d+[,\.]\d{2}\b'               # total: 123,45
+            ]
+            for pattern in montant_patterns:
+                matches = re.findall(pattern, clean_response, re.IGNORECASE)
+                result["montants"].extend(matches[:3])
+            
+            # Extraction références françaises
+            ref_patterns = [
+                r'\bSIRET\s*:?\s*\d{3}\s?\d{3}\s?\d{3}\s?\d{5}\b',  # SIRET
+                r'\bIBAN\s*:?\s*FR\d{2}\s?[\d\s]{20,}\b',           # IBAN FR
+                r'\bfacture\s*n[°\s]*\d+\b',                        # Facture n°
+                r'\bn[u°\s]*\d{6,}\b'                               # Numéros divers
+            ]
+            for pattern in ref_patterns:
+                matches = re.findall(pattern, clean_response, re.IGNORECASE)
+                result["references"].extend(matches[:3])
+            
+            # Nettoyer et dédupliquer
+            for key in ["dates", "montants", "references"]:
+                result[key] = list(set(result[key]))[:5]  # Dédoublonner et limiter
+            
+            if any(result[key] for key in ["dates", "montants", "references"]):
+                self.logger.debug("✅ Extraction française par regex réussie")
+                return result
         
         # Fallback final
-        self.logger.error(f"Impossible de parser JSON: {clean_response}")
+        self.logger.error(f"❌ Impossible de parser JSON: {clean_response[:150]}")
         return {'error': 'Parsing JSON échoué', 'raw_response': clean_response[:200]}
     
     async def _classify_document(self, text: str) -> Dict[str, Any]:
@@ -316,28 +496,44 @@ Analyse en JSON :
                         continue
                     else:
                         self.logger.error(f"Toutes les tentatives échouées: {classification_data}")
-                        return {"type": DocumentType.AUTRE, "confidence": 0.2, "reasoning": "Parsing JSON échoué"}
+                        return {"type": DocumentType.NON_CLASSES, "confidence": 0.2, "reasoning": "Parsing JSON échoué"}
                 
                 # Mapper vers notre enum
-                doc_type_str = classification_data.get("type", "autre").lower()
+                doc_type_str = classification_data.get("type", "non_classes").lower()
                 try:
-                    # Mapper les variantes possibles
+                    # Mapper les variantes possibles vers les 9 catégories harmonisées
                     type_mapping = {
                         'rib': DocumentType.RIB,
                         'relevé identité bancaire': DocumentType.RIB,
-                        'facture': DocumentType.FACTURE,
-                        'invoice': DocumentType.FACTURE,
-                        'contrat': DocumentType.CONTRAT,
-                        'contract': DocumentType.CONTRAT,
-                        'attestation': DocumentType.ATTESTATION,
-                        'courrier': DocumentType.COURRIER,
-                        'rapport': DocumentType.RAPPORT,
-                        'autre': DocumentType.AUTRE
+                        'factures': DocumentType.FACTURES,
+                        'facture': DocumentType.FACTURES,
+                        'invoice': DocumentType.FACTURES,
+                        'contrats': DocumentType.CONTRATS,
+                        'contrat': DocumentType.CONTRATS,
+                        'contract': DocumentType.CONTRATS,
+                        'attestations': DocumentType.ATTESTATIONS,
+                        'attestation': DocumentType.ATTESTATIONS,
+                        'courriers': DocumentType.COURRIERS,
+                        'courrier': DocumentType.COURRIERS,
+                        'rapports': DocumentType.COURRIERS,  # Les rapports sont classés comme courriers
+                        'rapport': DocumentType.COURRIERS,
+                        'impots': DocumentType.IMPOTS,
+                        'impôts': DocumentType.IMPOTS,
+                        'fiscal': DocumentType.IMPOTS,
+                        'urssaf': DocumentType.IMPOTS,
+                        'sante': DocumentType.SANTE,
+                        'santé': DocumentType.SANTE,
+                        'medical': DocumentType.SANTE,
+                        'emploi': DocumentType.EMPLOI,
+                        'travail': DocumentType.EMPLOI,
+                        'paie': DocumentType.EMPLOI,
+                        'autre': DocumentType.NON_CLASSES,
+                        'non_classes': DocumentType.NON_CLASSES
                     }
                     
-                    doc_type = type_mapping.get(doc_type_str, DocumentType.AUTRE)
+                    doc_type = type_mapping.get(doc_type_str, DocumentType.NON_CLASSES)
                 except Exception:
-                    doc_type = DocumentType.AUTRE
+                    doc_type = DocumentType.NON_CLASSES
                 
                 confidence = float(classification_data.get("confidence", 0.5))
                 confidence = max(0.0, min(1.0, confidence))  # Clamp entre 0 et 1
@@ -356,7 +552,7 @@ Analyse en JSON :
                 if attempt < MISTRAL_MAX_RETRIES:
                     continue
                 else:
-                    return {"type": DocumentType.AUTRE, "confidence": 0.1, "reasoning": "Timeout Mistral"}
+                    return {"type": DocumentType.NON_CLASSES, "confidence": 0.1, "reasoning": "Timeout Mistral"}
                     
             except Exception as e:
                 self.logger.error(f"Erreur classification tentative {attempt + 1}: {e}")
@@ -364,10 +560,10 @@ Analyse en JSON :
                     await asyncio.sleep(2)  # Pause plus longue en cas d'erreur
                     continue
                 else:
-                    return {"type": DocumentType.AUTRE, "confidence": 0.0, "reasoning": f"Erreur: {str(e)}"}
+                    return {"type": DocumentType.NON_CLASSES, "confidence": 0.0, "reasoning": f"Erreur: {str(e)}"}
         
         # Fallback final si toutes les tentatives échouent
-        return {"type": DocumentType.AUTRE, "confidence": 0.0, "reasoning": "Toutes tentatives échouées"}
+        return {"type": DocumentType.NON_CLASSES, "confidence": 0.0, "reasoning": "Toutes tentatives échouées"}
     
     async def _extract_key_information(self, text: str) -> Dict[str, Any]:
         """Extrait les informations clés du document avec parsing robuste"""
@@ -518,56 +714,143 @@ Analyse en JSON :
                 verbose=False
             )
             
-            self.logger.info(f"Réponse Mistral brute: {response[:100]}...")
+            self.logger.info(f"Réponse Mistral brute: {response[:150]}...")
             
-            # Nettoyer la réponse en profondeur
+            # Nettoyer la réponse en profondeur - RENFORCÉ
             summary = response.strip()
             
-            # Supprimer le prompt entier qui peut être répété
-            prompt_phrases = [
+            # 1. Supprimer prompts français ET anglais
+            prompt_phrases_fr = [
                 "Tu es un expert en synthèse documentaire",
-                "Créé un résumé concis",
+                "Créé un résumé concis", 
                 "Document :",
                 "Résumé en 2-3 phrases",
                 "maximum, en français professionnel",
                 "sans reprendre le prompt"
             ]
             
-            for phrase in prompt_phrases:
+            prompt_phrases_en = [
+                "You are an expert",
+                "Create a summary",
+                "Summarize this document",
+                "Please provide",
+                "Generate a summary",
+                "Document analysis",
+                "Summary:",
+                "Analysis:",
+                "The document"
+            ]
+            
+            all_prompt_phrases = prompt_phrases_fr + prompt_phrases_en
+            
+            for phrase in all_prompt_phrases:
                 if phrase in summary:
                     parts = summary.split(phrase)
                     summary = parts[-1].strip()
             
-            # Supprimer les éventuels préfixes et suffixes
-            prefixes_to_remove = [":", "Document", "Résumé", "-"]
+            # 2. Supprimer patterns anglais détectés
+            english_patterns = [
+                r"Summary:.*?(?=\n|\.|$)",
+                r"Analysis:.*?(?=\n|\.|$)",
+                r"The document.*?(?=\n|\.|$)",
+                r"This is.*?(?=\n|\.|$)",
+                r"Based on.*?(?=\n|\.|$)"
+            ]
+            
+            import re
+            for pattern in english_patterns:
+                summary = re.sub(pattern, "", summary, flags=re.IGNORECASE)
+            
+            # 3. Supprimer préfixes/suffixes
+            prefixes_to_remove = [":", "Document", "Résumé", "-", "Summary", "Analysis"]
             for prefix in prefixes_to_remove:
                 if summary.startswith(prefix):
                     summary = summary[len(prefix):].strip()
             
-            # Supprimer les répétitions de texte original
+            # 4. Supprimer répétitions texte original
             if len(summary) > 200 and clean_text[:50] in summary:
-                # Le résumé contient le texte original, on extrait seulement la fin
                 summary_start = summary.rfind(clean_text[:50])
                 if summary_start > 0:
                     summary = summary[summary_start + len(clean_text[:50]):].strip()
             
-            # Nettoyer les lignes vides et les caractères indésirables
+            # 5. Nettoyer lignes vides et caractères indésirables
             summary = ' '.join(summary.split())
             
-            # Si le résumé contient encore des fragments du prompt, le raccourcir
-            if any(p in summary.lower() for p in ["expert", "analyse", "document :", "résumé"]):
+            # 6. Filtrage avancé français uniquement
+            french_indicators = ["le", "la", "les", "de", "du", "des", "ce", "cette", "est", "sont", "avec", "pour", "dans"]
+            english_indicators = ["the", "and", "this", "that", "with", "for", "in", "is", "are", "was", "were"]
+            
+            summary_lower = summary.lower()
+            french_count = sum(1 for word in french_indicators if word in summary_lower)
+            english_count = sum(1 for word in english_indicators if word in summary_lower)
+            
+            # Si plus d'anglais que de français, regenerer avec prompt renforcé
+            if english_count > french_count and len(summary) > 20:
+                self.logger.warning("Résumé détecté en anglais, tentative regeneration française")
+                
+                # Prompt de secours ultra-strict français
+                fallback_prompt = f"""FRANÇAIS OBLIGATOIRE. Voici un document : {clean_text[:800]}
+
+Écris 2 phrases en français pour décrire ce document. Commence immédiatement, pas de préambule :"""
+                
+                try:
+                    french_response = generate(
+                        self.model,
+                        self.tokenizer,
+                        prompt=fallback_prompt,
+                        max_tokens=100,
+                        verbose=False
+                    )
+                    
+                    # Nettoyage simple pour fallback
+                    french_summary = french_response.strip()
+                    if french_summary and len(french_summary) > 20:
+                        # Vérification rapide que c'est plus français
+                        fr_check = sum(1 for word in ["le", "la", "les", "de", "du", "est", "sont"] if word in french_summary.lower())
+                        en_check = sum(1 for word in ["the", "and", "this", "that", "is", "are"] if word in french_summary.lower())
+                        
+                        if fr_check >= en_check:
+                            self.logger.info("✅ Regeneration française réussie")
+                            summary = french_summary[:400]
+                        else:
+                            raise Exception("Regeneration encore en anglais")
+                    else:
+                        raise Exception("Regeneration trop courte")
+                        
+                except Exception as e:
+                    self.logger.warning(f"Regeneration échouée: {e}, utilisation résumé français de secours")
+                    summary = f"Document analysé contenant des informations importantes. Contenu traité avec {len(clean_text.split())} mots."
+            
+            # 7. Nettoyage final fragments prompt
+            if any(p in summary.lower() for p in ["expert", "analyse", "document :", "résumé", "summary", "analysis"]):
                 sentences = summary.split('.')
                 clean_sentences = []
                 for sentence in sentences:
-                    if not any(p in sentence.lower() for p in ["expert", "analyse document", "tu es"]):
-                        clean_sentences.append(sentence.strip())
+                    sentence_lower = sentence.lower().strip()
+                    if not any(p in sentence_lower for p in ["expert", "analyse document", "tu es", "you are", "create", "generate", "summary", "analysis"]):
+                        if sentence.strip():
+                            clean_sentences.append(sentence.strip())
                 summary = '. '.join(clean_sentences).strip()
                 if summary and not summary.endswith('.'):
                     summary += '.'
             
-            # Validation finale
+            # 8. Validation finale et logs de debug
             if len(summary) < 10:
+                self.logger.warning("Résumé trop court après nettoyage, génération résumé de secours")
                 summary = f"Document analysé contenant {len(text.split())} mots. Contenu principal extrait."
+            
+            # Logs de debug détaillés
+            self.logger.info(f"Résumé final nettoyé: {summary[:100]}...")
+            self.logger.info(f"Longueur résumé: {len(summary)} caractères")
+            
+            # Validation langue française
+            french_count = sum(1 for word in ["le", "la", "les", "de", "du", "des", "est", "sont"] if word in summary.lower())
+            english_count = sum(1 for word in ["the", "and", "this", "that", "is", "are"] if word in summary.lower())
+            
+            if english_count > 0:
+                self.logger.warning(f"⚠️ Résumé contient possiblement de l'anglais (indicateurs EN: {english_count}, FR: {french_count})")
+            else:
+                self.logger.info(f"✅ Résumé validé français (indicateurs FR: {french_count})")
             
             return summary[:500]  # Limiter la taille
             
