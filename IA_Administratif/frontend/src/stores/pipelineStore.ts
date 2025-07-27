@@ -61,7 +61,7 @@ export const usePipelineStore = create<PipelineStore>()(
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ pipeline_type: pipeline }),
+            body: JSON.stringify({ pipeline: pipeline }),
           });
 
           if (!response.ok) {
@@ -125,14 +125,34 @@ export const usePipelineStore = create<PipelineStore>()(
           if (response.ok) {
             const data = await response.json();
             
+            // Debug logging
+            console.log('🔄 Pipeline status check:', {
+              mistral_service_status: data.mistral_service_status,
+              donut_service_status: data.donut_service_status,
+              active_pipeline: data.active_pipeline,
+              timestamp: new Date().toISOString()
+            });
+            
+            // Mapping des statuts API vers statuts frontend
+            const mapStatus = (serviceStatus: string) => {
+              if (serviceStatus === 'available') return 'active';
+              if (serviceStatus === 'unavailable') return 'inactive';
+              return 'unknown';
+            };
+            
+            const mistralStatus = mapStatus(data.mistral_service_status || 'unknown');
+            const donutStatus = mapStatus(data.donut_service_status || 'unknown');
+            
+            console.log('📊 Mapped statuses:', { mistral: mistralStatus, donut: donutStatus });
+            
             set(state => ({
               availablePipelines: {
                 mistral: {
-                  status: data.mistral_status === 'healthy' ? 'active' : 'inactive',
+                  status: mistralStatus,
                   lastCheck: now,
                 },
                 donut: {
-                  status: data.donut_status === 'healthy' ? 'active' : 'inactive', 
+                  status: donutStatus, 
                   lastCheck: now,
                 },
               },
@@ -140,8 +160,11 @@ export const usePipelineStore = create<PipelineStore>()(
 
             // Mettre à jour le pipeline actif si spécifié dans la réponse
             if (data.active_pipeline && data.active_pipeline !== get().activePipeline) {
+              console.log(`🔄 Pipeline switch detected: ${get().activePipeline} → ${data.active_pipeline}`);
               set({ activePipeline: data.active_pipeline });
             }
+          } else {
+            console.warn('❌ Pipeline status check failed:', response.status, response.statusText);
           }
         } catch (error) {
           console.warn('Erreur lors de la vérification du statut des pipelines:', error);

@@ -577,29 +577,29 @@ export function FolderStructure({
         </div>
 
         {/* Stats */}
-        {folderData && (
+        {folderData && folderData.metadata && folderData.stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div className="bg-blue-50 p-3 rounded-lg">
               <div className="text-lg font-semibold text-blue-600">
-                {folderData.metadata.totalDocuments}
+                {folderData.metadata.totalDocuments ?? 0}
               </div>
               <div className="text-xs text-blue-600">Documents</div>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
               <div className="text-lg font-semibold text-green-600">
-                {folderData.metadata.totalFolders}
+                {folderData.metadata.totalFolders ?? 0}
               </div>
               <div className="text-xs text-green-600">Dossiers</div>
             </div>
             <div className="bg-purple-50 p-3 rounded-lg">
               <div className="text-lg font-semibold text-purple-600">
-                {folderData.metadata.autoCreatedFolders}
+                {folderData.metadata.autoCreatedFolders ?? 0}
               </div>
               <div className="text-xs text-purple-600">Auto-créés</div>
             </div>
             <div className="bg-gray-50 p-3 rounded-lg">
               <div className="text-lg font-semibold text-gray-600">
-                {folderData.stats.organizationLevel}%
+                {folderData.stats.organizationLevel ?? 0}%
               </div>
               <div className="text-xs text-gray-600">Organisation</div>
             </div>
@@ -607,7 +607,7 @@ export function FolderStructure({
         )}
 
         {/* Pipeline indicator */}
-        {folderData && (
+        {folderData && folderData.stats && (
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
               {folderData.stats.pipeline === 'donut' ? (
@@ -648,7 +648,7 @@ export function FolderStructure({
       </div>
 
       {/* Footer */}
-      {folderData && (
+      {folderData && folderData.stats && (
         <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center space-x-4">
@@ -662,7 +662,7 @@ export function FolderStructure({
               </div>
             </div>
             <div>
-              Efficacité: {folderData.stats.efficiency}%
+              Efficacité: {folderData.stats.efficiency ?? 0}%
             </div>
           </div>
         </div>

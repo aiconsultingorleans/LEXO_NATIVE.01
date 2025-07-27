@@ -262,12 +262,8 @@ async def get_donut_folder_structure(
         # Proxy vers service DONUT pour structure
         structure = await proxy_to_donut("organization/structure", method="GET")
         
-        return JSONResponse(content={
-            "success": True,
-            "structure": structure,
-            "generated_by": "donut_dynamic_classification",
-            "last_updated": datetime.now().isoformat()
-        })
+        # Retourner directement la structure DONUT sans wrapper
+        return JSONResponse(content=structure)
         
     except Exception as e:
         logger.error(f"Erreur récupération structure DONUT: {e}")

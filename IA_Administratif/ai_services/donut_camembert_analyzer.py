@@ -10,7 +10,7 @@ Approche: 100% non-destructive, coexistence avec pipeline existant
 import os
 import asyncio
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 from datetime import datetime
 
 import uvicorn
@@ -295,6 +295,135 @@ async def analyze_document(request: DocumentAnalysisRequest):
         error="Analyse documentaire implémentée dans Étape 3"
     )
 
+@app.get("/organization/structure")
+async def get_organization_structure():
+    """
+    Obtenir l'arborescence intelligente DONUT
+    
+    Retourne la structure hiérarchique des dossiers organisés automatiquement
+    par le pipeline DONUT avec classification dynamique.
+    """
+    try:
+        # Import dynamique pour éviter les erreurs au démarrage
+        from utils.document_organizer import DocumentOrganizer
+        
+        # Créer instance organizer avec chemin OCR
+        organizer = DocumentOrganizer(ocr_base_path="/Users/stephaneansel/Documents/LEXO_v1/IA_Administratif/OCR")
+        
+        # Obtenir structure actuelle
+        structure_data = organizer.get_folder_structure(include_stats=True)
+        
+        if "error" in structure_data:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Erreur scan structure: {structure_data['error']}"
+            )
+        
+        # Formater pour compatibilité frontend
+        formatted_structure = {
+            "tree": _convert_to_frontend_format(structure_data["structure"]),
+            "metadata": {
+                "totalFolders": _count_folders(structure_data["structure"]),
+                "totalDocuments": _count_documents(structure_data["structure"]),
+                "autoCreatedFolders": _count_auto_folders(structure_data["structure"]),
+                "categories": list(structure_data.get("emitter_counts", {}).keys()),
+                "emitters": _extract_emitters(structure_data.get("emitter_counts", {})),
+                "lastUpdate": datetime.now().isoformat()
+            },
+            "stats": {
+                "pipeline": "donut",
+                "organizationLevel": _calculate_organization_level(structure_data),
+                "efficiency": _calculate_efficiency(structure_data)
+            }
+        }
+        
+        return formatted_structure
+        
+    except Exception as e:
+        logger.error(f"Erreur récupération structure DONUT: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur organisation DONUT: {str(e)}"
+        )
+
+def _convert_to_frontend_format(structure: Dict[str, Any]) -> Dict[str, Any]:
+    """Convertit la structure organizer vers format frontend"""
+    if not structure:
+        return {
+            "name": "OCR",
+            "path": "/OCR", 
+            "type": "folder",
+            "children": []
+        }
+    
+    return {
+        "name": structure.get("name", "OCR"),
+        "path": structure.get("path", "/OCR"),
+        "type": structure.get("type", "folder"),
+        "documentCount": structure.get("file_count", 0),
+        "isAutoCreated": structure.get("auto_created", False),
+        "children": [
+            _convert_to_frontend_format(child) 
+            for child in structure.get("children", [])
+        ] if structure.get("children") else []
+    }
+
+def _count_folders(structure: Dict[str, Any]) -> int:
+    """Compte le nombre total de dossiers"""
+    if not structure or structure.get("type") != "folder":
+        return 0
+    
+    count = 1  # Ce dossier
+    for child in structure.get("children", []):
+        if child.get("type") == "folder":
+            count += _count_folders(child)
+    
+    return count
+
+def _count_documents(structure: Dict[str, Any]) -> int:
+    """Compte le nombre total de documents"""
+    if not structure:
+        return 0
+    
+    count = structure.get("file_count", 0)
+    for child in structure.get("children", []):
+        count += _count_documents(child)
+    
+    return count
+
+def _count_auto_folders(structure: Dict[str, Any]) -> int:
+    """Compte les dossiers auto-créés"""
+    if not structure or structure.get("type") != "folder":
+        return 0
+    
+    count = 1 if structure.get("auto_created", False) else 0
+    for child in structure.get("children", []):
+        if child.get("type") == "folder":
+            count += _count_auto_folders(child)
+    
+    return count
+
+def _extract_emitters(emitter_counts: Dict[str, Any]) -> List[str]:
+    """Extrait la liste des émetteurs"""
+    emitters = []
+    for category_emitters in emitter_counts.values():
+        emitters.extend(category_emitters.keys())
+    return list(set(emitters))
+
+def _calculate_organization_level(structure_data: Dict[str, Any]) -> int:
+    """Calcule le niveau d'organisation (pourcentage)"""
+    stats = structure_data.get("statistics", {})
+    total_docs = stats.get("total_documents", 1)
+    organized_docs = stats.get("documents_organized", 0)
+    return int((organized_docs / total_docs) * 100) if total_docs > 0 else 0
+
+def _calculate_efficiency(structure_data: Dict[str, Any]) -> int:
+    """Calcule l'efficacité du classement"""
+    stats = structure_data.get("statistics", {})
+    auto_folders = stats.get("auto_created_folders", 0)
+    total_folders = stats.get("total_folders", 1)
+    return int((auto_folders / total_folders) * 100) if total_folders > 0 else 85
+
 @app.get("/")
 async def root():
     """Page d'accueil du service"""
@@ -305,7 +434,8 @@ async def root():
         "next_step": "Implémentation Service Core (Étape 3)",
         "endpoints": {
             "health": "/health",
-            "models": "/models/status",
+            "models": "/models/status", 
+            "organization/structure": "/organization/structure",
             "docs": "/docs"
         }
     }
