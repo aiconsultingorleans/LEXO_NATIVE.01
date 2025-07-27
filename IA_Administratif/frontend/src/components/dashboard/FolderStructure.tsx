@@ -362,9 +362,9 @@ export function FolderStructure({
           className={cn(
             'flex items-center py-2 px-3 rounded-lg transition-all duration-150 relative',
             {
-              'bg-blue-50 border border-blue-200': isExpanded && hasChildren,
-              'hover:bg-gray-50 cursor-pointer': hasChildren && !isEditing,
-              'bg-purple-50 border border-purple-200': isEditing,
+              'bg-blue-900/20 border border-blue-600/50': isExpanded && hasChildren,
+              'hover:bg-hover-background cursor-pointer': hasChildren && !isEditing,
+              'bg-purple-900/20 border border-purple-600/50': isEditing,
             }
           )}
           style={{ marginLeft: `${indentation}px` }}
@@ -407,7 +407,7 @@ export function FolderStructure({
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm font-medium bg-white border border-purple-300 rounded px-2 py-1 flex-1 min-w-0"
+                  className="text-sm font-medium bg-card-background border border-purple-600/50 rounded px-2 py-1 flex-1 min-w-0 text-foreground"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveEdit();
@@ -416,13 +416,13 @@ export function FolderStructure({
                 />
                 <button
                   onClick={handleSaveEdit}
-                  className="p-1 text-green-600 hover:bg-green-100 rounded"
+                  className="p-1 text-green-400 hover:bg-green-900/20 rounded"
                 >
                   <Check className="h-4 w-4" />
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-400 hover:bg-red-900/20 rounded"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -433,7 +433,7 @@ export function FolderStructure({
                   <span 
                     className={cn(
                       'text-sm font-medium truncate',
-                      node.type === 'folder' ? 'text-gray-900' : 'text-gray-600'
+                      node.type === 'folder' ? 'text-foreground' : 'text-foreground-secondary'
                     )}
                     onClick={() => hasChildren && !isEditing && toggleExpanded(node.path)}
                   >
@@ -442,7 +442,7 @@ export function FolderStructure({
 
                   {/* Auto-created badge */}
                   {node.isAutoCreated && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-900/30 text-purple-300 border border-purple-800/30">
                       <Sparkles className="h-3 w-3 mr-1" />
                       Auto
                     </span>
@@ -450,7 +450,7 @@ export function FolderStructure({
 
                   {/* Document count */}
                   {node.documentCount !== undefined && node.documentCount > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-background-tertiary text-foreground-secondary border border-card-border">
                       <Hash className="h-3 w-3 mr-1" />
                       {node.documentCount}
                     </span>
@@ -461,12 +461,12 @@ export function FolderStructure({
                 {showDetails && (node.emitter || node.category) && (
                   <div className="flex items-center space-x-2 mt-1">
                     {node.emitter && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-foreground-muted">
                         Émetteur: {node.emitter}
                       </span>
                     )}
                     {node.category && (
-                      <span className="text-xs text-blue-600">
+                      <span className="text-xs text-blue-400">
                         • {node.category}
                       </span>
                     )}
@@ -484,20 +484,20 @@ export function FolderStructure({
                   e.stopPropagation();
                   setShowActions(showActionsMenu ? null : node.path);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-all duration-150"
+                className="opacity-0 group-hover:opacity-100 p-1 text-foreground-muted hover:text-foreground hover:bg-hover-background rounded transition-all duration-150"
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
 
               {/* Actions Dropdown */}
               {showActionsMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-32">
+                <div className="absolute right-0 top-full mt-1 bg-card-background border border-card-border rounded-lg shadow-lg z-10 min-w-32">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleStartEdit(node.path, node.name);
                     }}
-                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-foreground hover:bg-hover-background rounded-t-lg"
                   >
                     <Edit2 className="h-4 w-4" />
                     <span>Renommer</span>
@@ -507,7 +507,7 @@ export function FolderStructure({
                       e.stopPropagation();
                       handleDeleteFolder(node.path, node.name);
                     }}
-                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 rounded-b-lg"
                   >
                     <Trash2 className="h-4 w-4" />
                     <span>Supprimer</span>
@@ -558,7 +558,7 @@ export function FolderStructure({
   return (
     <div className={cn('bg-card-background rounded-xl shadow-lg border border-card-border', className)}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-card-border">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -579,29 +579,29 @@ export function FolderStructure({
         {/* Stats */}
         {folderData && folderData.metadata && folderData.stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="text-lg font-semibold text-blue-600">
+            <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-800/30">
+              <div className="text-lg font-semibold text-blue-300">
                 {folderData.metadata.totalDocuments ?? 0}
               </div>
-              <div className="text-xs text-blue-600">Documents</div>
+              <div className="text-xs text-blue-400">Documents</div>
             </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-lg font-semibold text-green-600">
+            <div className="bg-green-900/20 p-3 rounded-lg border border-green-800/30">
+              <div className="text-lg font-semibold text-green-300">
                 {folderData.metadata.totalFolders ?? 0}
               </div>
-              <div className="text-xs text-green-600">Dossiers</div>
+              <div className="text-xs text-green-400">Dossiers</div>
             </div>
-            <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="text-lg font-semibold text-purple-600">
+            <div className="bg-purple-900/20 p-3 rounded-lg border border-purple-800/30">
+              <div className="text-lg font-semibold text-purple-300">
                 {folderData.metadata.autoCreatedFolders ?? 0}
               </div>
-              <div className="text-xs text-purple-600">Auto-créés</div>
+              <div className="text-xs text-purple-400">Auto-créés</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-lg font-semibold text-gray-600">
+            <div className="bg-background-tertiary p-3 rounded-lg border border-card-border">
+              <div className="text-lg font-semibold text-foreground">
                 {folderData.stats.organizationLevel ?? 0}%
               </div>
-              <div className="text-xs text-gray-600">Organisation</div>
+              <div className="text-xs text-foreground-secondary">Organisation</div>
             </div>
           </div>
         )}
@@ -611,16 +611,16 @@ export function FolderStructure({
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
               {folderData.stats.pipeline === 'donut' ? (
-                <Lightbulb className="h-4 w-4 text-purple-600" />
+                <Lightbulb className="h-4 w-4 text-purple-400" />
               ) : (
-                <Bot className="h-4 w-4 text-blue-600" />
+                <Bot className="h-4 w-4 text-blue-400" />
               )}
-              <span className="text-gray-600">
+              <span className="text-foreground-secondary">
                 Organisé par {folderData.stats.pipeline === 'donut' ? 'DONUT' : 'Mistral MLX'}
               </span>
             </div>
             {lastUpdate > 0 && (
-              <span className="text-gray-500">
+              <span className="text-foreground-muted">
                 {new Date(lastUpdate).toLocaleTimeString()}
               </span>
             )}
@@ -632,16 +632,16 @@ export function FolderStructure({
       <div className="p-4 max-h-96 overflow-y-auto">
         {loading && !folderData ? (
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mr-2" />
-            <span className="text-gray-500">Chargement de la structure...</span>
+            <RefreshCw className="h-6 w-6 animate-spin text-foreground-muted mr-2" />
+            <span className="text-foreground-secondary">Chargement de la structure...</span>
           </div>
         ) : folderData ? (
           <div className="space-y-1">
             {renderFolderNode(folderData.tree)}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <Folder className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+          <div className="text-center py-8 text-foreground-secondary">
+            <Folder className="h-8 w-8 text-foreground-muted mx-auto mb-2" />
             <p className="text-sm">Aucune structure disponible</p>
           </div>
         )}
@@ -649,15 +649,15 @@ export function FolderStructure({
 
       {/* Footer */}
       {folderData && folderData.stats && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="p-4 border-t border-card-border bg-background-secondary rounded-b-xl">
+          <div className="flex items-center justify-between text-xs text-foreground-muted">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
-                <Sparkles className="h-3 w-3 text-purple-500" />
+                <Sparkles className="h-3 w-3 text-purple-400" />
                 <span>Auto-créé</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Hash className="h-3 w-3 text-gray-400" />
+                <Hash className="h-3 w-3 text-foreground-muted" />
                 <span>Nb. documents</span>
               </div>
             </div>

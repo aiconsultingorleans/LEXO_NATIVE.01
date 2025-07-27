@@ -23,13 +23,13 @@ const DocumentsList = lazy(() => import('@/components/documents/DocumentsList').
 
 // Composants de loading pour les composants lazy
 const DocumentUploadSkeleton = () => (
-  <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+  <div className="animate-pulse bg-background-secondary h-32 rounded-lg border border-card-border"></div>
 );
 
 const DocumentsListSkeleton = () => (
   <div className="animate-pulse space-y-4">
     {[1, 2, 3].map(i => (
-      <div key={i} className="bg-gray-200 h-16 rounded-lg"></div>
+      <div key={i} className="bg-background-secondary h-16 rounded-lg border border-card-border"></div>
     ))}
   </div>
 );
@@ -661,15 +661,15 @@ function DashboardContent() {
                 </span>
               </div>
             </div>
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-foreground-muted space-y-1">
               {systemStatus.lastCheck && (
                 <div className="flex items-center space-x-2">
                   <span>Système vérifié: {systemStatus.lastCheck}</span>
-                  <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded text-xs">
+                  <span className="bg-background-tertiary text-foreground-secondary px-1 py-0.5 rounded text-xs border border-card-border">
                     🔄 {systemStatus.pollInterval/1000}s
                   </span>
                   {systemStatus.stableCount >= 5 && (
-                    <span className="bg-green-100 text-green-700 px-1 py-0.5 rounded text-xs">
+                    <span className="bg-green-900/20 text-green-300 px-1 py-0.5 rounded text-xs border border-green-800/30">
                       ✅ Stable
                     </span>
                   )}
@@ -679,7 +679,7 @@ function DashboardContent() {
                 <div className="flex items-center space-x-2">
                   <span>Stats: {new Date(lastUpdate).toLocaleTimeString()}</span>
                   {isFromCache && (
-                    <span className="bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-xs">
+                    <span className="bg-blue-900/20 text-blue-300 px-1 py-0.5 rounded text-xs border border-blue-800/30">
                       📄 Cache
                     </span>
                   )}
@@ -688,7 +688,7 @@ function DashboardContent() {
             </div>
           </div>
           {systemStatus.mistral === 'unavailable' && (
-            <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+            <div className="mt-2 text-xs text-yellow-300 bg-yellow-900/20 p-2 rounded border border-yellow-800/30">
               ⚠️ Mode fallback actif : OCR seul disponible (sans enrichissement IA)
             </div>
           )}
@@ -712,13 +712,13 @@ function DashboardContent() {
           {compactUploadFiles.length > 0 && (
             <div className="mt-4 space-y-2">
               {compactUploadFiles.map(file => (
-                <div key={file.id} className="flex items-center justify-between bg-background-secondary/50 p-2 rounded-lg">
+                <div key={file.id} className="flex items-center justify-between bg-background-tertiary/80 p-2 rounded-lg border border-card-border">
                   <div className="flex items-center space-x-2 flex-1">
                     <FileText className="h-4 w-4 text-gray-400" />
                     <div className="flex-1">
                       {/* Nom du fichier */}
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-700 truncate max-w-32">{file.name}</span>
+                        <span className="text-xs text-foreground truncate max-w-32">{file.name}</span>
                       </div>
                       
                       {/* Barre de progression animée */}
@@ -738,11 +738,11 @@ function DashboardContent() {
                       {/* Fallback pour statut sans animation */}
                       {(file.status === 'uploading' || file.status === 'processing') && !file.isAnimating && (
                         <div className="mt-1">
-                          <div className="text-xs text-gray-500 mb-1">
+                          <div className="text-xs text-foreground-secondary mb-1">
                             {file.status === 'uploading' ? '📤 Upload...' : '🔍 Traitement...'}
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div className="h-1.5 rounded-full bg-gray-400" style={{ width: '50%' }} />
+                          <div className="w-full bg-background-secondary rounded-full h-1.5 border border-card-border">
+                            <div className="h-1.5 rounded-full bg-primary" style={{ width: '50%' }} />
                           </div>
                         </div>
                       )}
@@ -754,21 +754,21 @@ function DashboardContent() {
                     <div className="flex flex-col ml-2">
                       <span className="text-xs text-green-500">✓ Terminé</span>
                       {file.result && typeof file.result === 'object' && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-foreground-secondary mt-1">
                           <div className="flex items-center space-x-2">
                             {(file.result as any).category && (file.result as any).category !== 'non_classes' && (
-                              <span className="bg-blue-100 text-blue-800 px-1 rounded text-xs">
+                              <span className="bg-blue-900/20 text-blue-300 px-1 rounded text-xs border border-blue-800/30">
                                 📂 {(file.result as any).category}
                               </span>
                             )}
                             {(file.result as any).confidence_score && (
-                              <span className="bg-green-100 text-green-800 px-1 rounded text-xs">
+                              <span className="bg-green-900/20 text-green-300 px-1 rounded text-xs border border-green-800/30">
                                 {((file.result as any).confidence_score * 100).toFixed(0)}%
                               </span>
                             )}
                           </div>
                           {(file.result as any).summary && (
-                            <div className="text-xs text-gray-500 mt-1 max-w-40 truncate">
+                            <div className="text-xs text-foreground-muted mt-1 max-w-40 truncate">
                               💬 {(file.result as any).summary}
                             </div>
                           )}
@@ -787,7 +787,7 @@ function DashboardContent() {
                       e.stopPropagation();
                       removeCompactFile(file.id);
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-foreground-muted hover:text-foreground transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -974,8 +974,8 @@ function DashboardContent() {
         {/* Loading skeleton for secondary content */}
         {!showSecondaryContent && !loading && (
           <div className="space-y-6">
-            <div className="animate-pulse bg-gray-200 h-32 rounded-xl"></div>
-            <div className="animate-pulse bg-gray-200 h-48 rounded-xl"></div>
+            <div className="animate-pulse bg-background-secondary h-32 rounded-xl border border-card-border"></div>
+            <div className="animate-pulse bg-background-secondary h-48 rounded-xl border border-card-border"></div>
           </div>
         )}
       </div>

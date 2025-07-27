@@ -254,7 +254,7 @@ export function PerformanceIndicators({
   return (
     <div className={cn('bg-card-background rounded-xl border border-card-border', className)}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-card-border">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
@@ -262,7 +262,7 @@ export function PerformanceIndicators({
           </h3>
           <div className="flex items-center space-x-2">
             {showTimeRange && (
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center space-x-1 bg-background-tertiary rounded-lg p-1 border border-card-border">
                 {(['1h', '24h', '7d'] as const).map((range) => (
                   <button
                     key={range}
@@ -270,8 +270,8 @@ export function PerformanceIndicators({
                     className={cn(
                       'px-3 py-1 text-xs font-medium rounded transition-all duration-150',
                       {
-                        'bg-white text-primary shadow-sm': timeRange === range,
-                        'text-gray-600 hover:text-gray-800': timeRange !== range,
+                        'bg-card-background text-primary shadow-sm border border-primary/20': timeRange === range,
+                        'text-foreground-secondary hover:text-foreground': timeRange !== range,
                       }
                     )}
                   >
@@ -298,12 +298,12 @@ export function PerformanceIndicators({
               'w-2 h-2 rounded-full',
               activePipeline === 'donut' ? 'bg-purple-500' : 'bg-blue-500'
             )}></div>
-            <span className="text-gray-600">
+            <span className="text-foreground-secondary">
               Pipeline actif: {activePipeline === 'donut' ? 'DONUT' : 'Mistral MLX'}
             </span>
           </div>
           {comparisonData && (
-            <span className="text-gray-500">
+            <span className="text-foreground-muted">
               {new Date(comparisonData[activePipeline].lastUpdate).toLocaleTimeString()}
             </span>
           )}
@@ -312,66 +312,66 @@ export function PerformanceIndicators({
 
       {loading && !comparisonData ? (
         <div className="flex items-center justify-center py-12">
-          <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mr-2" />
-          <span className="text-gray-500">Chargement des métriques...</span>
+          <RefreshCw className="h-6 w-6 animate-spin text-foreground-muted mr-2" />
+          <span className="text-foreground-secondary">Chargement des métriques...</span>
         </div>
       ) : comparisonData ? (
         <div className="p-6 space-y-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-800/30">
               <div className="flex items-center justify-between mb-2">
-                <Target className="h-5 w-5 text-blue-600" />
+                <Target className="h-5 w-5 text-blue-400" />
                 {getWinnerMetric('accuracy') === 'donut' && (
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 )}
               </div>
-              <div className="text-lg font-semibold text-blue-900">
+              <div className="text-lg font-semibold text-blue-300">
                 {comparisonData[activePipeline].accuracy}%
               </div>
-              <div className="text-xs text-blue-600">Précision globale</div>
+              <div className="text-xs text-blue-400">Précision globale</div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-900/20 p-4 rounded-lg border border-green-800/30">
               <div className="flex items-center justify-between mb-2">
-                <Timer className="h-5 w-5 text-green-600" />
+                <Timer className="h-5 w-5 text-green-400" />
                 {getWinnerMetric('speed') === activePipeline && (
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 )}
               </div>
-              <div className="text-lg font-semibold text-green-900">
+              <div className="text-lg font-semibold text-green-300">
                 {comparisonData[activePipeline].processingTime}s
               </div>
-              <div className="text-xs text-green-600">Temps moyen</div>
+              <div className="text-xs text-green-400">Temps moyen</div>
             </div>
 
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-800/30">
               <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="h-5 w-5 text-purple-600" />
+                <CheckCircle className="h-5 w-5 text-purple-400" />
                 {getWinnerMetric('emitterDetection') === activePipeline && (
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 )}
               </div>
-              <div className="text-lg font-semibold text-purple-900">
+              <div className="text-lg font-semibold text-purple-300">
                 {comparisonData[activePipeline].emitterDetection}%
               </div>
-              <div className="text-xs text-purple-600">Détection émetteur</div>
+              <div className="text-xs text-purple-400">Détection émetteur</div>
             </div>
 
-            <div className="bg-orange-50 p-4 rounded-lg">
+            <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-800/30">
               <div className="flex items-center justify-between mb-2">
-                <Zap className="h-5 w-5 text-orange-600" />
+                <Zap className="h-5 w-5 text-orange-400" />
               </div>
-              <div className="text-lg font-semibold text-orange-900">
+              <div className="text-lg font-semibold text-orange-300">
                 {comparisonData[activePipeline].documentsProcessed}
               </div>
-              <div className="text-xs text-orange-600">Documents traités</div>
+              <div className="text-xs text-orange-400">Documents traités</div>
             </div>
           </div>
 
           {/* Comparison Chart */}
-          <div className="bg-white p-4 rounded-lg border">
-            <h4 className="text-sm font-medium text-gray-900 mb-4">Comparaison Mistral vs DONUT</h4>
+          <div className="bg-card-background p-4 rounded-lg border border-card-border">
+            <h4 className="text-sm font-medium text-foreground mb-4">Comparaison Mistral vs DONUT</h4>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={getComparisonBars()}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -390,8 +390,8 @@ export function PerformanceIndicators({
           </div>
 
           {/* Time Series */}
-          <div className="bg-white p-4 rounded-lg border">
-            <h4 className="text-sm font-medium text-gray-900 mb-4">Évolution dans le temps</h4>
+          <div className="bg-card-background p-4 rounded-lg border border-card-border">
+            <h4 className="text-sm font-medium text-foreground mb-4">Évolution dans le temps</h4>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={comparisonData.timeSeriesData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -417,8 +417,8 @@ export function PerformanceIndicators({
           </div>
 
           {/* Category Performance */}
-          <div className="bg-white p-4 rounded-lg border">
-            <h4 className="text-sm font-medium text-gray-900 mb-4">Performance par catégorie</h4>
+          <div className="bg-card-background p-4 rounded-lg border border-card-border">
+            <h4 className="text-sm font-medium text-foreground mb-4">Performance par catégorie</h4>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={getCategoryData()}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -432,8 +432,8 @@ export function PerformanceIndicators({
           </div>
         </div>
       ) : (
-        <div className="text-center py-12 text-gray-500">
-          <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+        <div className="text-center py-12 text-foreground-secondary">
+          <BarChart3 className="h-8 w-8 text-foreground-muted mx-auto mb-2" />
           <p className="text-sm">Aucune donnée de performance disponible</p>
         </div>
       )}

@@ -237,22 +237,22 @@ export function ComparativeResults({
 
     return (
       <div className={cn(
-        'bg-white border rounded-lg p-4 transition-all duration-200',
+        'bg-card-background border rounded-lg p-4 transition-all duration-200',
         {
-          'border-blue-300 bg-blue-50': result.pipeline === 'mistral' && isActive,
-          'border-purple-300 bg-purple-50': result.pipeline === 'donut' && isActive,
-          'border-gray-200': !isActive,
+          'border-blue-600/50 bg-blue-900/20': result.pipeline === 'mistral' && isActive,
+          'border-purple-600/50 bg-purple-900/20': result.pipeline === 'donut' && isActive,
+          'border-card-border': !isActive,
         }
       )}>
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             {result.pipeline === 'donut' ? (
-              <Lightbulb className="h-5 w-5 text-purple-600" />
+              <Lightbulb className="h-5 w-5 text-purple-400" />
             ) : (
-              <Bot className="h-5 w-5 text-blue-600" />
+              <Bot className="h-5 w-5 text-blue-400" />
             )}
-            <span className="font-medium text-sm">
+            <span className="font-medium text-sm text-foreground">
               {result.pipeline === 'donut' ? 'DONUT' : 'Mistral MLX'}
             </span>
             {isActive && (
@@ -264,11 +264,11 @@ export function ComparativeResults({
           <div className="flex items-center space-x-2">
             {showGoldStandard && getAccuracyStatus(result, comparison.goldStandard)}
             <span className={cn(
-              'text-xs font-medium px-2 py-1 rounded',
+              'text-xs font-medium px-2 py-1 rounded border',
               {
-                'bg-green-100 text-green-800': result.confidence >= 0.9,
-                'bg-yellow-100 text-yellow-800': result.confidence >= 0.7,
-                'bg-red-100 text-red-800': result.confidence < 0.7,
+                'bg-green-900/20 text-green-300 border-green-800/30': result.confidence >= 0.9,
+                'bg-yellow-900/20 text-yellow-300 border-yellow-800/30': result.confidence >= 0.7,
+                'bg-red-900/20 text-red-300 border-red-800/30': result.confidence < 0.7,
               }
             )}>
               {(result.confidence * 100).toFixed(1)}%
@@ -279,32 +279,32 @@ export function ComparativeResults({
         {/* Main Results */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center space-x-2">
-            <Tag className="h-4 w-4 text-gray-500" />
-            <span className="text-sm">
+            <Tag className="h-4 w-4 text-foreground-muted" />
+            <span className="text-sm text-foreground">
               <span className="font-medium">Catégorie:</span> {result.category}
             </span>
           </div>
           
           {result.emitter && (
             <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">
+              <User className="h-4 w-4 text-foreground-muted" />
+              <span className="text-sm text-foreground">
                 <span className="font-medium">Émetteur:</span> {result.emitter}
               </span>
             </div>
           )}
           
           <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-gray-500" />
-            <span className="text-sm">
+            <Clock className="h-4 w-4 text-foreground-muted" />
+            <span className="text-sm text-foreground">
               <span className="font-medium">Temps:</span> {result.processingTime}s
             </span>
           </div>
 
           {result.organizationPath && (
             <div className="flex items-center space-x-2">
-              <ArrowRight className="h-4 w-4 text-gray-500" />
-              <span className="text-xs text-gray-600 font-mono">
+              <ArrowRight className="h-4 w-4 text-foreground-muted" />
+              <span className="text-xs text-foreground-secondary font-mono">
                 {result.organizationPath}
               </span>
             </div>
@@ -313,16 +313,16 @@ export function ComparativeResults({
 
         {/* Summary */}
         {result.summary && (
-          <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 mb-3">
+          <div className="bg-background-secondary p-3 rounded text-sm text-foreground-secondary mb-3 border border-card-border">
             {result.summary}
           </div>
         )}
 
         {/* Details Toggle */}
-        <div className="border-t pt-3">
+        <div className="border-t border-card-border pt-3">
           <button
             onClick={() => toggleDetails(`${comparison.documentId}-${result.pipeline}`)}
-            className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800"
+            className="flex items-center space-x-2 text-sm text-foreground-secondary hover:text-foreground transition-colors"
           >
             {showDetails[`${comparison.documentId}-${result.pipeline}`] ? (
               <EyeOff className="h-4 w-4" />
@@ -340,12 +340,12 @@ export function ComparativeResults({
               {/* Entities */}
               {result.entities && result.entities.length > 0 && (
                 <div>
-                  <h5 className="text-xs font-medium text-gray-700 mb-2">Entités détectées:</h5>
+                  <h5 className="text-xs font-medium text-foreground mb-2">Entités détectées:</h5>
                   <div className="space-y-1">
                     {result.entities.map((entity, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs">
-                        <span>{entity.type}: {entity.value}</span>
-                        <span className="text-gray-500">{(entity.confidence * 100).toFixed(0)}%</span>
+                        <span className="text-foreground-secondary">{entity.type}: {entity.value}</span>
+                        <span className="text-foreground-muted">{(entity.confidence * 100).toFixed(0)}%</span>
                       </div>
                     ))}
                   </div>
@@ -355,10 +355,10 @@ export function ComparativeResults({
               {/* Errors */}
               {result.errors && result.errors.length > 0 && (
                 <div>
-                  <h5 className="text-xs font-medium text-red-700 mb-2">Erreurs:</h5>
+                  <h5 className="text-xs font-medium text-red-400 mb-2">Erreurs:</h5>
                   <div className="space-y-1">
                     {result.errors.map((error, idx) => (
-                      <div key={idx} className="text-xs text-red-600">
+                      <div key={idx} className="text-xs text-red-300">
                         • {error}
                       </div>
                     ))}
@@ -389,12 +389,12 @@ export function ComparativeResults({
   return (
     <div className={cn('bg-card-background rounded-xl border border-card-border', className)}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-card-border">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             Résultats comparatifs
-            {documentId && <span className="text-sm text-gray-500">- Document spécifique</span>}
+            {documentId && <span className="text-sm text-foreground-muted">- Document spécifique</span>}
           </h3>
           <Button
             variant="ghost"
@@ -411,20 +411,20 @@ export function ComparativeResults({
       <div className="p-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mr-2" />
-            <span className="text-gray-500">Chargement des comparaisons...</span>
+            <RefreshCw className="h-6 w-6 animate-spin text-foreground-muted mr-2" />
+            <span className="text-foreground-secondary">Chargement des comparaisons...</span>
           </div>
         ) : comparisons.length > 0 ? (
           <div className="space-y-6">
             {comparisons.map((comparison) => (
-              <div key={comparison.documentId} className="border border-gray-200 rounded-lg p-4">
+              <div key={comparison.documentId} className="border border-card-border rounded-lg p-4">
                 {/* Document Header */}
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-card-border">
                   <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-gray-500" />
+                    <FileText className="h-5 w-5 text-foreground-muted" />
                     <div>
-                      <h4 className="font-medium text-sm text-gray-900">{comparison.filename}</h4>
-                      <p className="text-xs text-gray-500">
+                      <h4 className="font-medium text-sm text-foreground">{comparison.filename}</h4>
+                      <p className="text-xs text-foreground-muted">
                         {new Date(comparison.uploadedAt).toLocaleString()}
                       </p>
                     </div>
@@ -432,7 +432,7 @@ export function ComparativeResults({
                   <div className="flex items-center space-x-2">
                     {getComparisonIcon(comparison.mistralResult, comparison.donutResult)}
                     {showGoldStandard && comparison.goldStandard && (
-                      <span className="bg-gold-100 text-gold-800 text-xs px-2 py-1 rounded">
+                      <span className="bg-yellow-900/20 text-yellow-300 text-xs px-2 py-1 rounded border border-yellow-800/30">
                         Gold Standard
                       </span>
                     )}
@@ -447,9 +447,9 @@ export function ComparativeResults({
 
                 {/* Gold Standard */}
                 {showGoldStandard && comparison.goldStandard && (
-                  <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <h5 className="text-sm font-medium text-yellow-800 mb-2">Standard de référence:</h5>
-                    <div className="text-sm text-yellow-700">
+                  <div className="mt-4 bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3">
+                    <h5 className="text-sm font-medium text-yellow-300 mb-2">Standard de référence:</h5>
+                    <div className="text-sm text-yellow-400">
                       <p>Catégorie: {comparison.goldStandard.category}</p>
                       {comparison.goldStandard.emitter && (
                         <p>Émetteur: {comparison.goldStandard.emitter}</p>
@@ -464,10 +464,10 @@ export function ComparativeResults({
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-500">
-            <Target className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+          <div className="text-center py-12 text-foreground-secondary">
+            <Target className="h-8 w-8 text-foreground-muted mx-auto mb-2" />
             <p className="text-sm">Aucune comparaison disponible</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-foreground-muted mt-1">
               {documentId 
                 ? 'Ce document n\'a pas encore été traité par les deux pipelines'
                 : 'Uploadez des documents pour voir les comparaisons'

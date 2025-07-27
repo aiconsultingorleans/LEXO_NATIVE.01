@@ -18,21 +18,21 @@ const pipelineConfig = {
     name: 'Mistral MLX',
     description: 'Pipeline principal - Apple Silicon optimisé',
     icon: Bot,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-900/20',
+    borderColor: 'border-blue-600/50',
     badge: 'Principal',
-    badgeColor: 'bg-blue-100 text-blue-800',
+    badgeColor: 'bg-blue-900/30 text-blue-300',
   },
   donut: {
     name: 'DONUT + CamemBERT',
     description: 'Pipeline alternatif - Classification dynamique',
     icon: Lightbulb,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200', 
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-900/20',
+    borderColor: 'border-purple-600/50', 
     badge: 'Alternatif',
-    badgeColor: 'bg-purple-100 text-purple-800',
+    badgeColor: 'bg-purple-900/30 text-purple-300',
   },
 } as const;
 
@@ -183,9 +183,9 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2">
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-red-700">
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-600/50 rounded-lg flex items-start space-x-2">
+          <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-red-300">
             <p className="font-medium">Erreur</p>
             <p>{error}</p>
           </div>
@@ -208,10 +208,10 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
                 'relative rounded-lg border-2 transition-all duration-300 cursor-pointer hover:shadow-md transform hover:scale-[1.02]',
                 {
                   [config.borderColor]: isActive,
-                  'border-gray-200': !isActive,
+                  'border-card-border': !isActive,
                   [config.bgColor]: isActive,
-                  'bg-gray-50': !isActive && !isAvailable,
-                  'bg-white': !isActive && isAvailable,
+                  'bg-background-secondary': !isActive && !isAvailable,
+                  'bg-card-background': !isActive && isAvailable,
                   'opacity-60': !isAvailable,
                   'ring-2 ring-primary/20': isLoading,
                   'animate-pulse': isLoading,
@@ -224,11 +224,11 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
                   <div className="flex items-start space-x-3 flex-1">
                     <div className={cn(
                       'p-2 rounded-lg flex-shrink-0',
-                      isActive ? config.bgColor : 'bg-gray-100'
+                      isActive ? config.bgColor : 'bg-background-tertiary'
                     )}>
                       <Icon className={cn(
                         'h-5 w-5',
-                        isActive ? config.color : 'text-gray-500'
+                        isActive ? config.color : 'text-foreground-muted'
                       )} />
                     </div>
                     
@@ -242,7 +242,7 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
                         </h4>
                         <span className={cn(
                           'text-xs px-2 py-0.5 rounded-full font-medium',
-                          isActive ? config.badgeColor : 'bg-gray-100 text-gray-600'
+                          isActive ? config.badgeColor : 'bg-background-tertiary text-foreground-muted border border-card-border'
                         )}>
                           {config.badge}
                         </span>
@@ -265,10 +265,10 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
                     <span className={cn(
                       'text-xs font-medium',
                       {
-                        'text-green-600': status === 'active' && isActive,
-                        'text-green-700': status === 'active' && !isActive,
-                        'text-red-600': status === 'inactive',
-                        'text-gray-500': status === 'unknown',
+                        'text-green-400': status === 'active' && isActive,
+                        'text-green-500': status === 'active' && !isActive,
+                        'text-red-400': status === 'inactive',
+                        'text-foreground-muted': status === 'unknown',
                       }
                     )}>
                       {getStatusText(pipeline)}
@@ -278,14 +278,14 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                      <div className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full"></div>
+                  <div className="mt-3 pt-3 border-t border-card-border">
+                    <div className="flex items-center space-x-2 text-xs text-foreground-secondary">
+                      <div className="animate-spin h-3 w-3 border-2 border-background-tertiary border-t-primary rounded-full"></div>
                       <span>
                         {pipeline === activePipeline ? 'Basculement en cours...' : 'Activation...'}
                       </span>
                     </div>
-                    <div className="mt-2 w-full bg-gray-200 rounded-full h-1">
+                    <div className="mt-2 w-full bg-background-secondary rounded-full h-1 border border-card-border">
                       <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
                     </div>
                   </div>
@@ -310,7 +310,7 @@ export function ModelToggle({ className, showLabels = true, size = 'md' }: Model
       </div>
 
       {/* Legend */}
-      <div className="mt-4 pt-3 border-t border-gray-200">
+      <div className="mt-4 pt-3 border-t border-card-border">
         <div className="flex items-center justify-between text-xs text-foreground-muted">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
