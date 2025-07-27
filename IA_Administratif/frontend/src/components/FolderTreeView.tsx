@@ -11,6 +11,7 @@ import {
   RefreshCw 
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useOCRFolders, FolderItem } from '@/hooks/useOCRFolders';
 
@@ -25,6 +26,24 @@ interface FolderTreeItemProps {
 function FolderTreeItem({ folder, level, isExpanded, onToggle, expandedFolders }: FolderTreeItemProps) {
   const hasChildren = folder.children && folder.children.length > 0;
   const indentClass = level > 0 ? `ml-${level * 4}` : '';
+  const router = useRouter();
+
+  const handleFolderClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (hasChildren) {
+      // Si le dossier a des enfants, toggle l'expansion
+      onToggle(folder.path);
+    } else {
+      // Si pas d'enfants, naviguer vers la page documents filtrée
+      router.push(`/documents?category=${encodeURIComponent(folder.name)}`);
+    }
+  };
+
+  const handleNavigateToCategory = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/documents?category=${encodeURIComponent(folder.name)}`);
+  };
 
   return (
     <div className="w-full">
@@ -35,7 +54,7 @@ function FolderTreeItem({ folder, level, isExpanded, onToggle, expandedFolders }
           'text-foreground-secondary hover:bg-hover-background hover:text-foreground',
           indentClass
         )}
-        onClick={() => hasChildren && onToggle(folder.path)}
+        onClick={handleFolderClick}
       >
         <div className="flex items-center min-w-0 flex-1">
           {/* Icône expand/collapse */}
@@ -69,12 +88,18 @@ function FolderTreeItem({ folder, level, isExpanded, onToggle, expandedFolders }
         </div>
 
         {/* Compteur de fichiers */}
-        <span className={cn(
-          "text-xs px-2 py-1 rounded-full font-medium transition-colors flex-shrink-0 ml-2",
-          "bg-background-tertiary text-foreground-muted group-hover:bg-hover-background group-hover:text-foreground"
-        )}>
-          {folder.count}
-        </span>
+        <div className="flex items-center space-x-1">
+          <span 
+            className={cn(
+              "text-xs px-2 py-1 rounded-full font-medium transition-colors flex-shrink-0 cursor-pointer",
+              "bg-background-tertiary text-foreground-muted group-hover:bg-hover-background group-hover:text-foreground"
+            )}
+            onClick={handleNavigateToCategory}
+            title={`Voir les ${folder.count} documents de ${folder.name}`}
+          >
+            {folder.count}
+          </span>
+        </div>
       </div>
 
       {/* Enfants (sous-dossiers) */}

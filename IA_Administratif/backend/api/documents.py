@@ -572,7 +572,7 @@ async def _move_to_category_folder(file_path: Path, category: str) -> str:
             'rib': 'rib',
             'contrats': 'contrats',
             'impots': 'impots',
-            'courriers': 'non_classes',  # Pas de dossier courriers, on met dans non_classes
+            'courriers': 'courriers',  # Dossier courriers maintenant disponible
             'cartes_transport': 'non_classes',  # Pas de dossier cartes_transport
             'documents_personnels': 'non_classes',  # Pas de dossier documents_personnels 
             'non_classes': 'non_classes'

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Calendar, Eye, Trash2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -44,6 +45,9 @@ export function DocumentsList({ refreshTrigger }: DocumentsListProps) {
   const [total, setTotal] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category');
+  
   const viewerModal = useModal();
   const confirmDialog = useConfirmDialog();
   const toast = useToast();
@@ -51,7 +55,14 @@ export function DocumentsList({ refreshTrigger }: DocumentsListProps) {
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/v1/documents?page=${page}&limit=10`, {
+      
+      // Construire l'URL avec le paramètre category si présent
+      let url = `http://localhost:8000/api/v1/documents?page=${page}&limit=10`;
+      if (category) {
+        url += `&category=${encodeURIComponent(category)}`;
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -70,7 +81,7 @@ export function DocumentsList({ refreshTrigger }: DocumentsListProps) {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, category]);
 
   useEffect(() => {
     fetchDocuments();
