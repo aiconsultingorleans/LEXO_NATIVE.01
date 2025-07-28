@@ -18,8 +18,46 @@ from models.document import Document, DocumentCategory
 from api.auth import get_current_user
 from services.ocr_watcher import OCRFileHandler
 import logging
+import re
 
 router = APIRouter()
+
+
+def clean_filename(filename: str) -> str:
+    """Nettoie le nom de fichier en supprimant caractères spéciaux et espaces"""
+    import time
+    
+    if not filename:
+        return "document.pdf"
+    
+    # Garder l'extension
+    name = Path(filename).stem
+    extension = Path(filename).suffix.lower()
+    
+    # Si pas d'extension, ajouter .pdf par défaut
+    if not extension:
+        extension = ".pdf"
+    
+    # Supprimer caractères dangereux et normaliser
+    # Garder lettres, chiffres, tirets, underscores et points
+    clean_name = re.sub(r'[^\w\-_.]', '_', name)
+    
+    # Supprimer underscores multiples
+    clean_name = re.sub(r'_+', '_', clean_name)
+    
+    # Supprimer underscores en début/fin
+    clean_name = clean_name.strip('_.')
+    
+    # Limiter la longueur (255 caractères max pour la plupart des systèmes)
+    max_length = 255 - len(extension)
+    if len(clean_name) > max_length:
+        clean_name = clean_name[:max_length].rstrip('_.')
+    
+    # Fallback si nom vide après nettoyage
+    if not clean_name:
+        clean_name = f"document_{int(time.time())}"
+    
+    return clean_name + extension
 
 
 # Schemas
@@ -452,7 +490,8 @@ async def process_uploaded_document(file_path: str, document_id: int, user_id: i
                 logger.info(f"   ⏱️ Temps: {process_time:.2f}s")
                 
                 # 8. Déplacer le fichier vers le dossier de catégorie et mettre à jour le chemin
-                new_file_path = await _move_to_category_folder(Path(file_path), final_category)
+                original_filename = document.original_filename or document.filename
+                new_file_path = await _move_to_category_folder(Path(file_path), final_category, original_filename)
                 
                 # 9. Mettre à jour le chemin du fichier en base
                 document.file_path = new_file_path
@@ -558,8 +597,8 @@ async def _generate_mistral_summary(text: str, category: str) -> str:
         return f"Document {category} de {len(text.split())} mots analysé automatiquement."
 
 
-async def _move_to_category_folder(file_path: Path, category: str) -> str:
-    """Déplace le fichier vers le dossier de catégorie approprié et retourne le nouveau chemin"""
+async def _move_to_category_folder(file_path: Path, category: str, original_filename: str = None) -> str:
+    """Déplace le fichier vers le dossier de catégorie approprié avec nom original et retourne le nouveau chemin"""
     logger = logging.getLogger(__name__)
     try:
         # Base directory pour la structure OCR native
@@ -585,8 +624,12 @@ async def _move_to_category_folder(file_path: Path, category: str) -> str:
         # Créer le dossier s'il n'existe pas (normalement ils existent déjà)
         category_folder.mkdir(exist_ok=True)
         
-        # Destination finale
-        destination = category_folder / file_path.name
+        # Utiliser le nom original nettoyé si fourni, sinon le nom actuel
+        if original_filename:
+            cleaned_filename = clean_filename(original_filename)
+            destination = category_folder / cleaned_filename
+        else:
+            destination = category_folder / file_path.name
         
         # Éviter les conflits de noms
         counter = 1
@@ -782,7 +825,7 @@ async def upload_and_process_document(
                 summary = f"Document de type {final_category} analysé automatiquement. Contenu: {word_count} mots extraits avec {final_confidence:.1%} de confiance."
             
             # 9. Déplacer le fichier vers le dossier de catégorie
-            final_file_path = await _move_to_category_folder(Path(temp_file_path), final_category)
+            final_file_path = await _move_to_category_folder(Path(temp_file_path), final_category, file.filename)
             
             # 10. Sauvegarde en base de données avec le bon chemin
             document = Document(
